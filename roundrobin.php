@@ -660,7 +660,7 @@ let showPlayerNum = false;
 function getPlayerDisplayName(id) {
     const name = state.playerNames[id] || ('選手' + id);
     return showPlayerNum
-        ? `<span style="font-size:0.65em;color:#999;font-weight:normal;">No.${id}</span> ${name}`
+        ? `<span style="display:inline-flex;align-items:center;gap:5px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`
         : name;
 }
 
