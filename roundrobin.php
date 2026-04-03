@@ -282,12 +282,12 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div class="panel-title" style="margin:0;">📋 試合の組合せ・結果入力</div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
             <div class="court-toggle-wrap admin-only">
-                <span>第○コート</span>
+                <span>1,2</span>
                 <label class="toggle-sw">
                     <input type="checkbox" id="courtNameToggle" onchange="updateCourtNames()">
                     <span class="slider"></span>
                 </label>
-                <span>A・Bコート</span>
+                <span>A,B</span>
             </div>
             <div class="court-toggle-wrap">
                 <span>選手番号</span>
