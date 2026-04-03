@@ -443,10 +443,21 @@ function updateMatchRuleDesc() {
 
 function resetTournament() {
     if (!confirm('試合データをすべて削除して最初からやり直しますか？')) return;
+    // state を完全にリセット
+    state.roundCount   = 0;
+    state.players      = [];
+    state.schedule     = [];
+    state.scores       = {};
+    state.playerNames  = {};
+    state.pairMatrix   = {};
+    state.oppMatrix    = {};
+    state.tsMap        = {};
+    state.matchingRule = 'random';
+    // Firebase にも空の状態を即座に反映（他の端末の古いデータを上書き）
+    saveState();
     localStorage.removeItem('rr_state_v2');
     document.getElementById('initialSetup').style.display = 'block';
     document.getElementById('liveSetup').style.display = 'none';
-    state.roundCount = 0; state.players = []; state.schedule = []; state.scores = {};
     document.getElementById('disp-players').textContent = setupPlayers;
     document.getElementById('disp-courts').textContent = setupCourts;
     showStep('step-setup', document.getElementById('btn-setup'));
