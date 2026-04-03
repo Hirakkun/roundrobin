@@ -192,22 +192,29 @@ body.viewer-mode #initialSetup { display: none !important; }
     </div>
 
     <!-- クラウド同期カード -->
-    <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div class="setup-label" style="margin:0;padding:0;border:none;">☁️ クラウド同期</div>
-            <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;">未接続</div>
+    <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:0;overflow:hidden;">
+        <!-- ヘッダー（常に表示・クリックで開閉） -->
+        <div onclick="toggleSyncPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;">
+            <div style="font-size:16px;font-weight:bold;color:#1565c0;">☁️ クラウド同期</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;">未接続</div>
+                <span id="syncPanelArrow" style="font-size:16px;color:#1565c0;transition:transform 0.2s;">▼</span>
+            </div>
         </div>
-        <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:10px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <button onclick="createSession()" style="flex:1;padding:10px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🆕 新しいIDを作る（管理者）</button>
-        </div>
-        <div id="sessionUrlBtns" style="display:none;flex-direction:column;gap:8px;margin-bottom:8px;">
-            <button onclick="copyAdminUrl()" style="width:100%;padding:10px;background:#e65100;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🔑 管理者URLをコピー（自分用に保存）</button>
-            <button onclick="copyViewerUrl()" style="width:100%;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">👥 参加者URLをコピー（LINEで送信）</button>
-        </div>
-        <div style="display:flex;gap:8px;">
-            <input id="sessionIdInput" type="text" placeholder="同期IDを入力して参加（閲覧モード）" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;text-transform:uppercase;letter-spacing:2px;" maxlength="6">
-            <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
+        <!-- 開閉エリア（初期は閉じている） -->
+        <div id="syncPanelBody" style="display:none;padding:0 16px 14px;">
+            <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:10px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <button onclick="createSession()" style="flex:1;padding:10px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🆕 新しいIDを作る（管理者）</button>
+            </div>
+            <div id="sessionUrlBtns" style="display:none;flex-direction:column;gap:8px;margin-bottom:8px;">
+                <button onclick="copyAdminUrl()" style="width:100%;padding:10px;background:#e65100;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🔑 管理者URLをコピー（自分用に保存）</button>
+                <button onclick="copyViewerUrl()" style="width:100%;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">👥 参加者URLをコピー（LINEで送信）</button>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <input id="sessionIdInput" type="text" placeholder="同期IDを入力して参加（閲覧モード）" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;text-transform:uppercase;letter-spacing:2px;" maxlength="6">
+                <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
+            </div>
         </div>
     </div>
 
@@ -1533,6 +1540,8 @@ function updateAdminUI() {
         document.body.classList.add('viewer-mode');
         if (ind) { ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
     }
+    // 接続済みならパネルを開く
+    if (_sessionId) toggleSyncPanel(true);
 }
 
 function copyAdminUrl() {
@@ -1551,6 +1560,15 @@ function _copyToClipboard(url, msg) {
     } else {
         prompt('URLをコピーしてください:', url);
     }
+}
+
+function toggleSyncPanel(forceOpen) {
+    const body  = document.getElementById('syncPanelBody');
+    const arrow = document.getElementById('syncPanelArrow');
+    if (!body) return;
+    const open = forceOpen !== undefined ? forceOpen : body.style.display === 'none';
+    body.style.display  = open ? 'block' : 'none';
+    if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
 }
 
 function updateSyncStatus(msg, color) {
