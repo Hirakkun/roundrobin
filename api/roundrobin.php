@@ -326,6 +326,7 @@ let state = {
     schedule: [],
     scores: {},
     playerNames: {},
+    courtNameAlpha: false,  // false=第○コート, true=A・Bコート
 };
 
 // =====================================================================
@@ -616,12 +617,17 @@ function getCourtName(ci) {
 function updateCourtNames() {
     const checked = document.getElementById('courtNameToggle')?.checked;
     localStorage.setItem('court_name_alpha', checked ? '1' : '0');
+    state.courtNameAlpha = !!checked;
+    saveState();
     renderMatchContainer();
 }
 function loadCourtNameSetting() {
-    const saved = localStorage.getItem('court_name_alpha');
     const toggle = document.getElementById('courtNameToggle');
-    if (toggle && saved === '1') toggle.checked = true;
+    if (!toggle) return;
+    // stateに値があればそちらを優先、なければlocalStorageから
+    const useAlpha = state.courtNameAlpha || localStorage.getItem('court_name_alpha') === '1';
+    toggle.checked = useAlpha;
+    state.courtNameAlpha = useAlpha;
 }
 
 function shuffle(arr) {
@@ -1501,6 +1507,10 @@ window._fbApply = function(remoteState) {
     try {
         Object.assign(state, remoteState);
         localStorage.setItem('rr_state_v2', JSON.stringify(state));
+        // コート名トグルを同期
+        const toggle = document.getElementById('courtNameToggle');
+        if (toggle) toggle.checked = !!state.courtNameAlpha;
+        localStorage.setItem('court_name_alpha', state.courtNameAlpha ? '1' : '0');
         if (state.roundCount > 0) {
             document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
