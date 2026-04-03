@@ -162,6 +162,8 @@ tr:nth-child(even) td { background: #f5f5f5; }
 /* 閲覧モード */
 body.viewer-mode .admin-only { display: none !important; }
 body.viewer-mode .team { pointer-events: none; }
+body.viewer-mode .team::before { display: none; }
+body.viewer-mode .team::after  { display: none; }
 body.viewer-mode #initialSetup { display: none !important; }
 </style>
 </head>
@@ -279,7 +281,7 @@ body.viewer-mode #initialSetup { display: none !important; }
     </div>
     <div style="font-size:13px;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;color:#444;" id="matchRuleDesc">
     </div>
-    <div style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #e65100;">
+    <div class="admin-only" style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #e65100;">
         チームをタップするとスコアが変わります。左半分で＋、右半分でー。
     </div>
     <div id="matchContainer"></div>
