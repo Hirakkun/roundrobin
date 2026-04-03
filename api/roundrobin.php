@@ -317,10 +317,10 @@ body.viewer-mode #initialSetup { display: none !important; }
             <tbody id="rankBody"></tbody>
         </table>
     </div>
-    <button class="report-btn admin-only" onclick="previewReport()">📋 送信内容を確認する</button>
+    <button class="report-btn admin-only" onclick="previewReport()">📋 大会結果を確認する</button>
     <div id="reportPreview" style="display:none;margin-top:12px;">
         <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
-        <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="sendReport()">📧 この内容でメール送信する</button>
+        <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="copyReport()">📋 大会結果をクリップボードに保存する</button>
     </div>
     <div id="reportStatus"></div>
 </div>
@@ -1435,40 +1435,23 @@ function previewReport() {
     preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
 }
 
-function sendReport() {
-    const { csv, dateTag } = buildReportCSV();
+function copyReport() {
+    const { csv } = buildReportCSV();
     const status = document.getElementById('reportStatus');
-
-    const btns = document.querySelectorAll('.report-btn');
-    btns.forEach(b => { b.disabled = true; });
-    status.textContent = '送信中...';
-    status.textContent = '';
-
-    const form = new FormData();
-    form.append('action', 'send_report');
-    form.append('report_body', csv);
-    form.append('date_tag', dateTag);
-
-    fetch(location.href, { method: 'POST', body: form })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                status.textContent = '✅ 送信完了しました';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(csv)
+            .then(() => {
+                status.textContent = '✅ クリップボードにコピーしました！LINEやメモ帳に貼り付けてください。';
                 status.style.color = '#2e7d32';
-            } else {
-                status.textContent = '❌ 送信に失敗しました: ' + (data.error || 'サーバーエラー');
+            })
+            .catch(() => {
+                status.textContent = '❌ コピーに失敗しました。上のテキストを手動でコピーしてください。';
                 status.style.color = '#c62828';
-            }
-        })
-        .catch(() => {
-            status.textContent = '❌ 通信エラーが発生しました';
-            status.style.color = '#c62828';
-        })
-        .finally(() => {
-            btns.forEach(b => { b.disabled = false; });
-            btns[0].textContent = '📋 送信内容を確認する';
-            btns[1].textContent = '📧 この内容でメール送信する';
-        });
+            });
+    } else {
+        status.textContent = '❌ このブラウザはクリップボードに対応していません。上のテキストを手動でコピーしてください。';
+        status.style.color = '#c62828';
+    }
 }
 let rosterEditMode = false;
 
