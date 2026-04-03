@@ -184,6 +184,20 @@ tr:nth-child(even) td { background: #f5f5f5; }
         </span>
     </div>
 
+    <!-- クラウド同期カード -->
+    <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;">
+        <div class="setup-label">☁️ クラウド同期（リアルタイム共有）</div>
+        <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:10px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button onclick="createSession()" style="flex:1;padding:10px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🆕 新しいIDを作る</button>
+            <button onclick="copySessionUrl()" id="copyUrlBtn" style="flex:1;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;display:none;">🔗 URLをコピー</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <input id="sessionIdInput" type="text" placeholder="同期IDを入力して参加" style="flex:1;padding:10px;font-size:16px;border:2px solid #ccc;border-radius:8px;text-transform:uppercase;letter-spacing:2px;" maxlength="6">
+            <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
+        </div>
+    </div>
+
     <!-- 初期設定エリア -->
     <div id="initialSetup">
         <div class="setup-card">
@@ -1438,6 +1452,75 @@ function addRosterRow(d) {
 }
 
 // =====================================================================
+// クラウド同期
+// =====================================================================
+let isApplyingRemote = false;
+
+function createSession() {
+    const id = Math.random().toString(36).substr(2, 6).toUpperCase();
+    window.location.hash = id;
+    document.getElementById('sessionIdInput').value = id;
+    document.getElementById('copyUrlBtn').style.display = '';
+    _startFirebaseSession(id);
+}
+
+function joinSession() {
+    const id = (document.getElementById('sessionIdInput').value || '').trim().toUpperCase();
+    if (!id || id.length < 3) { alert('同期IDを入力してください'); return; }
+    window.location.hash = id;
+    _startFirebaseSession(id);
+}
+
+function _startFirebaseSession(id) {
+    localStorage.setItem('rr_session_id', id);
+    document.getElementById('copyUrlBtn').style.display = '';
+    updateSyncStatus('🟡 接続中...', '#e65100');
+    if (window._fbStart) window._fbStart(id);
+}
+
+function copySessionUrl() {
+    const url = location.origin + location.pathname + window.location.hash;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('✅ URLをコピーしました！\nLINEなどで参加者に送ってください。\n\n' + url);
+        }).catch(() => { prompt('このURLを参加者に送ってください:', url); });
+    } else {
+        prompt('このURLを参加者に送ってください:', url);
+    }
+}
+
+function updateSyncStatus(msg, color) {
+    const el = document.getElementById('syncStatusBar');
+    if (el) { el.textContent = msg; el.style.color = color || '#888'; }
+}
+window.updateSyncStatus = updateSyncStatus;
+
+window._fbApply = function(remoteState) {
+    if (isApplyingRemote) return;
+    isApplyingRemote = true;
+    try {
+        Object.assign(state, remoteState);
+        localStorage.setItem('rr_state_v2', JSON.stringify(state));
+        if (state.roundCount > 0) {
+            document.getElementById('btn-match').classList.remove('disabled');
+            document.getElementById('btn-rank').classList.remove('disabled');
+            document.getElementById('disp-players').textContent = state.players.length;
+            document.getElementById('disp-courts').textContent = state.courts;
+            document.getElementById('disp-courts-live').textContent = state.courts;
+            setupPlayers = state.players.length;
+            setupCourts = state.courts;
+            showLiveSetup();
+            renderMatchContainer();
+            renderPlayerList();
+        }
+        const sid = localStorage.getItem('rr_session_id') || '';
+        updateSyncStatus('🟢 同期中  ID: ' + sid, '#2e7d32');
+    } finally {
+        isApplyingRemote = false;
+    }
+};
+
+// =====================================================================
 // 書出・読込
 // =====================================================================
 function exportData() {
@@ -1504,6 +1587,7 @@ function importData(event) {
 // =====================================================================
 function saveState() {
     localStorage.setItem('rr_state_v2', JSON.stringify(state));
+    if (!isApplyingRemote && window._fbPush) window._fbPush(state);
 }
 
 function loadState() {
@@ -1543,7 +1627,72 @@ window.onload = function () {
         renderPlayerList();
         showStep('step-match', document.getElementById('btn-match'));
     }
+
+    // URLハッシュまたはlocalStorageから同期IDを復元
+    const hashId = (window.location.hash || '').replace('#', '').trim().toUpperCase();
+    const storedId = localStorage.getItem('rr_session_id') || '';
+    const sid = hashId || storedId;
+    if (sid.length >= 3) {
+        document.getElementById('sessionIdInput').value = sid;
+        document.getElementById('copyUrlBtn').style.display = '';
+        if (hashId) window.location.hash = hashId;
+    }
+
+    // Firebaseモジュールへ準備完了を通知
+    window.dispatchEvent(new Event('appReady'));
 };
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCsCHB2NaoRG5Q_D4u8VqeUghufZDTHTUE",
+    authDomain: "roundrobin-c2631.firebaseapp.com",
+    databaseURL: "https://roundrobin-c2631-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "roundrobin-c2631",
+    storageBucket: "roundrobin-c2631.firebasestorage.app",
+    messagingSenderId: "648952505350",
+    appId: "1:648952505350:web:eb913450f350ba404ccf87"
+};
+
+const CLIENT_ID = Math.random().toString(36).substr(2, 8);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+let _ref = null;
+
+window._fbStart = function(sessionId) {
+    if (_ref) off(_ref);
+    _ref = ref(db, 'sessions/' + sessionId);
+    onValue(_ref, snap => {
+        const d = snap.val();
+        if (!d) {
+            if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中  ID: ' + sessionId, '#2e7d32');
+            return;
+        }
+        // 自分が送ったデータは無視して無限ループを防ぐ
+        if (d._cid === CLIENT_ID) return;
+        const { _cid, ...stateData } = d;
+        if (window._fbApply) window._fbApply(stateData);
+    });
+};
+
+window._fbPush = function(data) {
+    if (!_ref) return;
+    set(_ref, { ...data, _cid: CLIENT_ID });
+};
+
+// appReadyイベントで自動接続
+window.addEventListener('appReady', () => {
+    const hashId = (window.location.hash || '').replace('#', '').trim().toUpperCase();
+    const storedId = localStorage.getItem('rr_session_id') || '';
+    const sid = hashId || storedId;
+    if (sid.length >= 3) {
+        window._fbStart(sid);
+        if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+    }
+});
 </script>
 </body>
 </html>
