@@ -176,7 +176,13 @@ tr:nth-child(even) td { background: #f5f5f5; }
 
 <!-- STEP1: 設定＋参加者統合 -->
 <div id="step-setup" class="panel active">
-    <div class="panel-title">⚙️ 設定・参加者</div>
+    <div class="panel-title" style="justify-content:space-between;">
+        <span>⚙️ 設定・参加者</span>
+        <span style="display:flex;gap:8px;">
+            <button onclick="exportData()" style="font-size:14px;padding:6px 12px;background:#546e7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">📤 書出</button>
+            <label style="font-size:14px;padding:6px 12px;background:#546e7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">📥 読込<input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
+        </span>
+    </div>
 
     <!-- 初期設定エリア -->
     <div id="initialSetup">
@@ -1429,6 +1435,68 @@ function addRosterRow(d) {
         tr.innerHTML = `<td style="font-size:18px;font-weight:bold;padding:6px 4px;">${d.name||'（未入力）'}</td><td><span class="age-blur" onclick="this.classList.toggle('revealed')">${ageText}</span></td><td>${gLabel}</td><td><button class="del-btn" onclick="this.closest('tr').remove();saveRoster()">×</button></td>`;
     }
     document.getElementById('rosterBody').appendChild(tr);
+}
+
+// =====================================================================
+// 書出・読込
+// =====================================================================
+function exportData() {
+    const payload = {
+        version: 'rr_v2',
+        exportedAt: new Date().toISOString(),
+        state: state,
+        roster: JSON.parse(localStorage.getItem('tournament_roster') || '[]'),
+        courtNameAlpha: localStorage.getItem('court_name_alpha') || '0',
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = new Date();
+    const tag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+    a.href = url;
+    a.download = `roundrobin_${tag}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const payload = JSON.parse(e.target.result);
+            if (!payload.version || !payload.state) {
+                alert('このファイルは対応していない形式です。');
+                return;
+            }
+            if (!confirm('現在のデータを上書きして読み込みますか？')) return;
+            Object.assign(state, payload.state);
+            if (payload.roster) localStorage.setItem('tournament_roster', JSON.stringify(payload.roster));
+            if (payload.courtNameAlpha) localStorage.setItem('court_name_alpha', payload.courtNameAlpha);
+            saveState();
+            // 画面を復元
+            loadCourtNameSetting();
+            if (state.roundCount > 0) {
+                document.getElementById('btn-match').classList.remove('disabled');
+                document.getElementById('btn-rank').classList.remove('disabled');
+                document.getElementById('disp-players').textContent = state.players.length;
+                document.getElementById('disp-courts').textContent = state.courts;
+                document.getElementById('disp-courts-live').textContent = state.courts;
+                setupPlayers = state.players.length;
+                setupCourts  = state.courts;
+                showLiveSetup();
+                renderMatchContainer();
+                renderPlayerList();
+            }
+            renderRoster();
+            alert('✅ データを読み込みました');
+        } catch(err) {
+            alert('❌ ファイルの読み込みに失敗しました: ' + err.message);
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
 }
 
 // =====================================================================
