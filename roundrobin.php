@@ -158,6 +158,11 @@ tr:nth-child(even) td { background: #f5f5f5; }
 .gender-badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:15px; font-weight:bold; }
 .gender-badge.M { background:#cce5ff; color:#004085; }
 .gender-badge.F { background:#f8d7da; color:#721c24; }
+
+/* 閲覧モード */
+body.viewer-mode .admin-only { display: none !important; }
+body.viewer-mode .team { pointer-events: none; }
+body.viewer-mode #initialSetup { display: none !important; }
 </style>
 </head>
 <body>
@@ -186,14 +191,20 @@ tr:nth-child(even) td { background: #f5f5f5; }
 
     <!-- クラウド同期カード -->
     <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;">
-        <div class="setup-label">☁️ クラウド同期（リアルタイム共有）</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="setup-label" style="margin:0;padding:0;border:none;">☁️ クラウド同期</div>
+            <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;">未接続</div>
+        </div>
         <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:10px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <button onclick="createSession()" style="flex:1;padding:10px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🆕 新しいIDを作る</button>
-            <button onclick="copySessionUrl()" id="copyUrlBtn" style="flex:1;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;display:none;">🔗 URLをコピー</button>
+            <button onclick="createSession()" style="flex:1;padding:10px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🆕 新しいIDを作る（管理者）</button>
+        </div>
+        <div id="sessionUrlBtns" style="display:none;flex-direction:column;gap:8px;margin-bottom:8px;">
+            <button onclick="copyAdminUrl()" style="width:100%;padding:10px;background:#e65100;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🔑 管理者URLをコピー（自分用に保存）</button>
+            <button onclick="copyViewerUrl()" style="width:100%;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">👥 参加者URLをコピー（LINEで送信）</button>
         </div>
         <div style="display:flex;gap:8px;">
-            <input id="sessionIdInput" type="text" placeholder="同期IDを入力して参加" style="flex:1;padding:10px;font-size:16px;border:2px solid #ccc;border-radius:8px;text-transform:uppercase;letter-spacing:2px;" maxlength="6">
+            <input id="sessionIdInput" type="text" placeholder="同期IDを入力して参加（閲覧モード）" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;text-transform:uppercase;letter-spacing:2px;" maxlength="6">
             <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
         </div>
     </div>
@@ -248,8 +259,8 @@ tr:nth-child(even) td { background: #f5f5f5; }
             </div>
         </div>
         <div id="playerList" class="player-list"></div>
-        <button class="player-add-btn" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
-        <button class="start-btn" style="margin-top:14px;background:#c62828;" onclick="resetTournament()">🔄 最初からやり直す</button>
+        <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
+        <button class="start-btn admin-only" style="margin-top:14px;background:#c62828;" onclick="resetTournament()">🔄 最初からやり直す</button>
     </div>
 </div>
 
@@ -257,7 +268,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
 <div id="step-match" class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
         <div class="panel-title" style="margin:0;">📋 試合の組合せ・結果入力</div>
-        <div class="court-toggle-wrap">
+        <div class="court-toggle-wrap admin-only">
             <span>第○コート</span>
             <label class="toggle-sw">
                 <input type="checkbox" id="courtNameToggle" onchange="updateCourtNames()">
@@ -272,7 +283,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
         チームをタップするとスコアが変わります。左半分で＋、右半分でー。
     </div>
     <div id="matchContainer"></div>
-    <button class="next-round-btn" id="nextRoundBtn" onclick="generateNextRound()">▶ 次の試合を作る</button>
+    <button class="next-round-btn admin-only" id="nextRoundBtn" onclick="generateNextRound()">▶ 次の試合を作る</button>
 </div>
 
 <!-- STEP4 -->
@@ -284,7 +295,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
             <tbody id="rankBody"></tbody>
         </table>
     </div>
-    <button class="report-btn" onclick="previewReport()">📋 送信内容を確認する</button>
+    <button class="report-btn admin-only" onclick="previewReport()">📋 送信内容を確認する</button>
     <div id="reportPreview" style="display:none;margin-top:12px;">
         <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
         <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="sendReport()">📧 この内容でメール送信する</button>
@@ -498,11 +509,14 @@ function renderPlayerList() {
 
         const restLabel = p.resting ? '復帰' : '休憩';
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
+        const restBtnHtml = isAdmin
+            ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
+            : '';
 
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
-            <select class="playerSelect" onchange="setPlayerName(${p.id},this.value)">${opts}</select>
-            <button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>
+            <select class="playerSelect" ${isAdmin ? '' : 'disabled'} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
+            ${restBtnHtml}
         `;
         list.appendChild(div);
     });
@@ -992,7 +1006,7 @@ function renderMatchContainer() {
                     <span class="round-badge">${rd.courts.length}コート</span>
                 </span>
                 <span style="display:flex;align-items:center;gap:8px;">
-                    <button class="round-del-btn" onclick="deleteRound(event,${rd.round})">🗑</button>
+                    ${isAdmin ? `<button class="round-del-btn" onclick="deleteRound(event,${rd.round})">🗑</button>` : ''}
                     <span class="arrow">▼</span>
                 </span>
             </div>
@@ -1042,6 +1056,7 @@ function updateMatchNames() {
 document.addEventListener('click', e => {
     const teamEl = e.target.closest('.team');
     if (!teamEl) return;
+    if (!isAdmin) return; // 閲覧モードはスコア変更不可
     const row = teamEl.closest('.match-row');
     const isLeft = teamEl.classList.contains('left-side');
     const scoreEl = row.querySelector(isLeft ? '.s1' : '.s2');
@@ -1458,40 +1473,70 @@ function addRosterRow(d) {
 }
 
 // =====================================================================
-// クラウド同期
+// クラウド同期・管理者/閲覧者モード
 // =====================================================================
 let isApplyingRemote = false;
+let isAdmin = false;
+let _sessionId = '';
+let _adminToken = '';
 
 function createSession() {
-    const id = Math.random().toString(36).substr(2, 6).toUpperCase();
-    window.location.hash = id;
-    document.getElementById('sessionIdInput').value = id;
-    document.getElementById('copyUrlBtn').style.display = '';
-    _startFirebaseSession(id);
+    const sid   = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const token = Math.random().toString(36).substr(2, 8).toUpperCase();
+    _sessionId  = sid;
+    _adminToken = token;
+    isAdmin     = true;
+    window.location.hash = sid + ':' + token;
+    document.getElementById('sessionIdInput').value = sid;
+    document.getElementById('sessionUrlBtns').style.display = 'flex';
+    localStorage.setItem('rr_session_id', sid);
+    localStorage.setItem('rr_admin:' + sid, token);
+    updateAdminUI();
+    updateSyncStatus('🟡 接続中...', '#e65100');
+    if (window._fbStart) window._fbStart(sid);
 }
 
 function joinSession() {
-    const id = (document.getElementById('sessionIdInput').value || '').trim().toUpperCase();
-    if (!id || id.length < 3) { alert('同期IDを入力してください'); return; }
-    window.location.hash = id;
-    _startFirebaseSession(id);
-}
-
-function _startFirebaseSession(id) {
-    localStorage.setItem('rr_session_id', id);
-    document.getElementById('copyUrlBtn').style.display = '';
+    const raw = (document.getElementById('sessionIdInput').value || '').trim().toUpperCase();
+    if (!raw || raw.length < 3) { alert('同期IDを入力してください'); return; }
+    _sessionId  = raw;
+    _adminToken = '';
+    isAdmin     = false;
+    window.location.hash = raw;
+    localStorage.setItem('rr_session_id', raw);
+    updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
-    if (window._fbStart) window._fbStart(id);
+    if (window._fbStart) window._fbStart(raw);
 }
 
-function copySessionUrl() {
-    const url = location.origin + location.pathname + window.location.hash;
+function updateAdminUI() {
+    const ind = document.getElementById('modeIndicator');
+    if (isAdmin) {
+        document.body.classList.remove('viewer-mode');
+        if (ind) { ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
+        const urlBtns = document.getElementById('sessionUrlBtns');
+        if (urlBtns) urlBtns.style.display = 'flex';
+    } else if (_sessionId) {
+        document.body.classList.add('viewer-mode');
+        if (ind) { ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
+    }
+}
+
+function copyAdminUrl() {
+    const url = location.origin + location.pathname + '#' + _sessionId + ':' + _adminToken;
+    _copyToClipboard(url, '🔑 管理者URLをコピーしました。\n自分だけが使えるURLです。大切に保存してください。\n\n' + url);
+}
+
+function copyViewerUrl() {
+    const url = location.origin + location.pathname + '#' + _sessionId;
+    _copyToClipboard(url, '👥 参加者URLをコピーしました。\nLINEで参加者に送ってください。\n\n' + url);
+}
+
+function _copyToClipboard(url, msg) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => {
-            alert('✅ URLをコピーしました！\nLINEなどで参加者に送ってください。\n\n' + url);
-        }).catch(() => { prompt('このURLを参加者に送ってください:', url); });
+        navigator.clipboard.writeText(url).then(() => alert('✅ ' + msg)).catch(() => prompt('URLをコピーしてください:', url));
     } else {
-        prompt('このURLを参加者に送ってください:', url);
+        prompt('URLをコピーしてください:', url);
     }
 }
 
@@ -1638,14 +1683,28 @@ window.onload = function () {
         showStep('step-match', document.getElementById('btn-match'));
     }
 
-    // URLハッシュまたはlocalStorageから同期IDを復元
-    const hashId = (window.location.hash || '').replace('#', '').trim().toUpperCase();
-    const storedId = localStorage.getItem('rr_session_id') || '';
-    const sid = hashId || storedId;
+    // URLハッシュから同期IDと管理者トークンを復元
+    const rawHash = (window.location.hash || '').replace('#', '').trim().toUpperCase();
+    const [hashSid, hashToken] = rawHash.split(':');
+    const storedSid = localStorage.getItem('rr_session_id') || '';
+    const sid = hashSid || storedSid;
+
     if (sid.length >= 3) {
+        _sessionId = sid;
         document.getElementById('sessionIdInput').value = sid;
-        document.getElementById('copyUrlBtn').style.display = '';
-        if (hashId) window.location.hash = hashId;
+
+        // 管理者判定: URLトークン or localStorage保存トークン
+        const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
+        const token = hashToken || storedToken;
+        if (token.length > 0) {
+            _adminToken = token;
+            isAdmin = true;
+            // 管理者URLをハッシュに反映（localStorageから復元した場合）
+            if (!hashToken) window.location.hash = sid + ':' + token;
+            document.getElementById('sessionUrlBtns').style.display = 'flex';
+            localStorage.setItem('rr_admin:' + sid, token);
+        }
+        updateAdminUI();
     }
 
     // Firebaseモジュールへ準備完了を通知
@@ -1695,9 +1754,10 @@ window._fbPush = function(data) {
 
 // appReadyイベントで自動接続
 window.addEventListener('appReady', () => {
-    const hashId = (window.location.hash || '').replace('#', '').trim().toUpperCase();
+    const rawHash = (window.location.hash || '').replace('#', '').trim().toUpperCase();
+    const hashSid = rawHash.split(':')[0];  // トークン部分を除いたセッションIDのみ
     const storedId = localStorage.getItem('rr_session_id') || '';
-    const sid = hashId || storedId;
+    const sid = hashSid || storedId;
     if (sid.length >= 3) {
         window._fbStart(sid);
         if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
