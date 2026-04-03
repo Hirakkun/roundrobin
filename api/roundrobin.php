@@ -289,7 +289,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                 </label>
                 <span>A,B</span>
             </div>
-            <div class="court-toggle-wrap">
+            <div class="court-toggle-wrap admin-only">
                 <span>選手番号</span>
                 <label class="toggle-sw">
                     <input type="checkbox" id="playerNumToggle" onchange="updatePlayerNumDisplay()">
