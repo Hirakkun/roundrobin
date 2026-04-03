@@ -1642,7 +1642,7 @@ window._fbApply = function(remoteState) {
             renderPlayerList();
         }
         const sid = localStorage.getItem('rr_session_id') || '';
-        updateSyncStatus('🟢 同期中  ID: ' + sid, '#2e7d32');
+        updateSyncStatus('🟢 同期中', '#2e7d32');
     } finally {
         isApplyingRemote = false;
     }
@@ -1813,7 +1813,7 @@ window._fbStart = function(sessionId) {
     onValue(_ref, snap => {
         const d = snap.val();
         if (!d) {
-            if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中  ID: ' + sessionId, '#2e7d32');
+            if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
             return;
         }
         // 自分が送ったデータは無視して無限ループを防ぐ
