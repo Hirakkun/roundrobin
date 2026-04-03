@@ -195,9 +195,12 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:0;overflow:hidden;">
         <!-- ヘッダー（常に表示・クリックで開閉） -->
         <div onclick="toggleSyncPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;">
-            <div style="font-size:16px;font-weight:bold;color:#1565c0;">☁️ クラウド同期</div>
             <div style="display:flex;align-items:center;gap:8px;">
-                <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;">未接続</div>
+                <span style="font-size:16px;font-weight:bold;color:#1565c0;">☁️ クラウド同期</span>
+                <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
                 <span id="syncPanelArrow" style="font-size:16px;color:#1565c0;transition:transform 0.2s;">▼</span>
             </div>
         </div>
@@ -1533,15 +1536,13 @@ function updateAdminUI() {
     const ind = document.getElementById('modeIndicator');
     if (isAdmin) {
         document.body.classList.remove('viewer-mode');
-        if (ind) { ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
+        if (ind) { ind.style.display = ''; ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
         const urlBtns = document.getElementById('sessionUrlBtns');
         if (urlBtns) urlBtns.style.display = 'flex';
     } else if (_sessionId) {
         document.body.classList.add('viewer-mode');
-        if (ind) { ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
+        if (ind) { ind.style.display = ''; ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
     }
-    // 接続済みならパネルを開く
-    if (_sessionId) toggleSyncPanel(true);
 }
 
 function copyAdminUrl() {
@@ -1572,8 +1573,13 @@ function toggleSyncPanel(forceOpen) {
 }
 
 function updateSyncStatus(msg, color) {
-    const el = document.getElementById('syncStatusBar');
-    if (el) { el.textContent = msg; el.style.color = color || '#888'; }
+    const bar   = document.getElementById('syncStatusBar');
+    const badge = document.getElementById('syncBadge');
+    if (bar)   { bar.textContent = msg; bar.style.color = color || '#888'; }
+    if (badge) { badge.textContent = msg; badge.style.color = color || '#888';
+        badge.style.background = color === '#2e7d32' ? '#e8f5e9'
+                               : color === '#e65100' ? '#fff3e0' : '#eee';
+    }
 }
 window.updateSyncStatus = updateSyncStatus;
 
