@@ -1623,8 +1623,15 @@ window._fbApply = function(remoteState) {
             showLiveSetup();
             renderMatchContainer();
             renderPlayerList();
+        } else {
+            // 管理者がリセットした場合：閲覧者の画面もリセット
+            document.getElementById('btn-match').classList.add('disabled');
+            document.getElementById('btn-rank').classList.add('disabled');
+            document.getElementById('matchContainer').innerHTML =
+                '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が試合を準備中です</div>';
+            document.getElementById('rankBody').innerHTML = '';
+            showStep('step-match', document.getElementById('btn-match'));
         }
-        const sid = localStorage.getItem('rr_session_id') || '';
         updateSyncStatus('🟢 同期中', '#2e7d32');
     } finally {
         isApplyingRemote = false;
