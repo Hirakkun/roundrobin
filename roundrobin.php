@@ -360,6 +360,7 @@ let state = {
     scores: {},
     playerNames: {},
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
+    showPlayerNum:  false,  // false=名前のみ, true=番号+名前
 };
 
 // =====================================================================
@@ -665,7 +666,9 @@ function getPlayerDisplayName(id) {
 }
 
 function updatePlayerNumDisplay() {
-    showPlayerNum = document.getElementById('playerNumToggle')?.checked || false;
+    state.showPlayerNum = document.getElementById('playerNumToggle')?.checked || false;
+    showPlayerNum = state.showPlayerNum;
+    saveState();
     renderMatchContainer();
 }
 
@@ -690,6 +693,10 @@ function loadCourtNameSetting() {
     const useAlpha = state.courtNameAlpha || localStorage.getItem('court_name_alpha') === '1';
     toggle.checked = useAlpha;
     state.courtNameAlpha = useAlpha;
+    // 選手番号表示の復元
+    showPlayerNum = !!state.showPlayerNum;
+    const numToggle = document.getElementById('playerNumToggle');
+    if (numToggle) numToggle.checked = showPlayerNum;
 }
 
 function shuffle(arr) {
@@ -1618,6 +1625,10 @@ window._fbApply = function(remoteState) {
         const toggle = document.getElementById('courtNameToggle');
         if (toggle) toggle.checked = !!state.courtNameAlpha;
         localStorage.setItem('court_name_alpha', state.courtNameAlpha ? '1' : '0');
+        // 選手番号表示トグルを同期
+        showPlayerNum = !!state.showPlayerNum;
+        const numToggle = document.getElementById('playerNumToggle');
+        if (numToggle) numToggle.checked = showPlayerNum;
         if (state.roundCount > 0) {
             document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
