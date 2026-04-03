@@ -280,13 +280,23 @@ body.viewer-mode #initialSetup { display: none !important; }
 <div id="step-match" class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
         <div class="panel-title" style="margin:0;">📋 試合の組合せ・結果入力</div>
-        <div class="court-toggle-wrap admin-only">
-            <span>第○コート</span>
-            <label class="toggle-sw">
-                <input type="checkbox" id="courtNameToggle" onchange="updateCourtNames()">
-                <span class="slider"></span>
-            </label>
-            <span>A・Bコート</span>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+            <div class="court-toggle-wrap admin-only">
+                <span>第○コート</span>
+                <label class="toggle-sw">
+                    <input type="checkbox" id="courtNameToggle" onchange="updateCourtNames()">
+                    <span class="slider"></span>
+                </label>
+                <span>A・Bコート</span>
+            </div>
+            <div class="court-toggle-wrap">
+                <span>選手番号</span>
+                <label class="toggle-sw">
+                    <input type="checkbox" id="playerNumToggle" onchange="updatePlayerNumDisplay()">
+                    <span class="slider"></span>
+                </label>
+                <span>表示</span>
+            </div>
         </div>
     </div>
     <div style="font-size:13px;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;color:#444;" id="matchRuleDesc">
@@ -644,6 +654,21 @@ function updateTrueSkill(team1ids, team2ids, score1, score2) {
 // =====================================================================
 // スケジューリングアルゴリズム
 // =====================================================================
+// 選手番号表示フラグ
+let showPlayerNum = false;
+
+function getPlayerDisplayName(id) {
+    const name = state.playerNames[id] || ('選手' + id);
+    return showPlayerNum
+        ? `<span style="font-size:0.65em;color:#999;font-weight:normal;">No.${id}</span> ${name}`
+        : name;
+}
+
+function updatePlayerNumDisplay() {
+    showPlayerNum = document.getElementById('playerNumToggle')?.checked || false;
+    renderMatchContainer();
+}
+
 // コート名（数字 or アルファベット）
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 function getCourtName(ci) {
@@ -1037,8 +1062,8 @@ function renderMatchContainer() {
                 ${rd.courts.map((ct, ci) => {
                     const mid = `r${rd.round}c${ci}`;
                     const sc = state.scores[mid] || {s1: 0, s2: 0};
-                    const n1 = ct.team1.map(id => state.playerNames[id] || ('選手'+id)).join('<br>');
-                    const n2 = ct.team2.map(id => state.playerNames[id] || ('選手'+id)).join('<br>');
+                    const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('<br>');
+                    const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('<br>');
                     return `
                     <div class="match-card">
                         <div class="match-header">${getCourtName(ci)}</div>
@@ -1068,7 +1093,7 @@ function updateMatchNames() {
             const el = row.querySelector('.' + side);
             if (!el) return;
             const ids = el.dataset.p.split(',').map(Number);
-            el.querySelector('.name').innerHTML = ids.map(id => state.playerNames[id] || ('選手'+id)).join('<br>');
+            el.querySelector('.name').innerHTML = ids.map(id => getPlayerDisplayName(id)).join('<br>');
         });
     });
 }
