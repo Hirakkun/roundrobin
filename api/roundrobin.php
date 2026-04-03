@@ -196,7 +196,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         <!-- ヘッダー（常に表示・クリックで開閉） -->
         <div onclick="toggleSyncPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;">
             <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:16px;font-weight:bold;color:#1565c0;">☁️ クラウド同期</span>
+                <span style="font-size:16px;font-weight:bold;color:#1565c0;">☁️</span>
                 <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
