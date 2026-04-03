@@ -250,7 +250,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
             名前の割り当て・休憩・コート数の変更は次の試合から反映されます。
         </div>
-        <div class="court-change-row">
+        <div class="court-change-row admin-only">
             <div class="setup-label">🏸 次の試合からのコート数</div>
             <div class="counter-row">
                 <button type="button" class="counter-btn" onclick="changeCourts(-1)">－</button>
