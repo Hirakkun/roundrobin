@@ -1522,10 +1522,11 @@ async function calcPeriodStats() {
     resultDiv.innerHTML = '';
 
     try {
-        const sessions = await window._fbQueryPrefix(prefix, date1str, date2str);
+        const { results: sessions, excludedNoDate } = await window._fbQueryPrefix(prefix, date1str, date2str);
 
         if (!sessions || sessions.length === 0) {
-            status.textContent = '該当するセッションが見つかりませんでした。';
+            const note = excludedNoDate > 0 ? `（作成日時不明のセッション${excludedNoDate}件は除外）` : '';
+            status.textContent = `該当するセッションが見つかりませんでした。${note}`;
             status.style.color = '#c62828';
             return;
         }
@@ -1574,7 +1575,9 @@ async function calcPeriodStats() {
             return;
         }
 
-        status.textContent = `✅ ${sessions.length}セッションを集計（${arr.length}名）`;
+        let statusMsg = `✅ ${sessions.length}セッションを集計（${arr.length}名）`;
+        if (excludedNoDate > 0) statusMsg += `　※作成日時不明${excludedNoDate}件除外`;
+        status.textContent = statusMsg;
         status.style.color = '#2e7d32';
 
         let h = '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
@@ -1982,18 +1985,21 @@ window._fbQueryPrefix = async function(prefix, date1str, date2str) {
     );
     const snapshot = await get(q);
     const results = [];
+    let excludedNoDate = 0;
+    const useDateFilter = !!(date1str || date2str);
     snapshot.forEach(child => {
         const data = child.val();
         if (!data) return;
-        // 期間フィルタ（createdAt がある場合のみ）
-        if (data.createdAt && (date1str || date2str)) {
+        if (useDateFilter) {
+            // createdAt がないセッションは期間不明として除外
+            if (!data.createdAt) { excludedNoDate++; return; }
             const created = new Date(data.createdAt);
             if (date1str && created < new Date(date1str + 'T00:00:00')) return;
             if (date2str && created > new Date(date2str + 'T23:59:59')) return;
         }
         results.push({ key: child.key, data });
     });
-    return results;
+    return { results, excludedNoDate };
 };
 
 // appReadyイベントで自動接続
