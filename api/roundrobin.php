@@ -185,7 +185,7 @@ body.viewer-mode #initialSetup { display: none !important; }
 <div id="step-setup" class="panel active">
     <div class="panel-title" style="justify-content:space-between;">
         <span>⚙️ 設定・参加者</span>
-        <span style="display:flex;gap:8px;">
+        <span style="display:flex;gap:8px;" class="admin-only">
             <button onclick="exportData()" style="font-size:14px;padding:6px 12px;background:#546e7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">📤 書出</button>
             <label style="font-size:14px;padding:6px 12px;background:#546e7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">📥 読込<input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
         </span>
