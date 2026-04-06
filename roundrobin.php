@@ -2082,6 +2082,7 @@ window.onload = function () {
         updateAdminUI();
 
         if (loadState() && state.roundCount > 0) {
+            // 試合データあり → 画面を復元
             document.getElementById('disp-players').textContent = state.players.length;
             document.getElementById('disp-courts').textContent  = state.courts;
             document.getElementById('disp-courts-live').textContent = state.courts;
@@ -2093,6 +2094,18 @@ window.onload = function () {
             renderMatchContainer();
             renderPlayerList();
             showStep('step-match', document.getElementById('btn-match'));
+        } else {
+            // 試合データなし → IDをクリアして初期画面に戻す
+            _sessionId  = '';
+            _adminToken = '';
+            isAdmin     = false;
+            window.location.hash = '';
+            localStorage.removeItem('rr_session_id');
+            document.getElementById('sessionIdInput').value = '';
+            document.getElementById('sessionUrlBtns').style.display = 'none';
+            document.getElementById('initialSetup').style.display = 'block';
+            document.getElementById('liveSetup').style.display = 'none';
+            showStep('step-setup', document.getElementById('btn-setup'));
         }
     } else {
         // セッションIDなし → 設定の初期画面を表示
