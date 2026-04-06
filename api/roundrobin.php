@@ -313,7 +313,7 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div class="panel-title">🏆 順位表</div>
     <div class="rank-table-wrap">
         <table id="rankTable">
-            <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"><col style="width:36px;"><col style="width:36px;"></colgroup>
+            <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"></colgroup>
             <tbody id="rankBody"></tbody>
         </table>
     </div>
@@ -669,9 +669,12 @@ let showPlayerNum = false;
 
 function getPlayerDisplayName(id) {
     const name = state.playerNames[id] || ('選手' + id);
-    return showPlayerNum
-        ? `<span style="display:inline-flex;align-items:center;gap:5px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`
-        : name;
+    const len = name.length;
+    const fs = len >= 8 ? '13px' : len >= 6 ? '15px' : len >= 5 ? '17px' : '20px';
+    if (showPlayerNum) {
+        return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
+    }
+    return `<span style="white-space:nowrap;font-size:${fs};">${name}</span>`;
 }
 
 function updatePlayerNumDisplay() {
@@ -1078,8 +1081,8 @@ function renderMatchContainer() {
                 ${rd.courts.map((ct, ci) => {
                     const mid = `r${rd.round}c${ci}`;
                     const sc = state.scores[mid] || {s1: 0, s2: 0};
-                    const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('<br>');
-                    const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('<br>');
+                    const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
+                    const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
                     return `
                     <div class="match-card">
                         <div class="match-header">${getCourtName(ci)}</div>
@@ -1088,10 +1091,10 @@ function renderMatchContainer() {
                              data-t1="${ct.team1.join(',')}"
                              data-t2="${ct.team2.join(',')}">
                             <div class="team left-side" data-p="${ct.team1.join(',')}"
-                                 ><span class="name">${n1}</span></div>
+                                 ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span></div>
                             <div class="score-area"><span class="s1">${sc.s1}</span><small>-</small><span class="s2">${sc.s2}</span></div>
                             <div class="team right-side" data-p="${ct.team2.join(',')}"
-                                 ><span class="name">${n2}</span></div>
+                                 ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>
                     </div>`;
                 }).join('')}
@@ -1292,7 +1295,7 @@ function calcRank() {
         return b.age - a.age;
     });
 
-    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th><th>μ</th><th>σ</th></tr>';
+    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th></tr>';
     arr.forEach((r, i) => {
         const wr = r.played ? (r.wins / r.played * 100).toFixed(0) + '%' : '-';
         const rank = i + 1;
@@ -1300,17 +1303,15 @@ function calcRank() {
         const intv = r.appearedCount ? (r.eligibleRounds / r.appearedCount).toFixed(1) : '-';
         const intvLabel = r.eligibleRounds > 0 ? `間隔${intv}R` : '-';
         const muDisp = r.mu.toFixed(1);
-        const gammaDisp = r.sigma.toFixed(2);
+        const sigmaDisp = r.sigma.toFixed(2);
         h += `<tr${rc}>
             <td style="font-size:17px;font-weight:bold;">${rank}</td>
             <td class="name-cell">
                 <span class="name-text">${r.name}</span>
-                <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span></div>
+                <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span><span>μ:${muDisp}</span><span>σ:${sigmaDisp}</span></div>
             </td>
             <td>${wr}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td>
             <td style="font-weight:bold;">${r.diff > 0 ? '+' + r.diff : r.diff}</td>
-            <td style="font-size:13px;color:#555;">${muDisp}</td>
-            <td style="font-size:13px;color:#888;">${gammaDisp}</td>
         </tr>`;
     });
     document.getElementById('rankBody').innerHTML = h;
