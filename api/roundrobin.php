@@ -313,7 +313,7 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div class="panel-title">🏆 順位表</div>
     <div class="rank-table-wrap">
         <table id="rankTable">
-            <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"><col style="width:38px;"></colgroup>
+            <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"><col style="width:36px;"><col style="width:36px;"></colgroup>
             <tbody id="rankBody"></tbody>
         </table>
     </div>
@@ -1292,24 +1292,25 @@ function calcRank() {
         return b.age - a.age;
     });
 
-    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th><th>γ</th></tr>';
+    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th><th>μ</th><th>γ</th></tr>';
     arr.forEach((r, i) => {
         const wr = r.played ? (r.wins / r.played * 100).toFixed(0) + '%' : '-';
         const rank = i + 1;
         const rc = i === 0 ? ' class="rank-1"' : i === 1 ? ' class="rank-2"' : i === 2 ? ' class="rank-3"' : '';
         const intv = r.appearedCount ? (r.eligibleRounds / r.appearedCount).toFixed(1) : '-';
         const intvLabel = r.eligibleRounds > 0 ? `間隔${intv}R` : '-';
-        const rateDisp = r.rate.toFixed(1);
-        const gammaDisp = (r.mu - 3 * r.sigma).toFixed(1);
+        const muDisp = r.mu.toFixed(1);
+        const gammaDisp = (r.sigma * r.sigma).toFixed(2);
         h += `<tr${rc}>
             <td style="font-size:17px;font-weight:bold;">${rank}</td>
             <td class="name-cell">
                 <span class="name-text">${r.name}</span>
-                <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span><span>R:${rateDisp}</span></div>
+                <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span></div>
             </td>
             <td>${wr}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td>
             <td style="font-weight:bold;">${r.diff > 0 ? '+' + r.diff : r.diff}</td>
-            <td style="font-size:13px;color:#555;">${gammaDisp}</td>
+            <td style="font-size:13px;color:#555;">${muDisp}</td>
+            <td style="font-size:13px;color:#888;">${gammaDisp}</td>
         </tr>`;
     });
     document.getElementById('rankBody').innerHTML = h;
@@ -1382,7 +1383,7 @@ function buildReportCSV() {
     if (createdStr) csv += `大会作成日時,${createdStr}\n`;
     csv += '【順位表】\n';
     csv += 'マッチング方式,' + (state.matchingRule === 'rating' ? 'レーティングマッチ' : 'ランダムマッチ') + '\n';
-    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,レート(μ),γ(μ-3σ)\n';
+    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,μ,γ(σ²)\n';
     arr.forEach((r, i) => {
         const rank = i + 1;
         const wr = r.played ? (r.wins / r.played * 100).toFixed(1) : '0.0';
@@ -1390,7 +1391,7 @@ function buildReportCSV() {
         const pid = Object.keys(statsMap).find(id => statsMap[id].name === r.name);
         const ts = pid && state.tsMap[pid] ? state.tsMap[pid] : { mu: 25.0, sigma: 25.0/3 };
         const mu = ts.mu.toFixed(1);
-        const gamma = (ts.mu - 3 * ts.sigma).toFixed(1);
+        const gamma = (ts.sigma * ts.sigma).toFixed(2);
         csv += `${rank},"${r.name}",${wr}%,${r.played},${r.wins},${r.losses},${r.diff > 0 ? '+'+r.diff : r.diff},${r.appearedCount},${intv},${mu},${gamma}\n`;
     });
 
