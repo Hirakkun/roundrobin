@@ -1292,7 +1292,7 @@ function calcRank() {
         return b.age - a.age;
     });
 
-    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th><th>μ</th><th>γ</th></tr>';
+    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th><th>μ</th><th>σ</th></tr>';
     arr.forEach((r, i) => {
         const wr = r.played ? (r.wins / r.played * 100).toFixed(0) + '%' : '-';
         const rank = i + 1;
@@ -1300,7 +1300,7 @@ function calcRank() {
         const intv = r.appearedCount ? (r.eligibleRounds / r.appearedCount).toFixed(1) : '-';
         const intvLabel = r.eligibleRounds > 0 ? `間隔${intv}R` : '-';
         const muDisp = r.mu.toFixed(1);
-        const gammaDisp = (r.sigma * r.sigma).toFixed(2);
+        const gammaDisp = r.sigma.toFixed(2);
         h += `<tr${rc}>
             <td style="font-size:17px;font-weight:bold;">${rank}</td>
             <td class="name-cell">
@@ -1383,7 +1383,7 @@ function buildReportCSV() {
     if (createdStr) csv += `大会作成日時,${createdStr}\n`;
     csv += '【順位表】\n';
     csv += 'マッチング方式,' + (state.matchingRule === 'rating' ? 'レーティングマッチ' : 'ランダムマッチ') + '\n';
-    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,μ,γ(σ²)\n';
+    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,μ,σ\n';
     arr.forEach((r, i) => {
         const rank = i + 1;
         const wr = r.played ? (r.wins / r.played * 100).toFixed(1) : '0.0';
@@ -1391,7 +1391,7 @@ function buildReportCSV() {
         const pid = Object.keys(statsMap).find(id => statsMap[id].name === r.name);
         const ts = pid && state.tsMap[pid] ? state.tsMap[pid] : { mu: 25.0, sigma: 25.0/3 };
         const mu = ts.mu.toFixed(1);
-        const gamma = (ts.sigma * ts.sigma).toFixed(2);
+        const gamma = ts.sigma.toFixed(2);
         csv += `${rank},"${r.name}",${wr}%,${r.played},${r.wins},${r.losses},${r.diff > 0 ? '+'+r.diff : r.diff},${r.appearedCount},${intv},${mu},${gamma}\n`;
     });
 
