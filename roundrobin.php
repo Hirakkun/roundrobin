@@ -322,6 +322,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
         <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="copyReport()">📋 大会結果をクリップボードに保存する</button>
     </div>
+    <button class="report-btn admin-only" style="margin-top:10px;background:#1565c0;" onclick="downloadReport()">📥 結果ダウンロード</button>
     <div id="reportStatus"></div>
 </div>
 
@@ -1459,6 +1460,24 @@ function copyReport() {
         status.style.color = '#c62828';
     }
 }
+
+function downloadReport() {
+    const { csv, dateTag } = buildReportCSV();
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'roundrobin_result_' + dateTag + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    const status = document.getElementById('reportStatus');
+    status.textContent = '✅ CSVファイルをダウンロードしました！';
+    status.style.color = '#1565c0';
+}
+
 let rosterEditMode = false;
 
 function toggleRosterEdit() {
