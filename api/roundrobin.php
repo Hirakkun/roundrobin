@@ -2050,22 +2050,7 @@ window.onload = function () {
     renderSessionHistory();
     loadCourtNameSetting();
 
-    if (loadState() && state.roundCount > 0) {
-        document.getElementById('disp-players').textContent = state.players.length;
-        document.getElementById('disp-courts').textContent  = state.courts;
-        document.getElementById('disp-courts-live').textContent = state.courts;
-        setupPlayers = state.players.length;
-        setupCourts  = state.courts;
-        // タブを有効化してから遷移
-        document.getElementById('btn-match').classList.remove('disabled');
-        document.getElementById('btn-rank').classList.remove('disabled');
-        showLiveSetup();
-        renderMatchContainer();
-        renderPlayerList();
-        showStep('step-match', document.getElementById('btn-match'));
-    }
-
-    // URLハッシュから同期IDと管理者トークンを復元
+    // URLハッシュ・localStorageからセッションIDを先に確認
     const rawHash = (window.location.hash || '').replace('#', '').trim();
     const colonIdx = rawHash.indexOf(':');
     const encodedSid = colonIdx >= 0 ? rawHash.substring(0, colonIdx) : rawHash;
@@ -2076,6 +2061,7 @@ window.onload = function () {
     const sid = hashSid || storedSid;
 
     if (sid.length >= 3) {
+        // セッションIDあり → 状態を復元
         _sessionId = sid;
         document.getElementById('sessionIdInput').value = sid;
 
@@ -2084,17 +2070,35 @@ window.onload = function () {
         // #SID のみ  → 閲覧者確定（stored tokenがあっても使わない）
         // ハッシュなし → localStorageのトークンで復元
         const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
-        const isViewerUrl = hashSid && !hashToken; // #SID のみのアクセス
+        const isViewerUrl = hashSid && !hashToken;
         const token = isViewerUrl ? '' : (hashToken || storedToken);
         if (token.length > 0) {
             _adminToken = token;
             isAdmin = true;
-            // 管理者URLをハッシュに反映（localStorageから復元した場合）
             if (!hashToken) window.location.hash = encodeURIComponent(sid) + ':' + token;
             document.getElementById('sessionUrlBtns').style.display = 'flex';
             localStorage.setItem('rr_admin:' + sid, token);
         }
         updateAdminUI();
+
+        if (loadState() && state.roundCount > 0) {
+            document.getElementById('disp-players').textContent = state.players.length;
+            document.getElementById('disp-courts').textContent  = state.courts;
+            document.getElementById('disp-courts-live').textContent = state.courts;
+            setupPlayers = state.players.length;
+            setupCourts  = state.courts;
+            document.getElementById('btn-match').classList.remove('disabled');
+            document.getElementById('btn-rank').classList.remove('disabled');
+            showLiveSetup();
+            renderMatchContainer();
+            renderPlayerList();
+            showStep('step-match', document.getElementById('btn-match'));
+        }
+    } else {
+        // セッションIDなし → 設定の初期画面を表示
+        document.getElementById('initialSetup').style.display = 'block';
+        document.getElementById('liveSetup').style.display = 'none';
+        showStep('step-setup', document.getElementById('btn-setup'));
     }
 
     // Firebaseモジュールへ準備完了を通知
