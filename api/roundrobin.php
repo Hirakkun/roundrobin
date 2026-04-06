@@ -694,18 +694,44 @@ function updateTrueSkill(team1ids, team2ids, score1, score2) {
 // 選手番号表示フラグ
 let showPlayerNum = false;
 
-function getPlayerDisplayName(id) {
-    const name = state.playerNames[id] || ('選手' + id);
-    const len = name.length;
-    const viewer = document.body.classList.contains('viewer-mode');
-    let fs;
-    if (viewer) {
-        // 閲覧モード：＋/－なしで余白が広い → 大きく
-        fs = len >= 8 ? '19px' : len >= 6 ? '23px' : len >= 5 ? '27px' : '32px';
-    } else {
-        // 管理者モード：＋/－ボタンの邪魔にならない程度に大きく
-        fs = len >= 8 ? '15px' : len >= 6 ? '18px' : len >= 5 ? '21px' : '25px';
+// .team ボックスの実際の幅をピクセルで計算
+function calcTeamBoxWidth() {
+    const isWide = window.innerWidth > window.innerHeight;
+    const cols   = isWide ? 3 : 1;
+    const gap    = isWide ? 8 * (cols - 1) : 0;
+    // panel padding(20) + card border(4) + match-content padding(12) = 36px
+    const cardW  = (window.innerWidth - 20 - gap) / cols;
+    return (cardW - 16) * 0.40;
+}
+
+// 文字種別に実効幅を計算（全角=1.0 / ASCII=0.6 / スペース=0.35）
+function effectiveLen(name) {
+    let w = 0;
+    for (const ch of name) {
+        if (ch === ' ' || ch === '　') { w += 0.35; continue; }
+        w += ch.charCodeAt(0) >= 0x3000 ? 1.0 : 0.6;
     }
+    return Math.max(w, 0.5);
+}
+
+function getPlayerDisplayName(id) {
+    const name   = state.playerNames[id] || ('選手' + id);
+    const viewer = document.body.classList.contains('viewer-mode');
+    const teamW  = calcTeamBoxWidth();
+
+    // 選手番号バッジ分を差し引いた使用可能幅
+    const badgeW    = showPlayerNum ? 28 : 0;
+    const available = teamW - badgeW - 4;
+
+    // 文字の実効幅からフォントサイズを算出
+    const eLen = effectiveLen(name);
+    let fontSize = Math.floor(available / eLen);
+
+    // 上限：viewer は +/- ボタンがなく余白大 → 最大36px / 管理者は26px
+    const maxFs = viewer ? 36 : 26;
+    fontSize = Math.max(10, Math.min(maxFs, fontSize));
+
+    const fs = fontSize + 'px';
     if (showPlayerNum) {
         return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
     }
@@ -1963,6 +1989,15 @@ window.onload = function () {
 
     // Firebaseモジュールへ準備完了を通知
     window.dispatchEvent(new Event('appReady'));
+
+    // 画面回転・リサイズ時に組合せの文字サイズを再計算
+    let _resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => {
+            if (state.schedule.length > 0) updateMatchNames();
+        }, 150);
+    });
 };
 </script>
 
