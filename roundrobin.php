@@ -575,7 +575,7 @@ function renderPlayerList() {
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
         const restBtnHtml = isAdmin
             ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
-            : '';
+            : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
 
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
