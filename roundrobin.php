@@ -1756,7 +1756,7 @@ function renderSessionHistory() {
         const icon  = item.isAdmin ? '🔑' : '👁';
         const d     = new Date(item.usedAt);
         const label = `${d.getMonth()+1}/${d.getDate()}`;
-        h += `<button onclick="selectHistoryId('${item.id.replace(/'/g,"\\'")}')"`
+        h += `<button onclick="selectHistoryId('${item.id.replace(/'/g,"\\'")}',${item.isAdmin})"`
            + ` style="padding:5px 10px;font-size:13px;border:1px solid #90caf9;`
            + `border-radius:16px;background:#e3f2fd;color:#1565c0;cursor:pointer;`
            + `display:flex;align-items:center;gap:4px;white-space:nowrap;">`
@@ -1770,10 +1770,10 @@ function renderSessionHistory() {
     el.innerHTML = h;
 }
 
-function selectHistoryId(sid) {
+function selectHistoryId(sid, wasAdmin) {
     document.getElementById('sessionIdInput').value = sid;
-    // localStorageに管理者トークンがあれば管理者として、なければ閲覧者として自動接続
-    const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
+    // wasAdmin=true の場合のみ保存済みトークンを使用、falseなら閲覧者として接続
+    const storedToken = wasAdmin ? (localStorage.getItem('rr_admin:' + sid) || '') : '';
     _sessionId  = sid;
     _adminToken = storedToken;
     isAdmin     = !!storedToken;
@@ -2043,9 +2043,13 @@ window.onload = function () {
         _sessionId = sid;
         document.getElementById('sessionIdInput').value = sid;
 
-        // 管理者判定: URLトークン or localStorage保存トークン
+        // 管理者判定:
+        // #SID:TOKEN → 管理者確定
+        // #SID のみ  → 閲覧者確定（stored tokenがあっても使わない）
+        // ハッシュなし → localStorageのトークンで復元
         const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
-        const token = hashToken || storedToken;
+        const isViewerUrl = hashSid && !hashToken; // #SID のみのアクセス
+        const token = isViewerUrl ? '' : (hashToken || storedToken);
         if (token.length > 0) {
             _adminToken = token;
             isAdmin = true;
