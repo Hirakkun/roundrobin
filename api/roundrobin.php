@@ -1772,6 +1772,22 @@ function renderSessionHistory() {
 
 function selectHistoryId(sid) {
     document.getElementById('sessionIdInput').value = sid;
+    // localStorageに管理者トークンがあれば管理者として、なければ閲覧者として自動接続
+    const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
+    _sessionId  = sid;
+    _adminToken = storedToken;
+    isAdmin     = !!storedToken;
+    if (storedToken) {
+        window.location.hash = encodeURIComponent(sid) + ':' + storedToken;
+        document.getElementById('sessionUrlBtns').style.display = 'flex';
+    } else {
+        window.location.hash = encodeURIComponent(sid);
+    }
+    localStorage.setItem('rr_session_id', sid);
+    saveSessionToHistory(sid, isAdmin);
+    updateAdminUI();
+    updateSyncStatus('🟡 接続中...', '#e65100');
+    if (window._fbStart) window._fbStart(sid);
 }
 
 function clearSessionHistory() {
