@@ -1937,10 +1937,8 @@ function loadState() {
 // 初期化
 // =====================================================================
 window.onload = function () {
-    // 既存の名簿があればそちらを優先し、なければデフォルトをセット
-    if (!localStorage.getItem('tournament_roster')) {
-        localStorage.setItem('tournament_roster', JSON.stringify(defaultRoster));
-    }
+    // 毎回デフォルト名簿をセット
+    localStorage.setItem('tournament_roster', JSON.stringify(defaultRoster));
     renderRoster();
     loadCourtNameSetting();
 
