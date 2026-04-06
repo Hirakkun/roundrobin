@@ -218,6 +218,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <input id="sessionIdInput" type="text" placeholder="IDを入力（英数字・記号可）" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;letter-spacing:1px;" maxlength="30">
                 <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
             </div>
+            <div id="sessionHistory" style="margin-top:8px;"></div>
         </div>
     </div>
 
@@ -1727,6 +1728,58 @@ let isAdmin = false;
 let _sessionId = '';
 let _adminToken = '';
 
+// =====================================================================
+// セッションID履歴
+// =====================================================================
+const SESSION_HISTORY_KEY = 'rr_session_history';
+const SESSION_HISTORY_MAX = 10;
+
+function saveSessionToHistory(sid, admin) {
+    let hist = JSON.parse(localStorage.getItem(SESSION_HISTORY_KEY) || '[]');
+    // 同じIDが既にあれば削除して先頭に追加
+    hist = hist.filter(h => h.id !== sid);
+    hist.unshift({ id: sid, isAdmin: admin, usedAt: new Date().toISOString() });
+    if (hist.length > SESSION_HISTORY_MAX) hist = hist.slice(0, SESSION_HISTORY_MAX);
+    localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(hist));
+    renderSessionHistory();
+}
+
+function renderSessionHistory() {
+    const el = document.getElementById('sessionHistory');
+    if (!el) return;
+    const hist = JSON.parse(localStorage.getItem(SESSION_HISTORY_KEY) || '[]');
+    if (hist.length === 0) { el.innerHTML = ''; return; }
+
+    let h = '<div style="font-size:12px;color:#888;margin-bottom:4px;">🕐 履歴</div>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">';
+    hist.forEach(item => {
+        const icon  = item.isAdmin ? '🔑' : '👁';
+        const d     = new Date(item.usedAt);
+        const label = `${d.getMonth()+1}/${d.getDate()}`;
+        h += `<button onclick="selectHistoryId('${item.id.replace(/'/g,"\\'")}')"`
+           + ` style="padding:5px 10px;font-size:13px;border:1px solid #90caf9;`
+           + `border-radius:16px;background:#e3f2fd;color:#1565c0;cursor:pointer;`
+           + `display:flex;align-items:center;gap:4px;white-space:nowrap;">`
+           + `${icon} ${item.id} <span style="color:#aaa;font-size:11px;">${label}</span>`
+           + `</button>`;
+    });
+    h += `<button onclick="clearSessionHistory()" title="履歴を消去"`
+       + ` style="padding:5px 8px;font-size:13px;border:1px solid #ffcdd2;`
+       + `border-radius:16px;background:#fff;color:#e57373;cursor:pointer;">🗑</button>`;
+    h += '</div>';
+    el.innerHTML = h;
+}
+
+function selectHistoryId(sid) {
+    document.getElementById('sessionIdInput').value = sid;
+}
+
+function clearSessionHistory() {
+    if (!confirm('ID履歴をすべて削除しますか？')) return;
+    localStorage.removeItem(SESSION_HISTORY_KEY);
+    renderSessionHistory();
+}
+
 function createSession() {
     const inputVal = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '').toUpperCase();
     const sid   = inputVal.length >= 3 ? inputVal : String(Math.floor(Math.random() * 900000) + 100000);
@@ -1739,6 +1792,7 @@ function createSession() {
     document.getElementById('sessionUrlBtns').style.display = 'flex';
     localStorage.setItem('rr_session_id', sid);
     localStorage.setItem('rr_admin:' + sid, token);
+    saveSessionToHistory(sid, true);
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
     if (window._fbStart) window._fbStart(sid);
@@ -1752,6 +1806,7 @@ function joinSession() {
     isAdmin     = false;
     window.location.hash = encodeURIComponent(raw);
     localStorage.setItem('rr_session_id', raw);
+    saveSessionToHistory(raw, false);
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
     if (window._fbStart) window._fbStart(raw);
@@ -1940,6 +1995,7 @@ window.onload = function () {
     // 毎回デフォルト名簿をセット
     localStorage.setItem('tournament_roster', JSON.stringify(defaultRoster));
     renderRoster();
+    renderSessionHistory();
     loadCourtNameSetting();
 
     if (loadState() && state.roundCount > 0) {
