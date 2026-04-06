@@ -1542,13 +1542,13 @@ let _sessionId = '';
 let _adminToken = '';
 
 function createSession() {
-    const inputVal = (document.getElementById('sessionIdInput').value || '').trim().toUpperCase();
+    const inputVal = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '').toUpperCase();
     const sid   = inputVal.length >= 3 ? inputVal : String(Math.floor(Math.random() * 900000) + 100000);
     const token = Math.random().toString(36).substr(2, 8).toUpperCase();
     _sessionId  = sid;
     _adminToken = token;
     isAdmin     = true;
-    window.location.hash = sid + ':' + token;
+    window.location.hash = encodeURIComponent(sid) + ':' + token;
     document.getElementById('sessionIdInput').value = sid;
     document.getElementById('sessionUrlBtns').style.display = 'flex';
     localStorage.setItem('rr_session_id', sid);
@@ -1559,12 +1559,12 @@ function createSession() {
 }
 
 function joinSession() {
-    const raw = (document.getElementById('sessionIdInput').value || '').trim();
+    const raw = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '');
     if (!raw || raw.length < 3) { alert('同期IDを入力してください'); return; }
     _sessionId  = raw;
     _adminToken = '';
     isAdmin     = false;
-    window.location.hash = raw;
+    window.location.hash = encodeURIComponent(raw);
     localStorage.setItem('rr_session_id', raw);
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
@@ -1585,12 +1585,12 @@ function updateAdminUI() {
 }
 
 function copyAdminUrl() {
-    const url = location.origin + location.pathname + '#' + _sessionId + ':' + _adminToken;
+    const url = location.origin + location.pathname + '#' + encodeURIComponent(_sessionId) + ':' + _adminToken;
     _copyToClipboard(url, '🔑 管理者URLをコピーしました。\n自分だけが使えるURLです。大切に保存してください。\n\n' + url);
 }
 
 function copyViewerUrl() {
-    const url = location.origin + location.pathname + '#' + _sessionId;
+    const url = location.origin + location.pathname + '#' + encodeURIComponent(_sessionId);
     _copyToClipboard(url, '👥 参加者URLをコピーしました。\nLINEで参加者に送ってください。\n\n' + url);
 }
 
@@ -1774,8 +1774,12 @@ window.onload = function () {
     }
 
     // URLハッシュから同期IDと管理者トークンを復元
-    const rawHash = (window.location.hash || '').replace('#', '').trim().toUpperCase();
-    const [hashSid, hashToken] = rawHash.split(':');
+    const rawHash = (window.location.hash || '').replace('#', '').trim();
+    const colonIdx = rawHash.indexOf(':');
+    const encodedSid = colonIdx >= 0 ? rawHash.substring(0, colonIdx) : rawHash;
+    const hashToken = (colonIdx >= 0 ? rawHash.substring(colonIdx + 1) : '').toUpperCase();
+    let hashSid = '';
+    try { hashSid = decodeURIComponent(encodedSid); } catch(e) { hashSid = encodedSid; }
     const storedSid = localStorage.getItem('rr_session_id') || '';
     const sid = hashSid || storedSid;
 
@@ -1790,7 +1794,7 @@ window.onload = function () {
             _adminToken = token;
             isAdmin = true;
             // 管理者URLをハッシュに反映（localStorageから復元した場合）
-            if (!hashToken) window.location.hash = sid + ':' + token;
+            if (!hashToken) window.location.hash = encodeURIComponent(sid) + ':' + token;
             document.getElementById('sessionUrlBtns').style.display = 'flex';
             localStorage.setItem('rr_admin:' + sid, token);
         }
@@ -1823,7 +1827,7 @@ let _ref = null;
 
 window._fbStart = function(sessionId) {
     if (_ref) off(_ref);
-    _ref = ref(db, 'sessions/' + sessionId);
+    _ref = ref(db, 'sessions/' + encodeURIComponent(sessionId));
     onValue(_ref, snap => {
         const d = snap.val();
         if (!d) {
@@ -1844,8 +1848,10 @@ window._fbPush = function(data) {
 
 // appReadyイベントで自動接続
 window.addEventListener('appReady', () => {
-    const rawHash = (window.location.hash || '').replace('#', '').trim().toUpperCase();
-    const hashSid = rawHash.split(':')[0];  // トークン部分を除いたセッションIDのみ
+    const rawHash = (window.location.hash || '').replace('#', '').trim();
+    const encodedSid = rawHash.split(':')[0];
+    let hashSid = '';
+    try { hashSid = decodeURIComponent(encodedSid); } catch(e) { hashSid = encodedSid; }
     const storedId = localStorage.getItem('rr_session_id') || '';
     const sid = hashSid || storedId;
     if (sid.length >= 3) {
