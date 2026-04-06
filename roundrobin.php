@@ -325,18 +325,14 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div id="reportStatus"></div>
 
     <!-- 期間集計パネル -->
-    <div style="display:flex;gap:6px;margin-top:10px;">
-        <button class="report-btn" onclick="togglePeriodPanel()" style="background:#6a1b9a;flex:2;margin-top:0;">📅 期間集計</button>
-        <button class="report-btn" onclick="setPeriodYear()" style="background:#4527a0;flex:1;margin-top:0;font-size:15px;">年間</button>
-        <button class="report-btn" onclick="setPeriodFiscal()" style="background:#311b92;flex:1;margin-top:0;font-size:15px;">年度</button>
-    </div>
+    <button class="report-btn" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;">📅 期間集計</button>
     <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
         <div style="font-weight:bold;font-size:15px;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
         <div style="margin-bottom:8px;">
             <div style="font-size:12px;color:#555;margin-bottom:4px;">IDプレフィックス（前方一致）</div>
             <input id="periodPrefix" type="text" placeholder="例: ARCNET" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:15px;box-sizing:border-box;">
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="display:flex;gap:8px;margin-bottom:6px;">
             <div style="flex:1;">
                 <div style="font-size:12px;color:#555;margin-bottom:4px;">期間１（開始日）</div>
                 <input id="period1" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
@@ -345,6 +341,10 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <div style="font-size:12px;color:#555;margin-bottom:4px;">期間２（終了日）</div>
                 <input id="period2" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
             </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button onclick="setPeriodYear()" style="flex:1;padding:7px;background:#4527a0;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">📅 年間</button>
+            <button onclick="setPeriodFiscal()" style="flex:1;padding:7px;background:#311b92;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">📅 年度</button>
         </div>
         <button onclick="calcPeriodStats()" style="width:100%;padding:10px;background:#6a1b9a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🔍 集計する</button>
         <div id="periodStatus" style="text-align:center;margin-top:8px;font-size:13px;font-weight:bold;"></div>
