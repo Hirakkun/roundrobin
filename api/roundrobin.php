@@ -435,6 +435,25 @@ function changeCount(key, delta) {
 function initTournament() {
     if (state.roundCount > 0 && !confirm('現在の試合データをリセットして最初からやり直しますか？')) return;
 
+    // セッションIDがなければ試合開始時に生成してFirebase接続
+    if (!_sessionId) {
+        const inputVal = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '').toUpperCase();
+        const sid   = inputVal.length >= 3 ? inputVal : String(Math.floor(Math.random() * 900000) + 100000);
+        const token = Math.random().toString(36).substr(2, 8).toUpperCase();
+        _sessionId  = sid;
+        _adminToken = token;
+        isAdmin     = true;
+        window.location.hash = encodeURIComponent(sid) + ':' + token;
+        document.getElementById('sessionIdInput').value = sid;
+        document.getElementById('sessionUrlBtns').style.display = 'flex';
+        localStorage.setItem('rr_session_id', sid);
+        localStorage.setItem('rr_admin:' + sid, token);
+        if (window._fbStart) window._fbStart(sid);
+        saveSessionToHistory(sid, true);
+        updateAdminUI();
+        updateSyncStatus('🟡 接続中...', '#e65100');
+    }
+
     state.courts = setupCourts;
     state.roundCount = 0;
     state.matchingRule = matchingRule;
@@ -1811,25 +1830,21 @@ function clearSessionHistory() {
 }
 
 function createSession() {
-    const inputVal = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '').toUpperCase();
-    const sid   = inputVal.length >= 3 ? inputVal : String(Math.floor(Math.random() * 900000) + 100000);
-    const token = Math.random().toString(36).substr(2, 8).toUpperCase();
-    _sessionId  = sid;
-    _adminToken = token;
+    // IDの生成・Firebase接続は「▶ 試合開始」まで行わない
+    _sessionId  = '';
+    _adminToken = '';
     isAdmin     = true;
-    window.location.hash = encodeURIComponent(sid) + ':' + token;
-    document.getElementById('sessionIdInput').value = sid;
-    document.getElementById('sessionUrlBtns').style.display = 'flex';
-    localStorage.setItem('rr_session_id', sid);
-    localStorage.setItem('rr_admin:' + sid, token);
-    saveSessionToHistory(sid, true);
-    // 新しいセッションなので状態を完全リセットしてFirebaseに反映
+    window.location.hash = '';
+    localStorage.removeItem('rr_session_id');
+    document.getElementById('sessionIdInput').value = '';
+    document.getElementById('sessionUrlBtns').style.display = 'none';
     _resetState();
     _resetUI();
-    saveState(); // Firebase の新セッションIDに空データをプッシュ
-    updateAdminUI();
-    updateSyncStatus('🟡 接続中...', '#e65100');
-    if (window._fbStart) window._fbStart(sid);
+    // 管理者UIを表示（同期なし状態）
+    document.body.classList.remove('viewer-mode');
+    const ind = document.getElementById('modeIndicator');
+    if (ind) { ind.style.display = ''; ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
+    updateSyncStatus('⚪ 未接続（試合開始でIDを作成）', '#888');
 }
 
 function joinSession() {
