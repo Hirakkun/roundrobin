@@ -494,9 +494,7 @@ function updateMatchRuleDesc() {
     }
 }
 
-function resetTournament() {
-    if (!confirm('試合データをすべて削除して最初からやり直しますか？')) return;
-    // state を完全にリセット
+function _resetState() {
     state.roundCount   = 0;
     state.players      = [];
     state.schedule     = [];
@@ -507,14 +505,27 @@ function resetTournament() {
     state.tsMap        = {};
     state.matchingRule = 'random';
     state.createdAt    = new Date().toISOString();
-    // Firebase にも空の状態を即座に反映（他の端末の古いデータを上書き）
-    saveState();
+}
+
+function _resetUI() {
     localStorage.removeItem('rr_state_v2');
     document.getElementById('initialSetup').style.display = 'block';
     document.getElementById('liveSetup').style.display = 'none';
+    document.getElementById('btn-match').classList.add('disabled');
+    document.getElementById('btn-rank').classList.add('disabled');
     document.getElementById('disp-players').textContent = setupPlayers;
     document.getElementById('disp-courts').textContent = setupCourts;
+    document.getElementById('matchContainer').innerHTML = '';
+    document.getElementById('rankBody').innerHTML = '';
     showStep('step-setup', document.getElementById('btn-setup'));
+}
+
+function resetTournament() {
+    if (!confirm('試合データをすべて削除して最初からやり直しますか？')) return;
+    _resetState();
+    // Firebase にも空の状態を即座に反映（他の端末の古いデータを上書き）
+    saveState();
+    _resetUI();
 }
 
 function addPlayerToState(id, isNew = false) {
@@ -1777,6 +1788,9 @@ function selectHistoryId(sid, wasAdmin) {
     _sessionId  = sid;
     _adminToken = storedToken;
     isAdmin     = !!storedToken;
+    // 古いローカルデータをクリアし、Firebaseから正しいデータを受け取る
+    _resetState();
+    _resetUI();
     if (storedToken) {
         window.location.hash = encodeURIComponent(sid) + ':' + storedToken;
         document.getElementById('sessionUrlBtns').style.display = 'flex';
@@ -1809,6 +1823,10 @@ function createSession() {
     localStorage.setItem('rr_session_id', sid);
     localStorage.setItem('rr_admin:' + sid, token);
     saveSessionToHistory(sid, true);
+    // 新しいセッションなので状態を完全リセットしてFirebaseに反映
+    _resetState();
+    _resetUI();
+    saveState(); // Firebase の新セッションIDに空データをプッシュ
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
     if (window._fbStart) window._fbStart(sid);
@@ -1823,6 +1841,9 @@ function joinSession() {
     window.location.hash = encodeURIComponent(raw);
     localStorage.setItem('rr_session_id', raw);
     saveSessionToHistory(raw, false);
+    // 古いローカルデータをクリアし、Firebaseから正しいデータを受け取る
+    _resetState();
+    _resetUI();
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
     if (window._fbStart) window._fbStart(raw);
