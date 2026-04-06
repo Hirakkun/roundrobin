@@ -161,7 +161,7 @@ tr:nth-child(even) td { background: #f5f5f5; }
 
 /* 閲覧モード */
 body.viewer-mode .admin-only { display: none !important; }
-body.viewer-mode .team { pointer-events: none; }
+body.viewer-mode .team { pointer-events: none; padding: 6px 2px; }
 body.viewer-mode .team::before { display: none; }
 body.viewer-mode .team::after  { display: none; }
 body.viewer-mode #initialSetup { display: none !important; }
@@ -697,7 +697,15 @@ let showPlayerNum = false;
 function getPlayerDisplayName(id) {
     const name = state.playerNames[id] || ('選手' + id);
     const len = name.length;
-    const fs = len >= 8 ? '13px' : len >= 6 ? '15px' : len >= 5 ? '17px' : '20px';
+    const viewer = document.body.classList.contains('viewer-mode');
+    let fs;
+    if (viewer) {
+        // 閲覧モード：＋/－なしで余白が広い → 大きく
+        fs = len >= 8 ? '19px' : len >= 6 ? '23px' : len >= 5 ? '27px' : '32px';
+    } else {
+        // 管理者モード：＋/－ボタンの邪魔にならない程度に大きく
+        fs = len >= 8 ? '15px' : len >= 6 ? '18px' : len >= 5 ? '21px' : '25px';
+    }
     if (showPlayerNum) {
         return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
     }
@@ -1139,7 +1147,7 @@ function updateMatchNames() {
             const el = row.querySelector('.' + side);
             if (!el) return;
             const ids = el.dataset.p.split(',').map(Number);
-            el.querySelector('.name').innerHTML = ids.map(id => getPlayerDisplayName(id)).join('<br>');
+            el.querySelector('.name').innerHTML = ids.map(id => getPlayerDisplayName(id)).join('');
         });
     });
 }
