@@ -317,12 +317,11 @@ body.viewer-mode #initialSetup { display: none !important; }
             <tbody id="rankBody"></tbody>
         </table>
     </div>
-    <button class="report-btn admin-only" onclick="previewReport()">📋 大会結果を確認する</button>
+    <button class="report-btn" onclick="previewReport()">📋 結果を確認する</button>
     <div id="reportPreview" style="display:none;margin-top:12px;">
         <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
-        <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="copyReport()">📋 大会結果をクリップボードに保存する</button>
+        <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="downloadReport()">📥 結果をダウンロードする</button>
     </div>
-    <button class="report-btn admin-only" style="margin-top:10px;background:#1565c0;" onclick="downloadReport()">📥 結果ダウンロード</button>
     <div id="reportStatus"></div>
 </div>
 
@@ -1440,25 +1439,6 @@ function previewReport() {
     const preview = document.getElementById('reportPreview');
     document.getElementById('reportPreviewText').textContent = csv;
     preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
-}
-
-function copyReport() {
-    const { csv } = buildReportCSV();
-    const status = document.getElementById('reportStatus');
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(csv)
-            .then(() => {
-                status.textContent = '✅ クリップボードにコピーしました！LINEやメモ帳に貼り付けてください。';
-                status.style.color = '#2e7d32';
-            })
-            .catch(() => {
-                status.textContent = '❌ コピーに失敗しました。上のテキストを手動でコピーしてください。';
-                status.style.color = '#c62828';
-            });
-    } else {
-        status.textContent = '❌ このブラウザはクリップボードに対応していません。上のテキストを手動でコピーしてください。';
-        status.style.color = '#c62828';
-    }
 }
 
 function downloadReport() {
