@@ -323,6 +323,29 @@ body.viewer-mode #initialSetup { display: none !important; }
         <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="downloadReport()">📥 結果をダウンロードする</button>
     </div>
     <div id="reportStatus"></div>
+
+    <!-- 期間集計パネル -->
+    <button class="report-btn" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;">📅 期間集計</button>
+    <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
+        <div style="font-weight:bold;font-size:15px;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
+        <div style="margin-bottom:8px;">
+            <div style="font-size:12px;color:#555;margin-bottom:4px;">IDプレフィックス（前方一致）</div>
+            <input id="periodPrefix" type="text" placeholder="例: ARCNET" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:15px;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <div style="flex:1;">
+                <div style="font-size:12px;color:#555;margin-bottom:4px;">期間１（開始日）</div>
+                <input id="period1" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
+            </div>
+            <div style="flex:1;">
+                <div style="font-size:12px;color:#555;margin-bottom:4px;">期間２（終了日）</div>
+                <input id="period2" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
+            </div>
+        </div>
+        <button onclick="calcPeriodStats()" style="width:100%;padding:10px;background:#6a1b9a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🔍 集計する</button>
+        <div id="periodStatus" style="text-align:center;margin-top:8px;font-size:13px;font-weight:bold;"></div>
+        <div id="periodResult" style="margin-top:10px;overflow-x:auto;"></div>
+    </div>
 </div>
 
 <!-- 名簿(非表示) -->
@@ -1476,6 +1499,108 @@ function downloadReport() {
     status.style.color = '#1565c0';
 }
 
+// =====================================================================
+// 期間集計
+// =====================================================================
+function togglePeriodPanel() {
+    const panel = document.getElementById('periodPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function calcPeriodStats() {
+    const prefix    = document.getElementById('periodPrefix').value.trim();
+    const date1str  = document.getElementById('period1').value;
+    const date2str  = document.getElementById('period2').value;
+    const status    = document.getElementById('periodStatus');
+    const resultDiv = document.getElementById('periodResult');
+
+    if (!prefix) { alert('IDプレフィックスを入力してください'); return; }
+    if (!window._fbQueryPrefix) { alert('Firebase が初期化されていません'); return; }
+
+    status.textContent = '⏳ データを取得中...';
+    status.style.color = '#e65100';
+    resultDiv.innerHTML = '';
+
+    try {
+        const sessions = await window._fbQueryPrefix(prefix, date1str, date2str);
+
+        if (!sessions || sessions.length === 0) {
+            status.textContent = '該当するセッションが見つかりませんでした。';
+            status.style.color = '#c62828';
+            return;
+        }
+
+        // 選手名をキーに複数セッション横断で集計
+        const statsMap = {};
+        sessions.forEach(({ data }) => {
+            const schedule    = data.schedule    || [];
+            const scores      = data.scores      || {};
+            const playerNames = data.playerNames || {};
+
+            schedule.forEach(rd => {
+                (rd.courts || []).forEach((ct, ci) => {
+                    const mid = `r${rd.round}c${ci}`;
+                    const sc  = scores[mid];
+                    if (!sc || (sc.s1 === 0 && sc.s2 === 0)) return;
+
+                    const process = (ids, myScore, oppScore) => {
+                        (ids || []).forEach(id => {
+                            const name = playerNames[id] || ('選手' + id);
+                            if (!statsMap[name]) statsMap[name] = { wins: 0, losses: 0, played: 0, diff: 0 };
+                            statsMap[name].played++;
+                            statsMap[name].diff += (myScore - oppScore);
+                            if (myScore > oppScore) statsMap[name].wins++;
+                            else if (oppScore > myScore) statsMap[name].losses++;
+                        });
+                    };
+                    process(ct.team1, sc.s1, sc.s2);
+                    process(ct.team2, sc.s2, sc.s1);
+                });
+            });
+        });
+
+        const arr = Object.entries(statsMap)
+            .map(([name, s]) => ({ name, ...s }))
+            .filter(s => s.played > 0)
+            .sort((a, b) => {
+                const wrA = a.played ? a.wins / a.played : -1;
+                const wrB = b.played ? b.wins / b.played : -1;
+                if (wrB !== wrA) return wrB - wrA;
+                return b.diff - a.diff;
+            });
+
+        if (arr.length === 0) {
+            status.textContent = 'スコアが入力されたデータがありませんでした。';
+            return;
+        }
+
+        status.textContent = `✅ ${sessions.length}セッションを集計（${arr.length}名）`;
+        status.style.color = '#2e7d32';
+
+        let h = '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
+        h += '<tr style="background:#6a1b9a;color:#fff;"><th style="padding:6px 4px;">順</th><th style="padding:6px 4px;text-align:left;">氏名</th><th style="padding:6px 4px;">勝率</th><th style="padding:6px 4px;">試</th><th style="padding:6px 4px;">勝</th><th style="padding:6px 4px;">負</th><th style="padding:6px 4px;">差</th></tr>';
+        arr.forEach((r, i) => {
+            const wr = (r.wins / r.played * 100).toFixed(0) + '%';
+            const bg = i === 0 ? '#fff9c4' : i === 1 ? '#f5f5f5' : i === 2 ? '#fbe9e7' : '#fff';
+            h += `<tr style="background:${bg};border-bottom:1px solid #ddd;">
+                <td style="padding:6px 4px;text-align:center;font-weight:bold;">${i + 1}</td>
+                <td style="padding:6px 4px;font-weight:bold;">${r.name}</td>
+                <td style="padding:6px 4px;text-align:center;">${wr}</td>
+                <td style="padding:6px 4px;text-align:center;">${r.played}</td>
+                <td style="padding:6px 4px;text-align:center;">${r.wins}</td>
+                <td style="padding:6px 4px;text-align:center;">${r.losses}</td>
+                <td style="padding:6px 4px;text-align:center;font-weight:bold;">${r.diff > 0 ? '+' + r.diff : r.diff}</td>
+            </tr>`;
+        });
+        h += '</table>';
+        resultDiv.innerHTML = h;
+
+    } catch(e) {
+        status.textContent = '❌ エラー: ' + e.message;
+        status.style.color = '#c62828';
+    }
+}
+
 let rosterEditMode = false;
 
 function toggleRosterEdit() {
@@ -1808,7 +1933,7 @@ window.onload = function () {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, off, query, orderByKey, startAt, endAt, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCsCHB2NaoRG5Q_D4u8VqeUghufZDTHTUE",
@@ -1844,6 +1969,31 @@ window._fbStart = function(sessionId) {
 window._fbPush = function(data) {
     if (!_ref) return;
     set(_ref, { ...data, _cid: CLIENT_ID });
+};
+
+// 前方一致＋期間フィルタでセッションを取得
+window._fbQueryPrefix = async function(prefix, date1str, date2str) {
+    const encodedPrefix = encodeURIComponent(prefix);
+    const q = query(
+        ref(db, 'sessions'),
+        orderByKey(),
+        startAt(encodedPrefix),
+        endAt(encodedPrefix + '\uf8ff')
+    );
+    const snapshot = await get(q);
+    const results = [];
+    snapshot.forEach(child => {
+        const data = child.val();
+        if (!data) return;
+        // 期間フィルタ（createdAt がある場合のみ）
+        if (data.createdAt && (date1str || date2str)) {
+            const created = new Date(data.createdAt);
+            if (date1str && created < new Date(date1str + 'T00:00:00')) return;
+            if (date2str && created > new Date(date2str + 'T23:59:59')) return;
+        }
+        results.push({ key: child.key, data });
+    });
+    return results;
 };
 
 // appReadyイベントで自動接続
