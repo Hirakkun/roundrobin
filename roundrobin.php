@@ -566,10 +566,16 @@ function setPlayerName(id, name) {
 function toggleRest(id) {
     const p = state.players.find(p => p.id === id);
     if (!p) return;
+    if (p.resting) {
+        // 復帰時: 途中参加者と同じ扱いでplayCount・restCountをリセット
+        // これにより次のラウンドで優先的に選出される
+        const active = state.players.filter(x => !x.resting);
+        if (active.length > 0) {
+            p.playCount = Math.max(0, Math.min(...active.map(x => x.playCount)) - 1);
+        }
+        p.restCount = 0;
+    }
     p.resting = !p.resting;
-    // 復帰時: playCountはそのまま維持する
-    // 休憩した分だけ低いままなので自然に優先選出される
-    // （リセットしてしまうと休憩した意味がなくなる）
     renderPlayerList();
     saveState();
 }
