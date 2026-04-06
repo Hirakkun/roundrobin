@@ -215,7 +215,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <button onclick="copyViewerUrl()" style="width:100%;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">👥 参加者URLをコピー（LINEで送信）</button>
             </div>
             <div style="display:flex;gap:8px;">
-                <input id="sessionIdInput" type="text" placeholder="同期IDを入力して参加（閲覧モード）" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;text-transform:uppercase;letter-spacing:2px;" maxlength="6">
+                <input id="sessionIdInput" type="number" placeholder="6桁のIDを入力" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;letter-spacing:2px;" maxlength="6">
                 <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
             </div>
         </div>
@@ -1525,7 +1525,7 @@ let _sessionId = '';
 let _adminToken = '';
 
 function createSession() {
-    const sid   = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const sid   = String(Math.floor(Math.random() * 900000) + 100000);
     const token = Math.random().toString(36).substr(2, 8).toUpperCase();
     _sessionId  = sid;
     _adminToken = token;
@@ -1541,7 +1541,7 @@ function createSession() {
 }
 
 function joinSession() {
-    const raw = (document.getElementById('sessionIdInput').value || '').trim().toUpperCase();
+    const raw = (document.getElementById('sessionIdInput').value || '').trim();
     if (!raw || raw.length < 3) { alert('同期IDを入力してください'); return; }
     _sessionId  = raw;
     _adminToken = '';
