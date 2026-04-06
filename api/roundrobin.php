@@ -325,7 +325,11 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div id="reportStatus"></div>
 
     <!-- 期間集計パネル -->
-    <button class="report-btn" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;">📅 期間集計</button>
+    <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="report-btn" onclick="togglePeriodPanel()" style="background:#6a1b9a;flex:2;margin-top:0;">📅 期間集計</button>
+        <button class="report-btn" onclick="setPeriodYear()" style="background:#4527a0;flex:1;margin-top:0;font-size:15px;">年間</button>
+        <button class="report-btn" onclick="setPeriodFiscal()" style="background:#311b92;flex:1;margin-top:0;font-size:15px;">年度</button>
+    </div>
     <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
         <div style="font-weight:bold;font-size:15px;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
         <div style="margin-bottom:8px;">
@@ -1505,6 +1509,26 @@ function downloadReport() {
 function togglePeriodPanel() {
     const panel = document.getElementById('periodPanel');
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function setPeriodYear() {
+    const now = new Date();
+    const y = now.getFullYear();
+    document.getElementById('period1').value = `${y}-01-01`;
+    document.getElementById('period2').value = `${y}-12-31`;
+    document.getElementById('periodPanel').style.display = 'block';
+}
+
+function setPeriodFiscal() {
+    const now = new Date();
+    const m = now.getMonth() + 1; // 1-12
+    const y = now.getFullYear();
+    // 4月以降なら今年度、1〜3月なら前年度
+    const startY = m >= 4 ? y : y - 1;
+    const endY   = startY + 1;
+    document.getElementById('period1').value = `${startY}-04-01`;
+    document.getElementById('period2').value = `${endY}-03-31`;
+    document.getElementById('periodPanel').style.display = 'block';
 }
 
 async function calcPeriodStats() {
