@@ -313,7 +313,7 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div class="panel-title">🏆 順位表</div>
     <div class="rank-table-wrap">
         <table id="rankTable">
-            <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"></colgroup>
+            <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"><col style="width:38px;"></colgroup>
             <tbody id="rankBody"></tbody>
         </table>
     </div>
@@ -361,6 +361,7 @@ let state = {
     playerNames: {},
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
+    createdAt: '',          // 大会作成日時（ISO文字列）
 };
 
 // =====================================================================
@@ -416,6 +417,7 @@ function initTournament() {
     state.schedule = [];
     state.scores = {};
     state.playerNames = {};
+    state.createdAt = new Date().toISOString();
 
     for (let i = 1; i <= setupPlayers; i++) {
         addPlayerToState(i, false);
@@ -476,6 +478,7 @@ function resetTournament() {
     state.oppMatrix    = {};
     state.tsMap        = {};
     state.matchingRule = 'random';
+    state.createdAt    = new Date().toISOString();
     // Firebase にも空の状態を即座に反映（他の端末の古いデータを上書き）
     saveState();
     localStorage.removeItem('rr_state_v2');
@@ -1289,7 +1292,7 @@ function calcRank() {
         return b.age - a.age;
     });
 
-    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th></tr>';
+    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th><th>γ</th></tr>';
     arr.forEach((r, i) => {
         const wr = r.played ? (r.wins / r.played * 100).toFixed(0) + '%' : '-';
         const rank = i + 1;
@@ -1297,6 +1300,7 @@ function calcRank() {
         const intv = r.appearedCount ? (r.eligibleRounds / r.appearedCount).toFixed(1) : '-';
         const intvLabel = r.eligibleRounds > 0 ? `間隔${intv}R` : '-';
         const rateDisp = r.rate.toFixed(1);
+        const gammaDisp = (r.mu - 3 * r.sigma).toFixed(1);
         h += `<tr${rc}>
             <td style="font-size:17px;font-weight:bold;">${rank}</td>
             <td class="name-cell">
@@ -1305,6 +1309,7 @@ function calcRank() {
             </td>
             <td>${wr}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td>
             <td style="font-weight:bold;">${r.diff > 0 ? '+' + r.diff : r.diff}</td>
+            <td style="font-size:13px;color:#555;">${gammaDisp}</td>
         </tr>`;
     });
     document.getElementById('rankBody').innerHTML = h;
@@ -1366,16 +1371,27 @@ function buildReportCSV() {
     const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
     const dateTag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
 
-    let csv = '【順位表】\n';
+    // 大会作成日時
+    let createdStr = '';
+    if (state.createdAt) {
+        const cd = new Date(state.createdAt);
+        createdStr = `${cd.getFullYear()}/${String(cd.getMonth()+1).padStart(2,'0')}/${String(cd.getDate()).padStart(2,'0')} ${String(cd.getHours()).padStart(2,'0')}:${String(cd.getMinutes()).padStart(2,'0')}`;
+    }
+
+    let csv = '';
+    if (createdStr) csv += `大会作成日時,${createdStr}\n`;
+    csv += '【順位表】\n';
     csv += 'マッチング方式,' + (state.matchingRule === 'rating' ? 'レーティングマッチ' : 'ランダムマッチ') + '\n';
-    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,レート(μ)\n';
+    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,レート(μ),γ(μ-3σ)\n';
     arr.forEach((r, i) => {
         const rank = i + 1;
         const wr = r.played ? (r.wins / r.played * 100).toFixed(1) : '0.0';
         const intv = r.appearedCount ? (r.eligibleRounds / r.appearedCount).toFixed(1) : '-';
         const pid = Object.keys(statsMap).find(id => statsMap[id].name === r.name);
-        const mu = pid && state.tsMap[pid] ? state.tsMap[pid].mu.toFixed(1) : '25.0';
-        csv += `${rank},"${r.name}",${wr}%,${r.played},${r.wins},${r.losses},${r.diff > 0 ? '+'+r.diff : r.diff},${r.appearedCount},${intv},${mu}\n`;
+        const ts = pid && state.tsMap[pid] ? state.tsMap[pid] : { mu: 25.0, sigma: 25.0/3 };
+        const mu = ts.mu.toFixed(1);
+        const gamma = (ts.mu - 3 * ts.sigma).toFixed(1);
+        csv += `${rank},"${r.name}",${wr}%,${r.played},${r.wins},${r.losses},${r.diff > 0 ? '+'+r.diff : r.diff},${r.appearedCount},${intv},${mu},${gamma}\n`;
     });
 
     csv += '\n【試合結果】\n';
