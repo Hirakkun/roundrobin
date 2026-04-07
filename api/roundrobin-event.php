@@ -90,7 +90,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
             <input type="number" id="ne-courts" value="2" min="1" max="20">
         </div>
         <div id="ne-info" style="font-size:13px;color:#666;background:#fff3e0;border-radius:8px;padding:10px;display:none;"></div>
-        <button class="btn btn-green" style="width:100%;padding:14px;" onclick="createEvent()">🎾 イベントを作成する</button>
+        <button class="btn btn-green" style="width:100%;padding:14px;" onclick="submitNewEvent()">🎾 イベントを作成する</button>
     </div>
 </div>
 
@@ -342,7 +342,7 @@ document.getElementById('ne-name').addEventListener('input',function(){
     if(match){ info.style.display='block'; info.textContent=`💡「${name}」と同じイベント名が存在します。参加クラブ情報をコピーします。`; }
     else info.style.display='none';
 });
-window.createEvent=async function(){
+window.submitNewEvent=async function(){
     const name=(document.getElementById('ne-name').value||'').trim();
     const date=(document.getElementById('ne-date').value||'').replace(/-/g,'');
     const courts=parseInt(document.getElementById('ne-courts').value)||2;
