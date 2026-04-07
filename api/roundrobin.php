@@ -207,8 +207,8 @@ body.viewer-mode #initialSetup { display: none !important; }
         <!-- 開閉エリア（初期は閉じている） -->
         <div id="syncPanelBody" style="display:none;padding:0 16px 14px;">
             <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:10px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;">
-                <button onclick="createSession()" style="flex:1;padding:10px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🆕 新しいID(枠）を作る</button>
+            <div style="margin-bottom:8px;">
+                <a href="/roundrobin-event.php" style="display:block;text-align:center;padding:10px;background:#2e7d32;color:#fff;border-radius:8px;font-size:15px;font-weight:bold;text-decoration:none;">🎾 イベント（枠）を作成する</a>
             </div>
             <div id="sessionUrlBtns" style="display:none;flex-direction:column;gap:8px;margin-bottom:8px;">
                 <button onclick="copyAdminUrl()" style="width:100%;padding:10px;background:#e65100;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🔑 管理者URLをコピー（自分用に保存）</button>
@@ -448,7 +448,6 @@ function initTournament() {
         document.getElementById('sessionUrlBtns').style.display = 'flex';
         localStorage.setItem('rr_session_id', sid);
         localStorage.setItem('rr_admin:' + sid, token);
-        // モジュールがまだロードされていない場合に備えて保留SIDを保存
         window._pendingFbSid = sid;
         if (window._fbStart) { window._fbStart(sid); delete window._pendingFbSid; }
         saveSessionToHistory(sid, true);
@@ -456,24 +455,43 @@ function initTournament() {
         updateSyncStatus('🟡 接続中...', '#e65100');
     }
 
-    state.courts = setupCourts;
-    state.roundCount = 0;
-    state.matchingRule = matchingRule;
-    state.players = [];
-    state.pairMatrix = {};
-    state.oppMatrix = {};
-    state.tsMap = {};
-    state.schedule = [];
-    state.scores = {};
-    state.playerNames = {};
-    state.createdAt = new Date().toISOString();
+    // イベント管理から選手がプリロードされている場合は選手データを保持
+    const hasPreloaded = _sessionId && Array.isArray(state.players) && state.players.length > 0;
 
-    for (let i = 1; i <= setupPlayers; i++) {
-        addPlayerToState(i, false);
+    if (hasPreloaded) {
+        // ラウンド・試合データのみリセット（選手・名前・レーティングは維持）
+        state.roundCount = 0;
+        state.schedule   = [];
+        state.scores     = {};
+        state.courts     = setupCourts;
+        state.matchingRule = matchingRule;
+        // pairMatrix / oppMatrix を再初期化
+        const ids = state.players.map(p => p.id);
+        state.pairMatrix = {};
+        state.oppMatrix  = {};
+        ids.forEach(i => {
+            state.pairMatrix[i] = {};
+            state.oppMatrix[i]  = {};
+            ids.forEach(j => { state.pairMatrix[i][j] = 0; state.oppMatrix[i][j] = 0; });
+        });
+        state.players.forEach(p => { p.playCount = 0; p.lastRound = -1; p.resting = false; p.restCount = 0; });
+    } else {
+        // 通常の初期化
+        state.courts       = setupCourts;
+        state.roundCount   = 0;
+        state.matchingRule = matchingRule;
+        state.players      = [];
+        state.pairMatrix   = {};
+        state.oppMatrix    = {};
+        state.tsMap        = {};
+        state.schedule     = [];
+        state.scores       = {};
+        state.playerNames  = {};
+        state.createdAt    = new Date().toISOString();
+        for (let i = 1; i <= setupPlayers; i++) { addPlayerToState(i, false); }
+        const savedNames = JSON.parse(localStorage.getItem('rr_names') || '{}');
+        Object.assign(state.playerNames, savedNames);
     }
-
-    const savedNames = JSON.parse(localStorage.getItem('rr_names') || '{}');
-    Object.assign(state.playerNames, savedNames);
 
     saveState();
     showLiveSetup();
@@ -1932,6 +1950,7 @@ window._fbApply = function(remoteState) {
         const numToggle = document.getElementById('playerNumToggle');
         if (numToggle) numToggle.checked = showPlayerNum;
         if (state.roundCount > 0) {
+            // 試合進行中
             document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
             document.getElementById('disp-players').textContent = state.players.length;
@@ -1942,8 +1961,20 @@ window._fbApply = function(remoteState) {
             showLiveSetup();
             renderMatchContainer();
             renderPlayerList();
+        } else if (Array.isArray(state.players) && state.players.length > 0) {
+            // イベント管理から選手プリロード済み・試合未開始
+            document.getElementById('btn-match').classList.remove('disabled');
+            document.getElementById('btn-rank').classList.remove('disabled');
+            document.getElementById('disp-players').textContent = state.players.length;
+            document.getElementById('disp-courts').textContent = state.courts;
+            document.getElementById('disp-courts-live').textContent = state.courts;
+            setupPlayers = state.players.length;
+            setupCourts = state.courts;
+            showLiveSetup();
+            renderPlayerList();
+            showStep('step-setup', document.getElementById('btn-setup'));
         } else {
-            // 管理者がリセットした場合：閲覧者の画面もリセット
+            // 管理者がリセットした場合 or 試合データなし
             document.getElementById('btn-match').classList.add('disabled');
             document.getElementById('btn-rank').classList.add('disabled');
             document.getElementById('matchContainer').innerHTML =

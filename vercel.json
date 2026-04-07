@@ -5,7 +5,8 @@
     }
   },
   "routes": [
-    { "src": "/roundrobin-dbedit.php", "dest": "/api/roundrobin-dbedit.php" },
+    { "src": "/roundrobin-dbedit.php",  "dest": "/api/roundrobin-dbedit.php" },
+    { "src": "/roundrobin-event.php",   "dest": "/api/roundrobin-event.php" },
     { "src": "/(.*)", "dest": "/api/roundrobin.php" }
   ]
 }
