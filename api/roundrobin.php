@@ -448,7 +448,9 @@ function initTournament() {
         document.getElementById('sessionUrlBtns').style.display = 'flex';
         localStorage.setItem('rr_session_id', sid);
         localStorage.setItem('rr_admin:' + sid, token);
-        if (window._fbStart) window._fbStart(sid);
+        // モジュールがまだロードされていない場合に備えて保留SIDを保存
+        window._pendingFbSid = sid;
+        if (window._fbStart) { window._fbStart(sid); delete window._pendingFbSid; }
         saveSessionToHistory(sid, true);
         updateAdminUI();
         updateSyncStatus('🟡 接続中...', '#e65100');
@@ -2095,14 +2097,9 @@ window.onload = function () {
             renderPlayerList();
             showStep('step-match', document.getElementById('btn-match'));
         } else {
-            // 試合データなし → IDをクリアして初期画面に戻す
-            _sessionId  = '';
-            _adminToken = '';
-            isAdmin     = false;
-            window.location.hash = '';
-            localStorage.removeItem('rr_session_id');
-            document.getElementById('sessionIdInput').value = '';
-            document.getElementById('sessionUrlBtns').style.display = 'none';
+            // 試合データなし → セッションIDを保持したまま初期画面を表示
+            // appReady後にFirebaseから状態を受信する（閲覧者URLなど）
+            localStorage.setItem('rr_session_id', sid);
             document.getElementById('initialSetup').style.display = 'block';
             document.getElementById('liveSetup').style.display = 'none';
             showStep('step-setup', document.getElementById('btn-setup'));
@@ -2152,10 +2149,9 @@ window._fbStart = function(sessionId) {
     _ref = ref(db, 'sessions/' + encodeURIComponent(sessionId));
     onValue(_ref, snap => {
         const d = snap.val();
-        if (!d) {
-            if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
-            return;
-        }
+        // 接続確認できたら常に同期中に更新（自分のデータでも）
+        if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
+        if (!d) return;
         // 自分が送ったデータは無視して無限ループを防ぐ
         if (d._cid === CLIENT_ID) return;
         const { _cid, ...stateData } = d;
@@ -2197,7 +2193,16 @@ window._fbQueryPrefix = async function(prefix, date1str, date2str) {
 };
 
 // appReadyイベントで自動接続
-window.addEventListener('appReady', () => {
+function _tryFbConnect() {
+    if (_ref) return; // 既に接続済み
+    // initTournamentが先に呼ばれていた場合の保留SID
+    const pending = window._pendingFbSid;
+    if (pending) {
+        delete window._pendingFbSid;
+        window._fbStart(pending);
+        if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+        return;
+    }
     const rawHash = (window.location.hash || '').replace('#', '').trim();
     const encodedSid = rawHash.split(':')[0];
     let hashSid = '';
@@ -2208,7 +2213,10 @@ window.addEventListener('appReady', () => {
         window._fbStart(sid);
         if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
     }
-});
+}
+window.addEventListener('appReady', _tryFbConnect);
+// モジュールがappReadyより遅く読み込まれた場合（CDN遅延など）
+if (document.readyState === 'complete') setTimeout(_tryFbConnect, 0);
 </script>
 </body>
 </html>
