@@ -224,6 +224,18 @@ body.viewer-mode #initialSetup { display: none !important; }
 
     <!-- 初期設定エリア -->
     <div id="initialSetup">
+        <!-- 名簿モード：グループ参加者からエントリー選択（admin only） -->
+        <div id="rosterMode" style="display:none;" class="setup-card admin-only">
+            <div class="setup-label">📋 参加者を名簿から選択</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+                <button type="button" class="counter-btn" style="font-size:13px;padding:6px 14px;" onclick="rosterSelectAll(true)">全選択</button>
+                <button type="button" class="counter-btn" style="font-size:13px;padding:6px 14px;" onclick="rosterSelectAll(false)">全解除</button>
+                <span id="entry-count-label" style="font-size:13px;color:#555;margin-left:auto;font-weight:bold;"></span>
+            </div>
+            <div id="rosterCheckList" style="max-height:40vh;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;"></div>
+        </div>
+        <!-- 手動モード：参加人数カウンター -->
+        <div id="manualMode">
         <div class="setup-card">
             <div class="setup-label">👤 参加人数</div>
             <div class="counter-row">
@@ -231,6 +243,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <div class="counter-val" id="disp-players"><?=$default_players?></div>
                 <button type="button" class="counter-btn" onclick="changeCount('players',+1)">＋</button>
             </div>
+        </div>
         </div>
         <div class="setup-card">
             <div class="setup-label">🏸 コート数</div>
@@ -455,10 +468,14 @@ function initTournament() {
         updateSyncStatus('🟡 接続中...', '#e65100');
     }
 
-    // イベント管理から選手がプリロードされている場合は選手データを保持
+    // 名簿モード（roster あり・players 未確定）の場合はエントリー選択を処理
+    const isRosterMode = Array.isArray(state.roster) && state.roster.length > 0;
     const hasPreloaded = _sessionId && Array.isArray(state.players) && state.players.length > 0;
 
-    if (hasPreloaded) {
+    if (isRosterMode && !hasPreloaded) {
+        // チェックされた名簿選手をエントリー（players）として確定
+        if (!applyRosterEntry()) return;
+    } else if (hasPreloaded) {
         // ラウンド・試合データのみリセット（選手・名前・レーティングは維持）
         state.roundCount = 0;
         state.schedule   = [];
@@ -509,6 +526,73 @@ function showLiveSetup() {
     document.getElementById('liveSetup').style.display = 'block';
 }
 
+// =====================================================================
+// 名簿（roster）エントリー選択
+// =====================================================================
+function showRosterEntry() {
+    document.getElementById('rosterMode').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('manualMode').style.display = 'none';
+    renderRosterCheckList();
+}
+
+function renderRosterCheckList() {
+    const list = state.roster || [];
+    const c = document.getElementById('rosterCheckList');
+    if (!c) return;
+    if (!list.length) { c.innerHTML = '<div style="padding:14px;text-align:center;color:#aaa;">名簿が空です</div>'; return; }
+    const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    c.innerHTML = list.map((p, i) => `
+        <label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;background:#fff;">
+            <input type="checkbox" class="roster-cb" data-idx="${i}" checked
+                style="width:20px;height:20px;accent-color:#1565c0;flex-shrink:0;" onchange="updateEntryCount()">
+            <div>
+                <div style="font-weight:bold;">${esc(p.name)}</div>
+                <div style="font-size:12px;color:#888;">${esc(p.kana||'')}${p.mu!=null?' &nbsp;μ='+Number(p.mu).toFixed(1):''}</div>
+            </div>
+        </label>`).join('');
+    updateEntryCount();
+}
+
+function updateEntryCount() {
+    const n = document.querySelectorAll('.roster-cb:checked').length;
+    const el = document.getElementById('entry-count-label');
+    if (el) el.textContent = n + '人選択中';
+}
+
+window.rosterSelectAll = function(val) {
+    document.querySelectorAll('.roster-cb').forEach(cb => cb.checked = val);
+    updateEntryCount();
+};
+
+// チェックされた名簿選手を state.players / playerNames / tsMap に変換して返す
+function applyRosterEntry() {
+    const checked = Array.from(document.querySelectorAll('.roster-cb:checked'));
+    if (!checked.length) { alert('参加者を1人以上選択してください'); return false; }
+    const selected = checked.map(cb => (state.roster || [])[parseInt(cb.dataset.idx)]).filter(Boolean);
+    state.players     = [];
+    state.playerNames = {};
+    state.tsMap       = {};
+    state.pairMatrix  = {};
+    state.oppMatrix   = {};
+    state.roundCount  = 0;
+    state.schedule    = [];
+    state.scores      = {};
+    state.courts      = setupCourts;
+    state.matchingRule = matchingRule;
+    selected.forEach((p, i) => {
+        const id = i + 1;
+        state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
+        state.playerNames[id] = p.name;
+        state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
+    });
+    const ids = state.players.map(p => p.id);
+    ids.forEach(i => {
+        state.pairMatrix[i] = {}; state.oppMatrix[i] = {};
+        ids.forEach(j => { state.pairMatrix[i][j] = 0; state.oppMatrix[i][j] = 0; });
+    });
+    return true;
+}
+
 function enableTabs() {
     document.getElementById('btn-match').classList.remove('disabled');
     document.getElementById('btn-rank').classList.remove('disabled');
@@ -534,6 +618,7 @@ function updateMatchRuleDesc() {
 }
 
 function _resetState() {
+    const savedRoster = state.roster; // リセット後も名簿を保持
     state.roundCount   = 0;
     state.players      = [];
     state.schedule     = [];
@@ -544,6 +629,7 @@ function _resetState() {
     state.tsMap        = {};
     state.matchingRule = 'random';
     state.createdAt    = new Date().toISOString();
+    if (savedRoster) state.roster = savedRoster;
 }
 
 function _resetUI() {
@@ -557,6 +643,13 @@ function _resetUI() {
     document.getElementById('matchContainer').innerHTML = '';
     document.getElementById('rankBody').innerHTML = '';
     showStep('step-setup', document.getElementById('btn-setup'));
+    // 名簿が残っている場合は名簿モードを再表示
+    if (Array.isArray(state.roster) && state.roster.length > 0) {
+        showRosterEntry();
+    } else {
+        document.getElementById('rosterMode').style.display = 'none';
+        document.getElementById('manualMode').style.display = 'block';
+    }
 }
 
 function resetTournament() {
@@ -1961,8 +2054,24 @@ window._fbApply = function(remoteState) {
             showLiveSetup();
             renderMatchContainer();
             renderPlayerList();
+        } else if (Array.isArray(state.roster) && state.roster.length > 0 && (!Array.isArray(state.players) || state.players.length === 0)) {
+            // 名簿あり・エントリー未確定（参加者選択待ち）
+            setupCourts = state.courts || 2;
+            document.getElementById('disp-courts').textContent = setupCourts;
+            document.getElementById('disp-courts-live').textContent = setupCourts;
+            if (isAdmin) {
+                showRosterEntry();
+                showStep('step-setup', document.getElementById('btn-setup'));
+            } else {
+                document.getElementById('btn-match').classList.add('disabled');
+                document.getElementById('btn-rank').classList.add('disabled');
+                document.getElementById('matchContainer').innerHTML =
+                    '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が参加者を選択中です</div>';
+                document.getElementById('rankBody').innerHTML = '';
+                showStep('step-match', document.getElementById('btn-match'));
+            }
         } else if (Array.isArray(state.players) && state.players.length > 0) {
-            // イベント管理から選手プリロード済み・試合未開始
+            // エントリー確定済み・試合未開始
             document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
             document.getElementById('disp-players').textContent = state.players.length;
@@ -1974,7 +2083,7 @@ window._fbApply = function(remoteState) {
             renderPlayerList();
             showStep('step-setup', document.getElementById('btn-setup'));
         } else {
-            // 管理者がリセットした場合 or 試合データなし
+            // 試合データなし（手動モード初期状態）
             document.getElementById('btn-match').classList.add('disabled');
             document.getElementById('btn-rank').classList.add('disabled');
             document.getElementById('matchContainer').innerHTML =

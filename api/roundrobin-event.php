@@ -313,7 +313,7 @@ function renderEvents(){
         h+=`<tr style="cursor:pointer;" onclick="toggleERow('${esc(eid)}')">
             <td style="font-weight:bold;color:#1565c0;">${escH(ev.name)}</td>
             <td style="font-size:13px;white-space:nowrap;">${fmtDate(ev.date)}</td>
-            <td><button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">参加クラブ登録</button></td>
+            <td><button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">参加グループ登録</button></td>
             <td><button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button></td>
         </tr>
         <tr id="erow-${CSS.escape(eid)}" style="display:none;">
@@ -415,16 +415,19 @@ window.confirmClubs=async function(){
     }catch(e){showToast('❌ '+e.message);}
 };
 function buildSessionState(clubIds,courts){
-    const players=[],playerNames={},tsMap={},pairMatrix={},oppMatrix={};
-    let sid=1;
+    // グループメンバーを pid でユニーク化して名簿(roster)を作成
+    const rosterMap={};
     for(const cid of clubIds){
         const club=allClubs[cid]; if(!club||!club.playerIds) continue;
-        const sorted=Object.keys(club.playerIds).map(pid=>({pid,...allPlayers[pid]})).filter(p=>p.name).sort((a,b)=>(a.kana||a.name||'').localeCompare(b.kana||b.name||'','ja'));
-        for(const p of sorted){ players.push({id:sid,playCount:0,lastRound:-1,resting:false,joinedRound:0,restCount:0}); playerNames[sid]=p.name; tsMap[sid]={mu:p.mu??25.0,sigma:p.sigma??(25/3)}; sid++; }
+        for(const pid of Object.keys(club.playerIds)){
+            if(!rosterMap[pid]&&allPlayers[pid]?.name) rosterMap[pid]=allPlayers[pid];
+        }
     }
-    const n=players.length;
-    for(let i=1;i<=n;i++){ pairMatrix[i]={}; oppMatrix[i]={}; for(let j=1;j<=n;j++){pairMatrix[i][j]=0;oppMatrix[i][j]=0;} }
-    return {courts:courts||2,roundCount:0,matchingRule:'random',players,pairMatrix,oppMatrix,tsMap,schedule:[],scores:{},playerNames,courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()};
+    const roster=Object.entries(rosterMap)
+        .map(([pid,p])=>({pid,name:p.name,kana:p.kana||'',mu:p.mu??25.0,sigma:p.sigma??(25/3)}))
+        .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
+    // players は空（roundrobin.php でエントリー選択後に確定）
+    return {courts:courts||2,roundCount:0,matchingRule:'random',roster,players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()};
 }
 
 // ─── Club CRUD ────────────────────────────────────────────────
