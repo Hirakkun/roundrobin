@@ -68,7 +68,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div id="screen-events" class="screen active">
     <div class="hdr">
         <h1>🎾 イベント作成編集</h1>
-        <button class="back-btn" onclick="location.href='/'">🏠 試合画面へ</button>
+        <a href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
     </div>
     <div id="events-container"><div class="loading-msg">⏳ 読込中...</div></div>
     <div class="bottom-bar">
@@ -90,10 +90,6 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <div class="field">
             <label>日付 <span class="req">※</span></label>
             <input type="date" id="ne-date">
-        </div>
-        <div class="field">
-            <label>コート数</label>
-            <input type="number" id="ne-courts" value="2" min="1" max="20">
         </div>
         <div id="ne-info" style="font-size:13px;color:#666;background:#fff3e0;border-radius:8px;padding:10px;display:none;"></div>
         <button class="btn btn-green" style="width:100%;padding:14px;" onclick="submitNewEvent()">🎾 イベントを作成する</button>
@@ -124,7 +120,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <p id="mc-msg" style="font-size:14px;color:#444;white-space:pre-wrap;"></p>
         <div class="modal-btns">
             <button class="btn btn-gray" onclick="closeConfirm()">キャンセル</button>
-            <button class="btn btn-danger" onclick="execConfirm()">削除する</button>
+            <button class="btn btn-danger" id="mc-exec-btn" onclick="execConfirm()">削除する</button>
         </div>
     </div>
 </div>
@@ -172,7 +168,7 @@ function copyText(text,msg){ navigator.clipboard.writeText(text).then(()=>showTo
 window.showScreen = function(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); };
 
 // ─── Confirm modal ────────────────────────────────────────────────────
-function showConfirm(title,msg,cb){ pendingConfirmCb=cb; document.getElementById('mc-title').textContent=title; document.getElementById('mc-msg').textContent=msg; document.getElementById('modal-confirm').classList.add('show'); }
+function showConfirm(title,msg,cb,btnLabel='削除する'){ pendingConfirmCb=cb; document.getElementById('mc-title').textContent=title; document.getElementById('mc-msg').textContent=msg; document.getElementById('mc-exec-btn').textContent=btnLabel; document.getElementById('modal-confirm').classList.add('show'); }
 window.execConfirm  = function(){ const cb=pendingConfirmCb; closeConfirm(); cb&&cb(); };
 window.closeConfirm = function(){ document.getElementById('modal-confirm').classList.remove('show'); pendingConfirmCb=null; };
 
@@ -257,7 +253,6 @@ document.getElementById('ne-name').addEventListener('input',function(){
 window.submitNewEvent=async function(){
     const name=(document.getElementById('ne-name').value||'').trim();
     const date=(document.getElementById('ne-date').value||'').replace(/-/g,'');
-    const courts=parseInt(document.getElementById('ne-courts').value)||2;
     if(!name){showToast('⚠️ イベント名を入力してください');return;}
     if(!date||date.length<8){showToast('⚠️ 日付を入力してください');return;}
     const sid=name+date;
@@ -266,21 +261,20 @@ window.submitNewEvent=async function(){
     const sameNameEntry=Object.entries(allEvents).find(([,v])=>v.name===name);
     const copiedClubs=sameNameEntry?(sameNameEntry[1].usedClubs||{}):{};
     const token=Math.random().toString(36).substr(2,8).toUpperCase();
-    const evData={name,date,courts,adminToken:token,usedClubs:copiedClubs,status:'準備中',createdAt:new Date().toISOString()};
+    const evData={name,date,adminToken:token,usedClubs:copiedClubs,status:'準備中',createdAt:new Date().toISOString()};
     try{
         await fbSet('events/'+eid,evData);
         localStorage.setItem('rr_admin:'+sid,token);
         allEvents[eid]=evData;
-        await fbSet('sessions/'+eid,buildEmptySession(courts));
+        await fbSet('sessions/'+eid,buildEmptySession());
         showToast('✅ イベントを作成しました');
         document.getElementById('ne-name').value='';
         document.getElementById('ne-date').value=todayStr();
-        document.getElementById('ne-courts').value='2';
         document.getElementById('ne-info').style.display='none';
         showScreen('screen-events'); renderEvents();
     }catch(e){showToast('❌ '+e.message);}
 };
-function buildEmptySession(courts){ return {courts:courts||2,roundCount:0,matchingRule:'random',players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()}; }
+function buildEmptySession(){ return {courts:2,roundCount:0,matchingRule:'random',roster:[],players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()}; }
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 3: Club Selection
@@ -342,11 +336,24 @@ window.confirmClubs=async function(){
                 .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
             await fbUpdate('sessions/'+currentEventId,{roster:mergedRoster});
             showToast(`✅ グループを更新しました（+${addedPlayers.length}人追加・試合データ保持）`);
+            showScreen('screen-events'); loadEvents();
         } else {
-            // ── 準備中：セッションを完全リセット ──────────────────────────
-            const st=buildSessionState([...selectedClubs],courts);
-            await fbSet('sessions/'+currentEventId,st);
-            showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
+            // ── 準備中：確認後にセッションを完全リセット ──────────────────
+            showConfirm(
+                '⚠️ 大会データの初期化',
+                '参加グループを変更すると、大会参加者・試合スケジュール・スコアなどのデータがすべてリセットされます。\nよろしいですか？',
+                async ()=>{
+                    try{
+                        const courts=ev.courts||2;
+                        const st=buildSessionState([...selectedClubs],courts);
+                        await fbSet('sessions/'+currentEventId,st);
+                        showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
+                        showScreen('screen-events'); loadEvents();
+                    }catch(e){showToast('❌ '+e.message);}
+                },
+                '✅ リセットして保存'
+            );
+            return; // 確認待ち（tryのcatchで処理しない）
         }
     }catch(e){showToast('❌ '+e.message);}
 };
