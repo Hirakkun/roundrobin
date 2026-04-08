@@ -2302,6 +2302,7 @@ let _ref = null;
 
 let _evRef = null;
 window._fbStart = function(sessionId) {
+    if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
     if (_ref) off(_ref);
     _ref = ref(db, 'sessions/' + encodeURIComponent(sessionId));
     onValue(_ref, snap => {
