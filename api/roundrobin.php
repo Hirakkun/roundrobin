@@ -1410,9 +1410,9 @@ function updateRoundStatus() {
 // 順位計算
 // =====================================================================
 function calcRank() {
-    const roster = JSON.parse(localStorage.getItem('tournament_roster') || '[]');
+    // state.roster から年齢マップを生成（名前→age）
     const ageMap = {};
-    roster.forEach(r => ageMap[r.name] = parseInt(r.age) || 0);
+    (state.roster || []).forEach(r => { if (r.name) ageMap[r.name] = parseInt(r.age) || 0; });
 
     const stats = {};
     state.players.forEach(p => {
@@ -1505,9 +1505,9 @@ function calcRank() {
 // メール報告
 // =====================================================================
 function buildReportCSV() {
-    const roster = JSON.parse(localStorage.getItem('tournament_roster') || '[]');
+    // state.roster から年齢マップを生成（名前→age）
     const ageMap = {};
-    roster.forEach(r => ageMap[r.name] = parseInt(r.age) || 0);
+    (state.roster || []).forEach(r => { if (r.name) ageMap[r.name] = parseInt(r.age) || 0; });
 
     const statsMap = {};
     state.players.forEach(p => {

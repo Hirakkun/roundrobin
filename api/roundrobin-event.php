@@ -161,6 +161,14 @@ function escH(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function esc(s) { return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function fmtDate(d){ if(!d||d.length<8)return d||''; return `${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6,8)}`; }
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+// 誕生日(YYYYMMDD)とイベント日付(YYYYMMDD)から年齢を計算。誕生日なしは0
+function calcAge(birthdate, eventDate){
+    const b=String(birthdate||'').replace(/-/g,'');
+    if(b.length<8) return 0;
+    const ref=eventDate||todayStr().replace(/-/g,'');
+    const age=Math.floor((parseInt(ref)-parseInt(b))/10000);
+    return age>=0?age:0;
+}
 function showToast(msg,ms=3000){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms); }
 function copyText(text,msg){ navigator.clipboard.writeText(text).then(()=>showToast(msg||'✅ コピーしました')); }
 
@@ -326,16 +334,14 @@ window.confirmClubs=async function(){
         allEvents[currentEventId]={...ev,usedClubs:usedClubsMap};
 
         if(status==='開催中'){
-            // ── 開催中：既存セッションを保持したまま名簿だけ追加 ──────────
+            // ── 開催中：全選手の情報を最新データで更新（試合データは保持）──
             const curSession=await fbGet('sessions/'+currentEventId)||{};
-            const newRoster=buildRoster([...selectedClubs]);
-            // 既存 roster の pid セットで差分確認
+            const newRoster=buildRoster([...selectedClubs], ev.date);
+            // 追加人数を表示用に算出
             const existPids=new Set((curSession.roster||[]).map(p=>p.pid));
-            const addedPlayers=newRoster.filter(p=>!existPids.has(p.pid));
-            const mergedRoster=[...(curSession.roster||[]),...addedPlayers]
-                .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
-            await fbUpdate('sessions/'+currentEventId,{roster:mergedRoster});
-            showToast(`✅ グループを更新しました（+${addedPlayers.length}人追加・試合データ保持）`);
+            const addedCount=newRoster.filter(p=>!existPids.has(p.pid)).length;
+            await fbUpdate('sessions/'+currentEventId,{roster:newRoster});
+            showToast(`✅ グループを更新しました（+${addedCount}人追加・選手情報を更新・試合データ保持）`);
             showScreen('screen-events'); loadEvents();
         } else {
             // ── 準備中：確認後にセッションを完全リセット ──────────────────
@@ -345,7 +351,7 @@ window.confirmClubs=async function(){
                 async ()=>{
                     try{
                         const courts=ev.courts||2;
-                        const st=buildSessionState([...selectedClubs],courts);
+                        const st=buildSessionState([...selectedClubs], courts, ev.date);
                         await fbSet('sessions/'+currentEventId,st);
                         showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
                         showScreen('screen-events'); loadEvents();
@@ -357,7 +363,7 @@ window.confirmClubs=async function(){
         }
     }catch(e){showToast('❌ '+e.message);}
 };
-function buildRoster(clubIds){
+function buildRoster(clubIds, eventDate){
     const rosterMap={};
     for(const cid of clubIds){
         const club=allClubs[cid]; if(!club||!club.playerIds) continue;
@@ -365,12 +371,21 @@ function buildRoster(clubIds){
             if(!rosterMap[pid]&&allPlayers[pid]?.name) rosterMap[pid]=allPlayers[pid];
         }
     }
+    const refDate=eventDate||todayStr().replace(/-/g,'');
     return Object.entries(rosterMap)
-        .map(([pid,p])=>({pid,name:p.name,kana:p.kana||'',mu:p.mu??25.0,sigma:p.sigma??(25/3)}))
+        .map(([pid,p])=>({
+            pid,
+            name:     p.name,
+            kana:     p.kana||'',
+            mu:       p.mu??25.0,
+            sigma:    p.sigma??(25/3),
+            birthdate:p.birthdate||'',
+            age:      calcAge(p.birthdate, refDate)
+        }))
         .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
 }
-function buildSessionState(clubIds,courts){
-    const roster=buildRoster(clubIds);
+function buildSessionState(clubIds, courts, eventDate){
+    const roster=buildRoster(clubIds, eventDate);
     return {courts:courts||2,roundCount:0,matchingRule:'random',roster,players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()};
 }
 
