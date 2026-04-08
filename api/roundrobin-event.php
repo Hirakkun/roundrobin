@@ -290,7 +290,7 @@ window.closePwModal = function(){ document.getElementById('modal-pw').classList.
 
 // ─── Confirm modal ────────────────────────────────────────────────────
 function showConfirm(title,msg,cb){ pendingConfirmCb=cb; document.getElementById('mc-title').textContent=title; document.getElementById('mc-msg').textContent=msg; document.getElementById('modal-confirm').classList.add('show'); }
-window.execConfirm  = function(){ closeConfirm(); pendingConfirmCb&&pendingConfirmCb(); };
+window.execConfirm  = function(){ const cb=pendingConfirmCb; closeConfirm(); cb&&cb(); };
 window.closeConfirm = function(){ document.getElementById('modal-confirm').classList.remove('show'); pendingConfirmCb=null; };
 
 // ═══════════════════════════════════════════════════════════════
