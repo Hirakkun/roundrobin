@@ -94,124 +94,20 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     </div>
 </div>
 
-<!-- ■ Screen 3: Club Selection -->
+<!-- ■ Screen 3: Group Selection -->
 <div id="screen-clubs" class="screen">
     <div class="hdr">
         <button class="back-btn" onclick="showScreen('screen-events');loadEvents()">← 戻る</button>
         <div style="flex:1;">
-            <h1 style="margin:0;font-size:15px;">参加クラブ選択</h1>
+            <h1 style="margin:0;font-size:15px;">参加グループ選択</h1>
             <div style="font-size:11px;opacity:.8;">ID: <span id="clubs-eid-label"></span></div>
         </div>
+        <a href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
     </div>
     <div id="clubs-container"><div class="loading-msg">⏳ 読込中...</div></div>
-    <div class="section-actions" style="border-top:2px solid #e0e0e0;">
-        <button class="btn btn-blue" onclick="showNewClubForm()">🏢 新規クラブ登録</button>
-    </div>
     <div class="confirm-bar">
         <button class="btn btn-gray" onclick="showScreen('screen-events');loadEvents()">キャンセル</button>
         <button class="btn btn-green" onclick="confirmClubs()">✅ 参加確定して保存</button>
-    </div>
-</div>
-
-<!-- ■ Screen 4: Club Form -->
-<div id="screen-club-form" class="screen">
-    <div class="hdr">
-        <button class="back-btn" onclick="goBackToClubs()">← 戻る</button>
-        <h1 id="cf-title">クラブ登録画面</h1>
-    </div>
-    <div class="form-body">
-        <div class="field">
-            <label>クラブ名 <span class="req">※</span></label>
-            <input type="text" id="cf-name" placeholder="例: らさんて" maxlength="20">
-        </div>
-        <div class="field">
-            <label>パスワード <span class="req">※</span></label>
-            <input type="password" id="cf-pw" placeholder="編集・削除時に使用">
-        </div>
-        <button class="btn btn-blue" style="width:100%;padding:12px;" onclick="saveClub()">💾 保存</button>
-    </div>
-    <div id="cf-players-section" style="display:none;">
-        <div class="section-hdr">所属選手</div>
-        <div id="cf-players-container"></div>
-        <div class="section-actions">
-            <button class="btn btn-yellow" onclick="showAddPlayerForm()">➕ 新規会員追加</button>
-            <button class="btn btn-purple" onclick="showOtherPlayersScreen()">👥 他クラブの選手追加</button>
-        </div>
-    </div>
-</div>
-
-<!-- ■ Screen 5: Player Form -->
-<div id="screen-player-form" class="screen">
-    <div class="hdr">
-        <button class="back-btn" onclick="goBackToClubForm()">← 戻る</button>
-        <h1 id="pf-title">選手追加画面</h1>
-    </div>
-    <div class="form-body">
-        <div class="field"><label>氏名 <span class="req">※</span></label><input type="text" id="pf-name" placeholder="山田 太郎"></div>
-        <div class="field"><label>ふりがな <span class="req">※</span></label><input type="text" id="pf-kana" placeholder="やまだ たろう"></div>
-        <div class="field">
-            <label>性別 <span class="req">※</span></label>
-            <select id="pf-gender"><option value="">選択</option><option value="男性">男性</option><option value="女性">女性</option></select>
-        </div>
-        <div class="field"><label>生年月日</label><input type="date" id="pf-birthdate"></div>
-        <!-- Add mode -->
-        <div id="pf-class-section">
-            <div class="field">
-                <label>初期クラス</label>
-                <select id="pf-class">
-                    <option value="">選択してください</option>
-                    <option value="high">そこそこいける（6割以上）</option>
-                    <option value="mid">まぁふつうかも（4〜6割）</option>
-                    <option value="low">ちょっと自信ない（4割以下）</option>
-                </select>
-            </div>
-            <div class="class-guide">
-                <div style="color:#2e7d32;font-weight:bold;">そこそこいける 6割以上 &nbsp;μ=32.0 σ=8.3</div>
-                <div style="font-size:11px;color:#666;margin-bottom:6px;">練習で勝ち越すことが多い。攻めの展開ができる。</div>
-                <div style="color:#1565c0;font-weight:bold;">まぁふつうかも 4〜6割 &nbsp;μ=25.0 σ=7.0</div>
-                <div style="font-size:11px;color:#666;margin-bottom:6px;">勝ったり負けたり。ラリーが安定して続く。</div>
-                <div style="color:#e65100;font-weight:bold;">ちょっと自信ない 4割以下 &nbsp;μ=18.0 σ=7.0</div>
-                <div style="font-size:11px;color:#666;">負けることが多い。初心者、またはブランクがある。</div>
-            </div>
-        </div>
-        <!-- Edit mode -->
-        <div id="pf-ts-section" style="display:none;">
-            <div class="field"><label>μ（レーティング）</label><input type="number" id="pf-mu" step="0.1"></div>
-            <div class="field"><label>σ（不確実性）</label><input type="number" id="pf-sigma" step="0.1"></div>
-        </div>
-        <div id="pf-clubs-section" style="display:none;">
-            <div class="field"><label>所属クラブ</label><div id="pf-clubs-display" style="font-size:14px;color:#333;padding:6px 0;"></div></div>
-        </div>
-        <button class="btn btn-green" style="width:100%;padding:14px;" onclick="savePlayer()">✅ 決定</button>
-    </div>
-</div>
-
-<!-- ■ Screen 6: Other Players -->
-<div id="screen-other-players" class="screen">
-    <div class="hdr">
-        <button class="back-btn" onclick="goBackToClubForm()">← 戻る</button>
-        <h1>他クラブの選手追加</h1>
-    </div>
-    <div style="padding:12px;background:#fff;border-bottom:1px solid #eee;">
-        <input type="text" id="other-search" placeholder="🔍 氏名・ふりがなで絞込" oninput="filterOtherPlayers()"
-            style="width:100%;padding:9px 12px;border:2px solid #90caf9;border-radius:8px;font-size:14px;outline:none;">
-    </div>
-    <div id="other-players-container"></div>
-</div>
-
-<!-- Password Modal -->
-<div class="modal-overlay" id="modal-pw">
-    <div class="modal">
-        <h2>🔑 パスワード確認</h2>
-        <p id="modal-pw-label" style="font-size:13px;color:#666;margin:0 0 8px;"></p>
-        <input type="password" id="modal-pw-input" placeholder="パスワードを入力"
-            style="width:100%;padding:10px;border:2px solid #ccc;border-radius:8px;font-size:16px;"
-            onkeydown="if(event.key==='Enter')checkPw()">
-        <div id="modal-pw-err" style="color:#c62828;font-size:13px;margin-top:6px;display:none;">❌ パスワードが違います</div>
-        <div class="modal-btns">
-            <button class="btn btn-gray" onclick="closePwModal()">キャンセル</button>
-            <button class="btn btn-blue" onclick="checkPw()">確認</button>
-        </div>
     </div>
 </div>
 
@@ -253,11 +149,9 @@ async function fbRemove(path)   { await remove(ref(db,path)); }
 
 // ─── State ────────────────────────────────────────────────────────────
 let allEvents={}, allClubs={}, allPlayers={};
-let currentEventId=null, currentClubId=null;
-let currentClubIsNew=true, currentPlayerId=null, currentPlayerIsNew=true;
+let currentEventId=null;
 let selectedClubs=new Set();
-let pendingPwCb=null, pendingPwExp=null, pendingConfirmCb=null;
-let otherPlayersAll=[];
+let pendingConfirmCb=null;
 
 // ─── Utils ────────────────────────────────────────────────────────────
 function genId(){ return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -270,23 +164,6 @@ function copyText(text,msg){ navigator.clipboard.writeText(text).then(()=>showTo
 
 // ─── Screen ───────────────────────────────────────────────────────────
 window.showScreen = function(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); };
-
-// ─── Password modal ───────────────────────────────────────────────────
-function requirePw(clubName, expected, cb){
-    pendingPwCb=cb; pendingPwExp=expected;
-    document.getElementById('modal-pw-label').textContent='クラブ: '+clubName;
-    document.getElementById('modal-pw-input').value='';
-    document.getElementById('modal-pw-err').style.display='none';
-    document.getElementById('modal-pw-input').style.borderColor='#ccc';
-    document.getElementById('modal-pw').classList.add('show');
-    setTimeout(()=>document.getElementById('modal-pw-input').focus(),100);
-}
-window.checkPw = function(){
-    const v=document.getElementById('modal-pw-input').value;
-    if(v===pendingPwExp){ closePwModal(); pendingPwCb&&pendingPwCb(); }
-    else{ document.getElementById('modal-pw-err').style.display='block'; document.getElementById('modal-pw-input').style.borderColor='#c62828'; }
-};
-window.closePwModal = function(){ document.getElementById('modal-pw').classList.remove('show'); pendingPwCb=null; pendingPwExp=null; };
 
 // ─── Confirm modal ────────────────────────────────────────────────────
 function showConfirm(title,msg,cb){ pendingConfirmCb=cb; document.getElementById('mc-title').textContent=title; document.getElementById('mc-msg').textContent=msg; document.getElementById('modal-confirm').classList.add('show'); }
@@ -387,16 +264,14 @@ window.openClubs=async function(eid){
 function renderClubsScreen(){
     const c=document.getElementById('clubs-container');
     const entries=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
-    if(!entries.length){c.innerHTML='<div class="empty-msg">📭 クラブが登録されていません</div>';return;}
-    let h='<table class="data-table"><thead><tr><th style="width:36px;">使用</th><th>クラブ名</th><th>人数</th><th colspan="2"></th></tr></thead><tbody>';
+    if(!entries.length){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 グループ管理</a> から登録してください。</div>';return;}
+    let h='<table class="data-table" style="margin-bottom:70px;"><thead><tr><th style="width:36px;">参加</th><th>グループ名</th><th>人数</th></tr></thead><tbody>';
     for(const [cid,club] of entries){
         const count=Object.keys(club.playerIds||{}).length;
         h+=`<tr>
             <td style="text-align:center;"><input type="checkbox" class="club-cb" ${selectedClubs.has(cid)?'checked':''} onchange="toggleClub('${esc(cid)}',this.checked)"></td>
             <td style="font-weight:bold;">${escH(club.name)}</td>
             <td style="color:#666;">${count}人</td>
-            <td><button class="btn-sm btn-sm-edit" onclick="editClub('${esc(cid)}')">編集</button></td>
-            <td><button class="btn-sm btn-sm-del" onclick="deleteClubWithPw('${esc(cid)}')">削除</button></td>
         </tr>`;
     }
     h+='</tbody></table>';
@@ -411,7 +286,7 @@ window.confirmClubs=async function(){
         allEvents[currentEventId]={...ev,usedClubs:usedClubsMap};
         const st=buildSessionState([...selectedClubs],courts);
         await fbSet('sessions/'+currentEventId,st);
-        showToast(`✅ 参加確定しました（${selectedClubs.size}クラブ・${st.players.length}人）`);
+        showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
     }catch(e){showToast('❌ '+e.message);}
 };
 function buildSessionState(clubIds,courts){
@@ -447,137 +322,6 @@ async function deleteClub(cid){
         renderClubsScreen(); showToast('🗑 クラブを削除しました');
     }catch(e){showToast('❌ '+e.message);}
 }
-window.goBackToClubs=function(){ showScreen('screen-clubs'); renderClubsScreen(); };
-
-// ═══════════════════════════════════════════════════════════════
-// SCREEN 4: Club Form
-// ═══════════════════════════════════════════════════════════════
-window.saveClub=async function(){
-    const name=(document.getElementById('cf-name').value||'').trim();
-    const pw=(document.getElementById('cf-pw').value||'').trim();
-    if(!name){showToast('⚠️ クラブ名を入力してください');return;}
-    if(!pw){showToast('⚠️ パスワードを入力してください');return;}
-    if(currentClubIsNew){
-        const cid=encodeURIComponent(name);
-        if(allClubs[cid]){showToast('⚠️ 同じ名前のクラブが既に存在します');return;}
-        try{
-            const clubData={name,password:pw,playerIds:{}};
-            await fbSet('clubs/'+cid,clubData);
-            allClubs[cid]=clubData; currentClubId=cid; currentClubIsNew=false;
-            document.getElementById('cf-title').textContent='クラブ編集画面';
-            document.getElementById('cf-name').disabled=true;
-            document.getElementById('cf-players-section').style.display='block';
-            renderClubPlayers(); showToast('✅ クラブを登録しました');
-        }catch(e){showToast('❌ '+e.message);}
-    } else {
-        try{ await fbUpdate('clubs/'+currentClubId,{password:pw}); allClubs[currentClubId].password=pw; showToast('✅ パスワードを更新しました'); }catch(e){showToast('❌ '+e.message);}
-    }
-};
-function renderClubPlayers(){
-    const c=document.getElementById('cf-players-container');
-    const club=allClubs[currentClubId]; if(!club){return;}
-    const pids=Object.keys(club.playerIds||{});
-    if(!pids.length){c.innerHTML='<div class="empty-msg" style="padding:14px;">まだ選手が登録されていません</div>';return;}
-    const ps=pids.map(pid=>({pid,...allPlayers[pid]})).filter(p=>p.name).sort((a,b)=>(a.kana||a.name||'').localeCompare(b.kana||b.name||'','ja'));
-    let h='<table class="data-table"><thead><tr><th>氏名</th><th>ふりがな</th><th>性別</th><th>生年月日</th><th>μ</th><th>σ</th><th colspan="2"></th></tr></thead><tbody>';
-    for(const p of ps){
-        h+=`<tr>
-            <td style="font-weight:bold;">${escH(p.name)}</td>
-            <td style="font-size:12px;color:#888;">${escH(p.kana||'')}</td>
-            <td>${escH(p.gender||'')}</td>
-            <td style="font-size:12px;">${escH(p.birthdate||'—')}</td>
-            <td style="text-align:right;">${(p.mu??25).toFixed(1)}</td>
-            <td style="text-align:right;">${(p.sigma??8.33).toFixed(1)}</td>
-            <td><button class="btn-sm btn-sm-edit" onclick="editPlayer('${esc(p.pid)}')">編集</button></td>
-            <td><button class="btn-sm btn-sm-del" onclick="removePlayerFromClub('${esc(p.pid)}')">削除</button></td>
-        </tr>`;
-    }
-    h+='</tbody></table>';
-    c.innerHTML=h;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SCREEN 5: Player Form
-// ═══════════════════════════════════════════════════════════════
-window.showAddPlayerForm=function(){ currentPlayerId=null; currentPlayerIsNew=true; document.getElementById('pf-title').textContent='選手追加画面'; ['pf-name','pf-kana'].forEach(id=>document.getElementById(id).value=''); document.getElementById('pf-gender').value=''; document.getElementById('pf-birthdate').value=''; document.getElementById('pf-class').value=''; document.getElementById('pf-class-section').style.display='block'; document.getElementById('pf-ts-section').style.display='none'; document.getElementById('pf-clubs-section').style.display='none'; showScreen('screen-player-form'); };
-window.editPlayer=function(pid){ const p=allPlayers[pid]; if(!p) return; currentPlayerId=pid; currentPlayerIsNew=false; document.getElementById('pf-title').textContent='選手編集画面'; document.getElementById('pf-name').value=p.name||''; document.getElementById('pf-kana').value=p.kana||''; document.getElementById('pf-gender').value=p.gender||''; document.getElementById('pf-birthdate').value=(p.birthdate||'').replace(/\//g,'-'); document.getElementById('pf-mu').value=(p.mu??25).toFixed(1); document.getElementById('pf-sigma').value=(p.sigma??8.33).toFixed(1); document.getElementById('pf-class-section').style.display='none'; document.getElementById('pf-ts-section').style.display='block'; document.getElementById('pf-clubs-section').style.display='block'; const cn=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid)).join(' / '); document.getElementById('pf-clubs-display').textContent=cn; showScreen('screen-player-form'); };
-window.savePlayer=async function(){
-    const name=(document.getElementById('pf-name').value||'').trim();
-    const kana=(document.getElementById('pf-kana').value||'').trim();
-    const gender=document.getElementById('pf-gender').value;
-    const bd=(document.getElementById('pf-birthdate').value||'').replace(/-/g,'/');
-    if(!name){showToast('⚠️ 氏名を入力してください');return;}
-    if(!kana){showToast('⚠️ ふりがなを入力してください');return;}
-    if(!gender){showToast('⚠️ 性別を選択してください');return;}
-    let mu,sigma;
-    if(currentPlayerIsNew){ const cls=document.getElementById('pf-class').value; if(cls==='high'){mu=32.0;sigma=8.3;}else if(cls==='mid'){mu=25.0;sigma=7.0;}else if(cls==='low'){mu=18.0;sigma=7.0;}else{mu=25.0;sigma=25/3;} }
-    else{ mu=parseFloat(document.getElementById('pf-mu').value)||25.0; sigma=parseFloat(document.getElementById('pf-sigma').value)||8.33; }
-    try{
-        if(currentPlayerIsNew){
-            const pid=genId();
-            const pd={name,kana,gender,birthdate:bd,mu,sigma,clubs:{[currentClubId]:true}};
-            await fbSet('players/'+pid,pd); allPlayers[pid]=pd;
-            await fbUpdate('clubs/'+currentClubId+'/playerIds',{[pid]:true});
-            if(!allClubs[currentClubId].playerIds) allClubs[currentClubId].playerIds={};
-            allClubs[currentClubId].playerIds[pid]=true;
-            showToast('✅ 選手を追加しました');
-        } else {
-            const upd={name,kana,gender,birthdate:bd,mu,sigma};
-            await fbUpdate('players/'+currentPlayerId,upd); Object.assign(allPlayers[currentPlayerId],upd);
-            showToast('✅ 選手情報を更新しました');
-        }
-        goBackToClubForm();
-    }catch(e){showToast('❌ '+e.message);}
-};
-window.removePlayerFromClub=function(pid){ const p=allPlayers[pid]; if(!p) return; const cn=allClubs[currentClubId]?.name||''; const other=Object.keys(p.clubs||{}).filter(c=>c!==currentClubId); const msg=other.length>0?`「${p.name}」を${cn}から削除します（他クラブには残ります）。`:`「${p.name}」を削除します。他に所属クラブがないため選手データも削除されます。`; showConfirm('⚠️ 選手削除',msg,()=>doRemovePlayer(pid,other.length>0)); };
-async function doRemovePlayer(pid,hasOther){
-    try{
-        await fbRemove('clubs/'+currentClubId+'/playerIds/'+pid);
-        if(allClubs[currentClubId]?.playerIds) delete allClubs[currentClubId].playerIds[pid];
-        if(hasOther){ await fbRemove('players/'+pid+'/clubs/'+currentClubId); if(allPlayers[pid]?.clubs) delete allPlayers[pid].clubs[currentClubId]; }
-        else{ await fbRemove('players/'+pid); delete allPlayers[pid]; }
-        renderClubPlayers(); showToast('🗑 削除しました');
-    }catch(e){showToast('❌ '+e.message);}
-}
-window.goBackToClubForm=function(){ renderClubPlayers(); showScreen('screen-club-form'); };
-
-// ═══════════════════════════════════════════════════════════════
-// SCREEN 6: Other Players
-// ═══════════════════════════════════════════════════════════════
-window.showOtherPlayersScreen=function(){
-    const myPids=Object.keys(allClubs[currentClubId]?.playerIds||{});
-    otherPlayersAll=Object.entries(allPlayers).filter(([pid])=>!myPids.includes(pid)).map(([pid,p])=>({pid,...p})).sort((a,b)=>(a.kana||a.name||'').localeCompare(b.kana||b.name||'','ja'));
-    document.getElementById('other-search').value='';
-    showScreen('screen-other-players'); renderOtherPlayers(otherPlayersAll);
-};
-window.filterOtherPlayers=function(){ const q=document.getElementById('other-search').value.toLowerCase(); renderOtherPlayers(q?otherPlayersAll.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q)):otherPlayersAll); };
-function renderOtherPlayers(list){
-    const c=document.getElementById('other-players-container');
-    if(!list.length){c.innerHTML='<div class="empty-msg">該当する選手はいません</div>';return;}
-    c.innerHTML='<div style="background:#fff;">'+list.map(p=>{
-        const cn=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid)).join(' / ');
-        return `<div class="other-player-item">
-            <div style="flex:1;">
-                <div style="font-weight:bold;">${escH(p.name)}</div>
-                <div style="font-size:12px;color:#888;">${escH(p.kana||'')} ${escH(p.gender||'')}</div>
-                <div style="font-size:12px;color:#1565c0;">所属: ${escH(cn||'—')}</div>
-            </div>
-            <button class="btn-sm btn-sm-blue" onclick="addOtherPlayer('${esc(p.pid)}')">追加</button>
-        </div>`;
-    }).join('')+'</div>';
-}
-window.addOtherPlayer=async function(pid){
-    try{
-        await fbUpdate('clubs/'+currentClubId+'/playerIds',{[pid]:true});
-        await fbUpdate('players/'+pid+'/clubs',{[currentClubId]:true});
-        if(!allClubs[currentClubId].playerIds) allClubs[currentClubId].playerIds={};
-        allClubs[currentClubId].playerIds[pid]=true;
-        if(!allPlayers[pid].clubs) allPlayers[pid].clubs={};
-        allPlayers[pid].clubs[currentClubId]=true;
-        otherPlayersAll=otherPlayersAll.filter(p=>p.pid!==pid);
-        filterOtherPlayers(); showToast('✅ 選手を追加しました');
-    }catch(e){showToast('❌ '+e.message);}
-};
 
 // ─── Init ─────────────────────────────────────────────────────
 loadEvents();
