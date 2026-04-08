@@ -80,6 +80,11 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
                 <option value="">全グループ</option>
             </select>
         </div>
+        <div style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
+            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="exportPlayers()">📤 書出（CSV）</button>
+            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="document.getElementById('import-players-input').click()">📥 読込（CSV）</button>
+            <input type="file" id="import-players-input" accept=".csv" style="display:none;" onchange="importPlayers(this)">
+        </div>
         <div id="players-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
 
@@ -87,6 +92,11 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div id="pane-clubs" style="display:none;">
         <div class="search-bar">
             <input type="text" id="c-search" placeholder="🔍 グループ名" oninput="renderClubs()">
+        </div>
+        <div style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
+            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="exportClubs()">📤 書出（CSV）</button>
+            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="document.getElementById('import-clubs-input').click()">📥 読込（CSV）</button>
+            <input type="file" id="import-clubs-input" accept=".csv" style="display:none;" onchange="importClubs(this)">
         </div>
         <div id="clubs-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
@@ -621,6 +631,159 @@ async function doDeleteClub(){
         switchTab('clubs');
     }catch(e){showToast('❌ '+e.message);}
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CSV 書出 / 読込
+// ═══════════════════════════════════════════════════════════════
+function downloadCSV(filename, rows){
+    const BOM='\uFEFF';
+    const csv=BOM+rows.map(row=>row.map(cell=>{
+        const s=String(cell??'');
+        return (s.includes(',')||s.includes('"')||s.includes('\n'))?`"${s.replace(/"/g,'""')}"`:s;
+    }).join(',')).join('\r\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+    a.download=filename; a.click();
+}
+
+function parseCSV(text){
+    const content=text.startsWith('\uFEFF')?text.slice(1):text;
+    const rows=[];
+    let row=[],cur='',inQ=false;
+    for(let i=0;i<content.length;i++){
+        const c=content[i];
+        if(inQ){ if(c==='"'&&content[i+1]==='"'){cur+='"';i++;}else if(c==='"'){inQ=false;}else{cur+=c;} }
+        else if(c==='"'){inQ=true;}
+        else if(c===','){row.push(cur);cur='';}
+        else if(c==='\r'||c==='\n'){ if(c==='\r'&&content[i+1]==='\n')i++; row.push(cur); if(row.some(v=>v!==''))rows.push(row); row=[];cur=''; }
+        else{cur+=c;}
+    }
+    if(cur!==''||row.length)row.push(cur);
+    if(row.some(v=>v!==''))rows.push(row);
+    return rows;
+}
+
+// ─── 選手 書出 ────────────────────────────────────────────────
+window.exportPlayers=function(){
+    const header=['氏名','ふりがな','性別','生年月日','μ','σ','所属グループ'];
+    const rows=[header];
+    const entries=Object.entries(allPlayers).sort((a,b)=>(a[1].kana||a[1].name||'').localeCompare(b[1].kana||b[1].name||'','ja'));
+    for(const [,p] of entries){
+        const groups=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid)).join('/');
+        rows.push([p.name||'',p.kana||'',p.gender||'',p.birthdate||'',(p.mu??25).toFixed(1),(p.sigma??8.33).toFixed(1),groups]);
+    }
+    const today=new Date(); const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    downloadCSV(`players_${ds}.csv`,rows);
+    showToast(`📤 ${rows.length-1}人の選手データを書出しました`);
+};
+
+// ─── 選手 読込 ────────────────────────────────────────────────
+window.importPlayers=async function(input){
+    const file=input.files[0]; if(!file){return;}
+    input.value='';
+    const text=await file.text();
+    const rows=parseCSV(text);
+    if(rows.length<2){showToast('⚠️ データが見つかりません');return;}
+    const header=rows[0];
+    const col=name=>header.indexOf(name);
+    const iName=col('氏名'),iKana=col('ふりがな'),iGender=col('性別'),iBirth=col('生年月日'),iMu=col('μ'),iSigma=col('σ'),iGroups=col('所属グループ');
+    if(iName<0||iKana<0){showToast('⚠️ ヘッダーが正しくありません（氏名・ふりがな が必要）');return;}
+    let added=0,updated=0,errors=0;
+    for(const row of rows.slice(1)){
+        const name=(row[iName]||'').trim();
+        const kana=(row[iKana]||'').trim();
+        if(!name||!kana){errors++;continue;}
+        const gender=iGender>=0?(row[iGender]||'').trim():'';
+        const birthdate=iBirth>=0?(row[iBirth]||'').replace(/-/g,'/').trim():'';
+        const mu=iMu>=0?parseFloat(row[iMu])||25.0:25.0;
+        const sigma=iSigma>=0?parseFloat(row[iSigma])||8.33:8.33;
+        // 所属グループ → club IDに変換
+        const groupNames=iGroups>=0?(row[iGroups]||'').split('/').map(s=>s.trim()).filter(Boolean):[];
+        const clubsMap={};
+        for(const gname of groupNames){
+            const cid=encodeURIComponent(gname);
+            if(allClubs[cid]) clubsMap[cid]=true;
+        }
+        // 同名選手を検索（氏名+ふりがな一致）
+        const existEntry=Object.entries(allPlayers).find(([,p])=>p.name===name&&p.kana===kana);
+        try{
+            if(existEntry){
+                const [pid,op]=existEntry;
+                const upd={name,kana,gender,birthdate,mu,sigma};
+                await fbUpdate('players/'+pid,upd);
+                Object.assign(allPlayers[pid],upd);
+                // グループ追加（既存は保持）
+                for(const cid of Object.keys(clubsMap)){
+                    if(!allPlayers[pid].clubs?.[cid]){
+                        await fbUpdate('players/'+pid+'/clubs',{[cid]:true});
+                        await fbUpdate('clubs/'+cid+'/playerIds',{[pid]:true});
+                        if(!allPlayers[pid].clubs)allPlayers[pid].clubs={};
+                        allPlayers[pid].clubs[cid]=true;
+                        if(!allClubs[cid].playerIds)allClubs[cid].playerIds={};
+                        allClubs[cid].playerIds[pid]=true;
+                    }
+                }
+                updated++;
+            } else {
+                const pid=genId();
+                const pd={name,kana,gender,birthdate,mu,sigma,clubs:clubsMap};
+                await fbSet('players/'+pid,pd);
+                allPlayers[pid]=pd;
+                for(const cid of Object.keys(clubsMap)){
+                    await fbUpdate('clubs/'+cid+'/playerIds',{[pid]:true});
+                    if(!allClubs[cid].playerIds)allClubs[cid].playerIds={};
+                    allClubs[cid].playerIds[pid]=true;
+                }
+                added++;
+            }
+        }catch(e){errors++;}
+    }
+    buildClubFilter(); renderPlayers();
+    showToast(`📥 追加:${added}人 更新:${updated}人${errors?` エラー:${errors}件`:''}`,4000);
+};
+
+// ─── グループ 書出 ────────────────────────────────────────────
+window.exportClubs=function(){
+    const header=['グループ名','パスワード','人数'];
+    const rows=[header];
+    const entries=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
+    for(const [,cl] of entries){
+        const cnt=Object.keys(cl.playerIds||{}).length;
+        rows.push([cl.name||'',cl.password||'',cnt]);
+    }
+    const today=new Date(); const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    downloadCSV(`groups_${ds}.csv`,rows);
+    showToast(`📤 ${rows.length-1}件のグループデータを書出しました`);
+};
+
+// ─── グループ 読込 ────────────────────────────────────────────
+window.importClubs=async function(input){
+    const file=input.files[0]; if(!file){return;}
+    input.value='';
+    const text=await file.text();
+    const rows=parseCSV(text);
+    if(rows.length<2){showToast('⚠️ データが見つかりません');return;}
+    const header=rows[0];
+    const col=name=>header.indexOf(name);
+    const iName=col('グループ名'),iPw=col('パスワード');
+    if(iName<0){showToast('⚠️ ヘッダーが正しくありません（グループ名 が必要）');return;}
+    let added=0,skipped=0,errors=0;
+    for(const row of rows.slice(1)){
+        const name=(row[iName]||'').trim();
+        const pw=iPw>=0?(row[iPw]||'').trim():'';
+        if(!name){errors++;continue;}
+        const cid=encodeURIComponent(name);
+        if(allClubs[cid]){skipped++;continue;}  // 既存はスキップ
+        try{
+            const cl={name,password:pw,playerIds:{}};
+            await fbSet('clubs/'+cid,cl);
+            allClubs[cid]=cl;
+            added++;
+        }catch(e){errors++;}
+    }
+    buildClubFilter(); renderClubs();
+    showToast(`📥 追加:${added}件 スキップ:${skipped}件${errors?` エラー:${errors}件`:''}`,4000);
+};
 
 // ═══════════════════════════════════════════════════════════════
 // Init
