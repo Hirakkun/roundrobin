@@ -65,7 +65,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div id="screen-main" class="screen active">
     <div class="hdr">
         <h1>👤 選手・グループ管理</h1>
-        <button class="back-btn" onclick="location.href='/'">🏠 試合画面へ</button>
+        <button class="back-btn" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
     </div>
     <div class="tab-bar">
         <button class="tab-btn active" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
