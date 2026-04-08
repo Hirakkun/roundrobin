@@ -112,7 +112,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <!-- ■ Screen 2: 選手登録・編集 -->
 <div id="screen-player" class="screen">
     <div class="hdr">
-        <button class="back-btn" onclick="showScreen('screen-main')">← 戻る</button>
+        <button class="back-btn" onclick="goBackFromPlayer()">← 戻る</button>
         <h1 id="pf-title">選手登録</h1>
     </div>
     <div class="form-body">
@@ -183,7 +183,24 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div id="cf-players-section" style="display:none;">
         <div class="section-hdr">所属選手</div>
         <div id="cf-players-container"></div>
+        <div class="section-actions">
+            <button class="btn btn-purple" onclick="openPlayerFormFromClub()">➕ 新規選手登録</button>
+            <button class="btn btn-dark" onclick="openPlayerPickerFromClub()">👥 既存選手を追加</button>
+        </div>
     </div>
+</div>
+
+<!-- ■ Screen 5: 既存選手選択（グループから） -->
+<div id="screen-player-picker" class="screen">
+    <div class="hdr">
+        <button class="back-btn" onclick="showScreen('screen-club')">← 戻る</button>
+        <h1>既存選手を追加</h1>
+    </div>
+    <div style="padding:10px 14px;background:#fff;border-bottom:1px solid #eee;">
+        <input type="text" id="pp-search" placeholder="🔍 氏名・ふりがな" oninput="filterPlayerPicker()"
+            style="width:100%;padding:8px 12px;border:2px solid #d1c4e9;border-radius:8px;font-size:14px;outline:none;">
+    </div>
+    <div id="player-picker-container"></div>
 </div>
 
 <!-- ■ Screen 4: グループ選択（選手の所属追加用） -->
@@ -252,6 +269,8 @@ let currentTab='players';
 let currentPlayerId=null, currentPlayerIsNew=true;
 let currentClubId=null, currentClubIsNew=true;
 let pendingPwCb=null, pendingPwExp=null, pendingConfirmCb=null;
+let playerFormContext='main'; // 'main' or 'club'
+let playerPickerAll=[];
 
 // ─── Utils ────────────────────────────────────────────────────────────
 function genId(){ return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -371,7 +390,8 @@ window.renderClubs=function(){
 // ═══════════════════════════════════════════════════════════════
 // 選手フォーム
 // ═══════════════════════════════════════════════════════════════
-window.openPlayerForm=function(pid){
+function _openPlayerForm(pid, context){
+    playerFormContext=context||'main';
     currentPlayerId=pid;
     currentPlayerIsNew=!pid;
     const isNew=currentPlayerIsNew;
@@ -396,6 +416,15 @@ window.openPlayerForm=function(pid){
         renderPlayerClubs();
     }
     showScreen('screen-player');
+}
+// 選手一覧から開く
+window.openPlayerForm=function(pid){ _openPlayerForm(pid,'main'); };
+// グループ編集画面から新規登録
+window.openPlayerFormFromClub=function(){ _openPlayerForm(null,'club'); };
+// 戻るボタン（コンテキスト対応）
+window.goBackFromPlayer=function(){
+    if(playerFormContext==='club'){ showScreen('screen-club'); renderClubMemberList(); }
+    else { showScreen('screen-main'); }
 };
 
 function renderPlayerClubs(){
@@ -461,9 +490,15 @@ window.savePlayer=async function(){
     try{
         if(currentPlayerIsNew){
             const pid=genId();
-            const pd={name,kana,gender,birthdate:bd,mu,sigma,clubs:{}};
+            const clubs=playerFormContext==='club'&&currentClubId?{[currentClubId]:true}:{};
+            const pd={name,kana,gender,birthdate:bd,mu,sigma,clubs};
             await fbSet('players/'+pid,pd);
             allPlayers[pid]=pd;
+            if(playerFormContext==='club'&&currentClubId){
+                await fbUpdate('clubs/'+currentClubId+'/playerIds',{[pid]:true});
+                if(!allClubs[currentClubId].playerIds)allClubs[currentClubId].playerIds={};
+                allClubs[currentClubId].playerIds[pid]=true;
+            }
             showToast('✅ 選手を登録しました');
         } else {
             const upd={name,kana,gender,birthdate:bd,mu,sigma};
@@ -471,8 +506,8 @@ window.savePlayer=async function(){
             Object.assign(allPlayers[currentPlayerId],upd);
             showToast('✅ 選手情報を更新しました');
         }
-        showScreen('screen-main');
-        renderPlayers();
+        if(playerFormContext==='club'){ showScreen('screen-club'); renderClubMemberList(); }
+        else { showScreen('screen-main'); renderPlayers(); }
     }catch(e){showToast('❌ '+e.message);}
 };
 
@@ -490,8 +525,8 @@ async function doDeletePlayer(){
         await fbRemove('players/'+currentPlayerId);
         delete allPlayers[currentPlayerId];
         showToast('🗑 選手を削除しました');
-        showScreen('screen-main');
-        renderPlayers();
+        if(playerFormContext==='club'){ showScreen('screen-club'); renderClubMemberList(); }
+        else { showScreen('screen-main'); renderPlayers(); }
     }catch(e){showToast('❌ '+e.message);}
 }
 
@@ -529,6 +564,50 @@ window.addClubToPlayer=async function(cid){
         showToast('✅ 所属グループに追加しました');
         showScreen('screen-player');
         renderPlayerClubs();
+    }catch(e){showToast('❌ '+e.message);}
+};
+
+// ─── 既存選手選択（グループ編集画面から）────────────────────────
+window.openPlayerPickerFromClub=function(){
+    const alreadyIds=Object.keys(allClubs[currentClubId]?.playerIds||{});
+    playerPickerAll=Object.entries(allPlayers)
+        .filter(([pid])=>!alreadyIds.includes(pid))
+        .map(([pid,p])=>({pid,...p}))
+        .sort((a,b)=>(a.kana||a.name||'').localeCompare(b.kana||b.name||'','ja'));
+    document.getElementById('pp-search').value='';
+    renderPlayerPicker(playerPickerAll);
+    showScreen('screen-player-picker');
+};
+function renderPlayerPicker(list){
+    const c=document.getElementById('player-picker-container');
+    if(!list.length){ c.innerHTML='<div class="empty-msg">追加できる選手がいません</div>'; return; }
+    c.innerHTML='<div style="background:#fff;">'+list.map(p=>{
+        const groups=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid)).join(' / ');
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #f0f0f0;">
+            <div style="flex:1;">
+                <div style="font-weight:bold;">${escH(p.name)}</div>
+                <div style="font-size:12px;color:#888;">${escH(p.kana||'')} ${escH(p.gender||'')}</div>
+                ${groups?`<div style="font-size:12px;color:#4527a0;">所属: ${escH(groups)}</div>`:''}
+            </div>
+            <button class="btn-sm btn-sm-blue" onclick="addPlayerToCurrentClub('${esc(p.pid)}')">追加</button>
+        </div>`;
+    }).join('')+'</div>';
+}
+window.filterPlayerPicker=function(){
+    const q=(document.getElementById('pp-search').value||'').toLowerCase();
+    renderPlayerPicker(q?playerPickerAll.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q)):playerPickerAll);
+};
+window.addPlayerToCurrentClub=async function(pid){
+    try{
+        await fbUpdate('clubs/'+currentClubId+'/playerIds',{[pid]:true});
+        await fbUpdate('players/'+pid+'/clubs',{[currentClubId]:true});
+        if(!allClubs[currentClubId].playerIds)allClubs[currentClubId].playerIds={};
+        allClubs[currentClubId].playerIds[pid]=true;
+        if(!allPlayers[pid].clubs)allPlayers[pid].clubs={};
+        allPlayers[pid].clubs[currentClubId]=true;
+        playerPickerAll=playerPickerAll.filter(p=>p.pid!==pid);
+        window.filterPlayerPicker();
+        showToast('✅ 選手をグループに追加しました');
     }catch(e){showToast('❌ '+e.message);}
 };
 
