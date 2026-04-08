@@ -54,6 +54,12 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: #323232; color: #fff; padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 400; transition: transform .3s, opacity .3s; opacity: 0; pointer-events: none; max-width: 90vw; text-align: center; white-space: nowrap; }
 #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.status-badge { display: inline-block; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: bold; white-space: nowrap; }
+.status-preparing { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+.status-active    { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.status-ended     { background: #f5f5f5; color: #9e9e9e; border: 1px solid #e0e0e0; }
+.btn-sm-gray { background: #bdbdbd; color: #fff; cursor: not-allowed; opacity: .7; }
+.cb-locked { accent-color: #90caf9; cursor: not-allowed; opacity: .6; }
 </style>
 </head>
 <body>
@@ -179,23 +185,40 @@ async function loadEvents(){
     renderEvents();
 }
 
+function getStatus(ev){ return ev.status||'準備中'; }
+function statusBadge(st){
+    const cls=st==='開催中'?'status-active':st==='終了'?'status-ended':'status-preparing';
+    return `<span class="status-badge ${cls}">${escH(st)}</span>`;
+}
+
 function renderEvents(){
     const c=document.getElementById('events-container');
     const entries=Object.entries(allEvents);
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 イベントがありません。新規作成してください。</div>'; return; }
     entries.sort((a,b)=>(b[1].date||'')>(a[1].date||'')?1:-1);
-    let h='<table class="data-table" style="margin-bottom:60px;"><thead><tr><th>イベント名</th><th>日付</th><th colspan="2"></th></tr></thead><tbody>';
+    let h='<table class="data-table" style="margin-bottom:60px;"><thead><tr><th>イベント名</th><th>日付</th><th>状態</th><th colspan="2"></th></tr></thead><tbody>';
     for(const [eid,ev] of entries){
         const sid=decodeURIComponent(eid);
+        const st=getStatus(ev);
+        const ended=st==='終了';
+        const grpBtn=ended
+            ? `<button class="btn-sm btn-sm-gray" disabled title="終了済みのため変更できません">参加グループ登録</button>`
+            : `<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">参加グループ登録</button>`;
         h+=`<tr style="cursor:pointer;" onclick="toggleERow('${esc(eid)}')">
             <td style="font-weight:bold;color:#1565c0;">${escH(ev.name)}</td>
             <td style="font-size:13px;white-space:nowrap;">${fmtDate(ev.date)}</td>
-            <td><button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">参加グループ登録</button></td>
+            <td>${statusBadge(st)}</td>
+            <td>${grpBtn}</td>
             <td><button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button></td>
         </tr>
         <tr id="erow-${CSS.escape(eid)}" style="display:none;">
-            <td colspan="4"><div class="event-expand-body">
+            <td colspan="5"><div class="event-expand-body">
                 <span class="event-id-badge">ID: ${escH(sid)}</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    ${st==='準備中' ? `<button class="btn btn-green" style="flex:1;" onclick="changeStatus('${esc(eid)}','開催中')">▶ 開催中にする</button>` : ''}
+                    ${st==='開催中' ? `<button class="btn btn-dark"  style="flex:1;" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
+                    ${st==='終了'   ? `<button class="btn btn-gray"  style="flex:1;" onclick="changeStatus('${esc(eid)}','準備中')">↩ 準備中に戻す</button>` : ''}
+                </div>
                 <button class="btn btn-orange" style="width:100%;text-align:left;" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー（自分用に保存）</button>
                 <button class="btn btn-dark" style="width:100%;text-align:left;" onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINEで送信）</button>
             </div></td>
@@ -204,6 +227,18 @@ function renderEvents(){
     h+='</tbody></table>';
     c.innerHTML=h;
 }
+window.changeStatus=async function(eid,newStatus){
+    const ev=allEvents[eid]||{};
+    const old=getStatus(ev);
+    const msgs={'開催中':'開催中にします。開催中は参加グループを削減できなくなります。','終了':'終了にします。以降は参加グループ登録を変更できなくなります。','準備中':'準備中に戻します。'};
+    if(!confirm(`「${ev.name}」を${newStatus}にします。\n${msgs[newStatus]||''}\nよろしいですか？`)) return;
+    try{
+        await fbUpdate('events/'+eid,{status:newStatus});
+        allEvents[eid]={...ev,status:newStatus};
+        renderEvents();
+        showToast(`✅ 状態を「${newStatus}」に変更しました`);
+    }catch(e){showToast('❌ '+e.message);}
+};
 window.toggleERow=function(eid){ const r=document.getElementById('erow-'+CSS.escape(eid)); if(r) r.style.display=r.style.display==='none'?'table-row':'none'; };
 window.copyAdminUrl=function(eid){ const ev=allEvents[eid]||{}; const sid=decodeURIComponent(eid); const token=ev.adminToken||localStorage.getItem('rr_admin:'+sid)||''; if(!token){showToast('⚠️ トークンが見つかりません');return;} copyText(`${location.origin}/#${eid}:${token}`,'🔑 管理者URLをコピーしました。大切に保存してください。'); };
 window.copyViewerUrl=function(eid){ copyText(`${location.origin}/#${eid}`,'👥 参加者URLをコピーしました。LINEで送信してください。'); };
@@ -231,7 +266,7 @@ window.submitNewEvent=async function(){
     const sameNameEntry=Object.entries(allEvents).find(([,v])=>v.name===name);
     const copiedClubs=sameNameEntry?(sameNameEntry[1].usedClubs||{}):{};
     const token=Math.random().toString(36).substr(2,8).toUpperCase();
-    const evData={name,date,courts,adminToken:token,usedClubs:copiedClubs,createdAt:new Date().toISOString()};
+    const evData={name,date,courts,adminToken:token,usedClubs:copiedClubs,status:'準備中',createdAt:new Date().toISOString()};
     try{
         await fbSet('events/'+eid,evData);
         localStorage.setItem('rr_admin:'+sid,token);
@@ -265,12 +300,21 @@ function renderClubsScreen(){
     const c=document.getElementById('clubs-container');
     const entries=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(!entries.length){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 グループ管理</a> から登録してください。</div>';return;}
+    const st=getStatus(allEvents[currentEventId]||{});
+    const isActive=st==='開催中';
+    const ev=allEvents[currentEventId]||{};
+    const origSelected=new Set(Object.keys(ev.usedClubs||{})); // 元々選択済み
     let h='<table class="data-table" style="margin-bottom:70px;"><thead><tr><th style="width:36px;">参加</th><th>グループ名</th><th>人数</th></tr></thead><tbody>';
     for(const [cid,club] of entries){
         const count=Object.keys(club.playerIds||{}).length;
+        const checked=selectedClubs.has(cid);
+        // 開催中：既存選択済みはロック（外せない）
+        const locked=isActive&&origSelected.has(cid);
+        const cbAttr=`type="checkbox" class="${locked?'cb-locked':'club-cb'}" ${checked?'checked':''} ${locked?'disabled':'onchange="toggleClub(\''+esc(cid)+'\',this.checked)"'}`;
+        const lockIcon=locked?'<span title="開催中のため外せません" style="font-size:11px;color:#90caf9;margin-left:4px;">🔒</span>':'';
         h+=`<tr>
-            <td style="text-align:center;"><input type="checkbox" class="club-cb" ${selectedClubs.has(cid)?'checked':''} onchange="toggleClub('${esc(cid)}',this.checked)"></td>
-            <td style="font-weight:bold;">${escH(club.name)}</td>
+            <td style="text-align:center;"><input ${cbAttr}></td>
+            <td style="font-weight:bold;">${escH(club.name)}${lockIcon}</td>
             <td style="color:#666;">${count}人</td>
         </tr>`;
     }
@@ -279,18 +323,34 @@ function renderClubsScreen(){
 }
 window.toggleClub=function(cid,checked){ if(checked) selectedClubs.add(cid); else selectedClubs.delete(cid); };
 window.confirmClubs=async function(){
-    const ev=allEvents[currentEventId]||{}; const courts=ev.courts||2;
+    const ev=allEvents[currentEventId]||{};
+    const courts=ev.courts||2;
+    const status=getStatus(ev);
     const usedClubsMap={}; selectedClubs.forEach(cid=>usedClubsMap[cid]=true);
     try{
         await fbUpdate('events/'+currentEventId,{usedClubs:usedClubsMap});
         allEvents[currentEventId]={...ev,usedClubs:usedClubsMap};
-        const st=buildSessionState([...selectedClubs],courts);
-        await fbSet('sessions/'+currentEventId,st);
-        showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
+
+        if(status==='開催中'){
+            // ── 開催中：既存セッションを保持したまま名簿だけ追加 ──────────
+            const curSession=await fbGet('sessions/'+currentEventId)||{};
+            const newRoster=buildRoster([...selectedClubs]);
+            // 既存 roster の pid セットで差分確認
+            const existPids=new Set((curSession.roster||[]).map(p=>p.pid));
+            const addedPlayers=newRoster.filter(p=>!existPids.has(p.pid));
+            const mergedRoster=[...(curSession.roster||[]),...addedPlayers]
+                .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
+            await fbUpdate('sessions/'+currentEventId,{roster:mergedRoster});
+            showToast(`✅ グループを更新しました（+${addedPlayers.length}人追加・試合データ保持）`);
+        } else {
+            // ── 準備中：セッションを完全リセット ──────────────────────────
+            const st=buildSessionState([...selectedClubs],courts);
+            await fbSet('sessions/'+currentEventId,st);
+            showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
+        }
     }catch(e){showToast('❌ '+e.message);}
 };
-function buildSessionState(clubIds,courts){
-    // グループメンバーを pid でユニーク化して名簿(roster)を作成
+function buildRoster(clubIds){
     const rosterMap={};
     for(const cid of clubIds){
         const club=allClubs[cid]; if(!club||!club.playerIds) continue;
@@ -298,29 +358,13 @@ function buildSessionState(clubIds,courts){
             if(!rosterMap[pid]&&allPlayers[pid]?.name) rosterMap[pid]=allPlayers[pid];
         }
     }
-    const roster=Object.entries(rosterMap)
+    return Object.entries(rosterMap)
         .map(([pid,p])=>({pid,name:p.name,kana:p.kana||'',mu:p.mu??25.0,sigma:p.sigma??(25/3)}))
         .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
-    // players は空（roundrobin.php でエントリー選択後に確定）
-    return {courts:courts||2,roundCount:0,matchingRule:'random',roster,players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()};
 }
-
-// ─── Club CRUD ────────────────────────────────────────────────
-window.showNewClubForm=function(){ currentClubId=null; currentClubIsNew=true; document.getElementById('cf-title').textContent='クラブ登録画面'; document.getElementById('cf-name').value=''; document.getElementById('cf-pw').value=''; document.getElementById('cf-name').disabled=false; document.getElementById('cf-players-section').style.display='none'; showScreen('screen-club-form'); };
-window.editClub=function(cid){ const club=allClubs[cid]; if(!club) return; requirePw(club.name,club.password,()=>{ currentClubId=cid; currentClubIsNew=false; document.getElementById('cf-title').textContent='クラブ編集画面'; document.getElementById('cf-name').value=club.name; document.getElementById('cf-name').disabled=true; document.getElementById('cf-pw').value=club.password; document.getElementById('cf-players-section').style.display='block'; renderClubPlayers(); showScreen('screen-club-form'); }); };
-window.deleteClubWithPw=function(cid){ const club=allClubs[cid]; if(!club) return; requirePw(club.name,club.password,()=>showConfirm('⚠️ クラブ削除',`「${club.name}」を削除しますか？\nこのクラブのみ所属の選手も削除されます。`,()=>deleteClub(cid))); };
-async function deleteClub(cid){
-    const club=allClubs[cid]; if(!club) return;
-    try{
-        for(const pid of Object.keys(club.playerIds||{})){
-            const p=allPlayers[pid]; if(!p) continue;
-            const other=Object.keys(p.clubs||{}).filter(c=>c!==cid);
-            if(!other.length){ await fbRemove('players/'+pid); delete allPlayers[pid]; }
-            else{ await fbRemove('players/'+pid+'/clubs/'+cid); if(allPlayers[pid]) delete allPlayers[pid].clubs[cid]; }
-        }
-        await fbRemove('clubs/'+cid); delete allClubs[cid]; selectedClubs.delete(cid);
-        renderClubsScreen(); showToast('🗑 クラブを削除しました');
-    }catch(e){showToast('❌ '+e.message);}
+function buildSessionState(clubIds,courts){
+    const roster=buildRoster(clubIds);
+    return {courts:courts||2,roundCount:0,matchingRule:'random',roster,players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()};
 }
 
 // ─── Init ─────────────────────────────────────────────────────
