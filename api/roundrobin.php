@@ -203,17 +203,16 @@ body.viewer-mode #initialSetup { display: none !important; }
 
     <!-- 初期設定エリア -->
     <div id="initialSetup">
-        <!-- 名簿モード：グループ参加者からエントリー選択（admin only） -->
-        <div id="rosterMode" style="display:none;" class="setup-card admin-only">
-            <div class="setup-label">📋 参加者を名簿から選択</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-                <button type="button" class="counter-btn" style="font-size:13px;padding:6px 14px;" onclick="rosterSelectAll(true)">全選択</button>
-                <button type="button" class="counter-btn" style="font-size:13px;padding:6px 14px;" onclick="rosterSelectAll(false)">全解除</button>
-                <span id="entry-count-label" style="font-size:13px;color:#555;margin-left:auto;font-weight:bold;"></span>
+        <!-- 参加者登録（名簿あり・管理者のみ） -->
+        <div id="entryListCard" class="setup-card admin-only" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                <div class="setup-label" style="margin:0;">👥 参加者登録</div>
+                <span id="entry-count-label" style="font-size:13px;color:#555;font-weight:bold;"></span>
             </div>
-            <div id="rosterCheckList" style="max-height:40vh;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;"></div>
+            <div id="entryList"></div>
+            <button type="button" class="player-add-btn" style="margin-top:8px;" onclick="addEntryPlayer()">＋ 参加者を追加</button>
         </div>
-        <!-- 手動モード：参加人数カウンター -->
+        <!-- 手動モード：参加人数カウンター（名簿なし） -->
         <div id="manualMode">
         <div class="setup-card">
             <div class="setup-label">👤 参加人数</div>
@@ -247,7 +246,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                 </button>
             </div>
         </div>
-        <button class="start-btn" onclick="initTournament()">▶ 試合開始</button>
+        <button class="start-btn" onclick="initTournament()">▶ イベントを開始</button>
     </div>
 
     <!-- 参加者・途中変更エリア（試合開始後に表示） -->
@@ -442,13 +441,13 @@ function initTournament() {
         updateSyncStatus('🟡 接続中...', '#e65100');
     }
 
-    // 名簿モード（roster あり・players 未確定）の場合はエントリー選択を処理
-    const isRosterMode = Array.isArray(state.roster) && state.roster.length > 0;
+    // エントリーモード（名簿あり）か手動モードか判定
+    const isEntryMode = document.getElementById('entryListCard').style.display !== 'none';
     const hasPreloaded = _sessionId && Array.isArray(state.players) && state.players.length > 0;
 
-    if (isRosterMode && !hasPreloaded) {
-        // チェックされた名簿選手をエントリー（players）として確定
-        if (!applyRosterEntry()) return;
+    if (isEntryMode) {
+        // 1名ずつ追加したエントリーリストからstateを構築
+        if (!applyEntryPlayers()) return;
     } else if (hasPreloaded) {
         // ラウンド・試合データのみリセット（選手・名前・レーティングは維持）
         state.roundCount = 0;
@@ -484,6 +483,11 @@ function initTournament() {
         Object.assign(state.playerNames, savedNames);
     }
 
+    // Firebaseのイベント状態を「開催中」に変更
+    if (_sessionId && window._fbSetEventStatus) {
+        window._fbSetEventStatus(_sessionId, '開催中');
+    }
+
     saveState();
     showLiveSetup();
     enableTabs();
@@ -501,48 +505,87 @@ function showLiveSetup() {
 }
 
 // =====================================================================
-// 名簿（roster）エントリー選択
+// 参加者エントリー（1名ずつ追加方式）
 // =====================================================================
-function showRosterEntry() {
-    document.getElementById('rosterMode').style.display = isAdmin ? 'block' : 'none';
+let entryPlayers = []; // 確定した参加者 [{pid,name,kana,mu,sigma,...}]
+
+function showEntryMode() {
+    if (!isAdmin) return;
+    document.getElementById('entryListCard').style.display = 'block';
     document.getElementById('manualMode').style.display = 'none';
-    renderRosterCheckList();
+    entryPlayers = [];
+    renderEntryList();
 }
 
-function renderRosterCheckList() {
-    const list = state.roster || [];
-    const c = document.getElementById('rosterCheckList');
-    if (!c) return;
-    if (!list.length) { c.innerHTML = '<div style="padding:14px;text-align:center;color:#aaa;">名簿が空です</div>'; return; }
-    const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    c.innerHTML = list.map((p, i) => `
-        <label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;background:#fff;">
-            <input type="checkbox" class="roster-cb" data-idx="${i}" checked
-                style="width:20px;height:20px;accent-color:#1565c0;flex-shrink:0;" onchange="updateEntryCount()">
-            <div>
-                <div style="font-weight:bold;">${esc(p.name)}</div>
-                <div style="font-size:12px;color:#888;">${esc(p.kana||'')}${p.mu!=null?' &nbsp;μ='+Number(p.mu).toFixed(1):''}</div>
-            </div>
-        </label>`).join('');
-    updateEntryCount();
+function _esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function getUnusedRoster() {
+    const used = new Set(entryPlayers.map(p => p.pid));
+    return (state.roster || []).filter(p => !used.has(p.pid));
 }
 
-function updateEntryCount() {
-    const n = document.querySelectorAll('.roster-cb:checked').length;
-    const el = document.getElementById('entry-count-label');
-    if (el) el.textContent = n + '人選択中';
+function addEntryPlayer() {
+    const unused = getUnusedRoster();
+    if (!unused.length) { showToast('名簿の全員が登録済みです'); return; }
+    const list = document.getElementById('entryList');
+    const row = document.createElement('div');
+    row.className = 'entry-pending-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;';
+    const opts = `<option value="">--- 選択してください ---</option>` +
+        unused.map(p => `<option value="${_esc(p.pid)}">${_esc(p.name)}${p.kana?' ('+_esc(p.kana)+')':''}</option>`).join('');
+    row.innerHTML = `
+        <select style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:14px;">${opts}</select>
+        <button type="button" onclick="confirmEntryRow(this)"
+            style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:13px;white-space:nowrap;">✓ 決定</button>
+        <button type="button" onclick="this.closest('.entry-pending-row').remove()"
+            style="padding:8px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:14px;">×</button>`;
+    list.appendChild(row);
 }
 
-window.rosterSelectAll = function(val) {
-    document.querySelectorAll('.roster-cb').forEach(cb => cb.checked = val);
-    updateEntryCount();
+function confirmEntryRow(btn) {
+    const row = btn.closest('.entry-pending-row');
+    const sel = row.querySelector('select');
+    const pid = sel.value;
+    if (!pid) { showToast('選手を選択してください'); return; }
+    if (entryPlayers.find(p => p.pid === pid)) { showToast('すでに追加されています'); return; }
+    const rp = (state.roster || []).find(p => p.pid === pid);
+    if (!rp) return;
+    entryPlayers.push(rp);
+    row.remove();
+    renderEntryList();
+}
+
+window.removeConfirmedEntry = function(pid) {
+    entryPlayers = entryPlayers.filter(p => p.pid !== pid);
+    renderEntryList();
 };
 
-// チェックされた名簿選手を state.players / playerNames / tsMap に変換して返す
-function applyRosterEntry() {
-    const checked = Array.from(document.querySelectorAll('.roster-cb:checked'));
-    if (!checked.length) { alert('参加者を1人以上選択してください'); return false; }
-    const selected = checked.map(cb => (state.roster || [])[parseInt(cb.dataset.idx)]).filter(Boolean);
+function renderEntryList() {
+    const list = document.getElementById('entryList');
+    if (!list) return;
+    list.querySelectorAll('.entry-confirmed-row').forEach(r => r.remove());
+    const frag = document.createDocumentFragment();
+    entryPlayers.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'entry-confirmed-row';
+        div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0f0f0;';
+        div.innerHTML = `
+            <div style="flex:1;">
+                <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}</div>
+                <div style="font-size:11px;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
+            </div>
+            <button type="button" onclick="removeConfirmedEntry('${_esc(p.pid)}')"
+                style="padding:5px 12px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;white-space:nowrap;">削除</button>`;
+        frag.appendChild(div);
+    });
+    list.insertBefore(frag, list.firstChild);
+    const lbl = document.getElementById('entry-count-label');
+    if (lbl) lbl.textContent = entryPlayers.length + '人登録中';
+}
+
+// entryPlayersをstateに反映（initTournamentから呼ぶ）
+function applyEntryPlayers() {
+    if (!entryPlayers.length) { alert('参加者を1人以上追加してください'); return false; }
     state.players     = [];
     state.playerNames = {};
     state.tsMap       = {};
@@ -553,7 +596,7 @@ function applyRosterEntry() {
     state.scores      = {};
     state.courts      = setupCourts;
     state.matchingRule = matchingRule;
-    selected.forEach((p, i) => {
+    entryPlayers.forEach((p, i) => {
         const id = i + 1;
         state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
@@ -617,11 +660,11 @@ function _resetUI() {
     document.getElementById('matchContainer').innerHTML = '';
     document.getElementById('rankBody').innerHTML = '';
     showStep('step-setup', document.getElementById('btn-setup'));
-    // 名簿が残っている場合は名簿モードを再表示
+    // 名簿が残っている場合はエントリーモードを再表示
     if (Array.isArray(state.roster) && state.roster.length > 0) {
-        showRosterEntry();
+        showEntryMode();
     } else {
-        document.getElementById('rosterMode').style.display = 'none';
+        document.getElementById('entryListCard').style.display = 'none';
         document.getElementById('manualMode').style.display = 'block';
     }
 }
@@ -2074,7 +2117,7 @@ window._fbApply = function(remoteState) {
             document.getElementById('disp-courts').textContent = setupCourts;
             document.getElementById('disp-courts-live').textContent = setupCourts;
             if (isAdmin) {
-                showRosterEntry();
+                showEntryMode();
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else {
                 document.getElementById('btn-match').classList.add('disabled');
@@ -2277,7 +2320,7 @@ window.onload = function () {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, off, query, orderByKey, startAt, endAt, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+import { getDatabase, ref, set, update, onValue, off, query, orderByKey, startAt, endAt, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCsCHB2NaoRG5Q_D4u8VqeUghufZDTHTUE",
@@ -2320,6 +2363,12 @@ window._fbStart = function(sessionId) {
 window._fbPush = function(data) {
     if (!_ref) return;
     set(_ref, { ...data, _cid: CLIENT_ID });
+};
+
+window._fbSetEventStatus = async function(sessionId, status) {
+    try {
+        await update(ref(db, 'events/' + encodeURIComponent(sessionId)), { status });
+    } catch(e) { console.error('イベント状態更新失敗:', e); }
 };
 
 // 前方一致＋期間フィルタでセッションを取得
