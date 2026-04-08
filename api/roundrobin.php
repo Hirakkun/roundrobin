@@ -344,23 +344,10 @@ body.viewer-mode #initialSetup { display: none !important; }
     </div>
 </div>
 
-<!-- 名簿(非表示) -->
-<div id="roster" class="panel">
-    <div class="panel-title">📋 名簿</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <button onclick="addRoster()" style="flex:1;font-size:18px;padding:10px;background:#546e7a;color:#fff;border-radius:8px;border:none;cursor:pointer;">＋ 追加</button>
-        <button onclick="toggleRosterEdit()" id="rosterEditBtn" style="font-size:15px;padding:10px 14px;background:#546e7a;color:#fff;border-radius:8px;border:none;white-space:nowrap;cursor:pointer;">✏️ 編集</button>
-    </div>
-    <table id="rosterTable">
-        <colgroup><col class="r-name"><col class="r-age"><col class="r-gender"><col class="r-del"></colgroup>
-        <thead><tr><th>氏名</th><th>年齢</th><th>性別</th><th>消</th></tr></thead>
-        <tbody id="rosterBody"></tbody>
-    </table>
-</div>
 
 <script>
 // =====================================================================
-// 試合状態 (全てメモリ管理、localStorageへ随時保存)
+// 試合状態 (メモリ管理・Firebase同期、rr_state_v2はページ復元用キャッシュ)
 // =====================================================================
 let state = {
     courts: 2,
@@ -479,8 +466,6 @@ function initTournament() {
         state.playerNames  = {};
         state.createdAt    = new Date().toISOString();
         for (let i = 1; i <= setupPlayers; i++) { addPlayerToState(i, false); }
-        const savedNames = JSON.parse(localStorage.getItem('rr_names') || '{}');
-        Object.assign(state.playerNames, savedNames);
     }
 
     // Firebaseのイベント状態を「開催中」に変更
@@ -748,7 +733,6 @@ function renderPlayerList() {
 
 function setPlayerName(id, name) {
     state.playerNames[id] = name || ('選手' + id);
-    localStorage.setItem('rr_names', JSON.stringify(state.playerNames));
     updateMatchNames();
     saveState();
 }
@@ -914,7 +898,6 @@ function getCourtName(ci) {
 }
 function updateCourtNames() {
     const checked = document.getElementById('courtNameToggle')?.checked;
-    localStorage.setItem('court_name_alpha', checked ? '1' : '0');
     state.courtNameAlpha = !!checked;
     saveState();
     renderMatchContainer();
@@ -922,10 +905,7 @@ function updateCourtNames() {
 function loadCourtNameSetting() {
     const toggle = document.getElementById('courtNameToggle');
     if (!toggle) return;
-    // stateに値があればそちらを優先、なければlocalStorageから
-    const useAlpha = state.courtNameAlpha || localStorage.getItem('court_name_alpha') === '1';
-    toggle.checked = useAlpha;
-    state.courtNameAlpha = useAlpha;
+    toggle.checked = !!state.courtNameAlpha;
     // 選手番号表示の復元
     showPlayerNum = !!state.showPlayerNum;
     const numToggle = document.getElementById('playerNumToggle');
@@ -1822,62 +1802,6 @@ async function calcPeriodStats() {
     }
 }
 
-let rosterEditMode = false;
-
-function toggleRosterEdit() {
-    rosterEditMode = !rosterEditMode;
-    const btn = document.getElementById('rosterEditBtn');
-    btn.textContent = rosterEditMode ? '👁 表示' : '✏️ 編集';
-    btn.style.background = rosterEditMode ? '#17a2b8' : '#546e7a';
-    renderRoster();
-}
-
-function saveRoster() {
-    const data = [];
-    document.querySelectorAll('#rosterBody tr').forEach(tr => {
-        const nameEl = tr.querySelector('.r_name');
-        const ageEl = tr.querySelector('.r_age');
-        const genderEl = tr.querySelector('.r_gender');
-        data.push({
-            name: nameEl ? nameEl.value : tr.dataset.name,
-            age: ageEl ? ageEl.value : tr.dataset.age,
-            gender: genderEl ? genderEl.value : tr.dataset.gender,
-        });
-    });
-    localStorage.setItem('tournament_roster', JSON.stringify(data));
-    renderPlayerList();
-}
-
-function renderRoster() {
-    document.getElementById('rosterBody').innerHTML = '';
-    const data = JSON.parse(localStorage.getItem('tournament_roster') || '[]');
-    data.forEach(d => addRosterRow(d));
-}
-
-function addRoster(d = { name: '', age: '', gender: '' }) {
-    const data = JSON.parse(localStorage.getItem('tournament_roster') || '[]');
-    data.push(d);
-    localStorage.setItem('tournament_roster', JSON.stringify(data));
-    renderRoster();
-}
-
-function addRosterRow(d) {
-    const tr = document.createElement('tr');
-    tr.dataset.name = d.name || '';
-    tr.dataset.age = d.age || '';
-    tr.dataset.gender = d.gender || '';
-
-    if (rosterEditMode) {
-        const gSel = `<select class="r_gender"><option value="">－</option><option value="M"${d.gender==='M'?' selected':''}>男</option><option value="F"${d.gender==='F'?' selected':''}>女</option></select>`;
-        tr.innerHTML = `<td><input class="r_name" value="${d.name||''}" placeholder="氏名"></td><td><input type="number" class="r_age" value="${d.age||''}" placeholder="任意"></td><td>${gSel}</td><td><button class="del-btn" onclick="this.closest('tr').remove();saveRoster()">×</button></td>`;
-        tr.querySelectorAll('input,select').forEach(i => i.onchange = saveRoster);
-    } else {
-        const ageText = d.age ? d.age : '－';
-        const gLabel = d.gender === 'M' ? '<span class="gender-badge M">男</span>' : d.gender === 'F' ? '<span class="gender-badge F">女</span>' : '－';
-        tr.innerHTML = `<td style="font-size:18px;font-weight:bold;padding:6px 4px;">${d.name||'（未入力）'}</td><td><span class="age-blur" onclick="this.classList.toggle('revealed')">${ageText}</span></td><td>${gLabel}</td><td><button class="del-btn" onclick="this.closest('tr').remove();saveRoster()">×</button></td>`;
-    }
-    document.getElementById('rosterBody').appendChild(tr);
-}
 
 // =====================================================================
 // クラウド同期・管理者/閲覧者モード
@@ -2154,67 +2078,6 @@ window._fbApply = function(remoteState) {
     }
 };
 
-// =====================================================================
-// 書出・読込
-// =====================================================================
-function exportData() {
-    const payload = {
-        version: 'rr_v2',
-        exportedAt: new Date().toISOString(),
-        state: state,
-        roster: JSON.parse(localStorage.getItem('tournament_roster') || '[]'),
-        courtNameAlpha: localStorage.getItem('court_name_alpha') || '0',
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const now = new Date();
-    const tag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-    a.href = url;
-    a.download = `roundrobin_${tag}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const payload = JSON.parse(e.target.result);
-            if (!payload.version || !payload.state) {
-                alert('このファイルは対応していない形式です。');
-                return;
-            }
-            if (!confirm('現在のデータを上書きして読み込みますか？')) return;
-            Object.assign(state, payload.state);
-            if (payload.roster) localStorage.setItem('tournament_roster', JSON.stringify(payload.roster));
-            if (payload.courtNameAlpha) localStorage.setItem('court_name_alpha', payload.courtNameAlpha);
-            saveState();
-            // 画面を復元
-            loadCourtNameSetting();
-            if (state.roundCount > 0) {
-                document.getElementById('btn-match').classList.remove('disabled');
-                document.getElementById('btn-rank').classList.remove('disabled');
-                document.getElementById('disp-players').textContent = state.players.length;
-                document.getElementById('disp-courts').textContent = state.courts;
-                document.getElementById('disp-courts-live').textContent = state.courts;
-                setupPlayers = state.players.length;
-                setupCourts  = state.courts;
-                showLiveSetup();
-                renderMatchContainer();
-                renderPlayerList();
-            }
-            renderRoster();
-            alert('✅ データを読み込みました');
-        } catch(err) {
-            alert('❌ ファイルの読み込みに失敗しました: ' + err.message);
-        }
-        event.target.value = '';
-    };
-    reader.readAsText(file);
-}
 
 // =====================================================================
 // 状態の保存・復元
