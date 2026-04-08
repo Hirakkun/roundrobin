@@ -351,7 +351,7 @@ window.renderClubs=function(){
         h+=`<tr>
             <td style="font-weight:bold;">${escH(cl.name||'')}</td>
             <td style="color:#666;">${cnt}人</td>
-            <td><button class="btn-sm btn-sm-edit" onclick="openClubFormWithPw('${esc(cid)}')">編集</button></td>
+            <td><button class="btn-sm btn-sm-edit" onclick="openClubForm('${esc(cid)}')">編集</button></td>
         </tr>`;
     }
     h+='</tbody></table>';
