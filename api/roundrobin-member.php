@@ -537,7 +537,7 @@ window.openClubForm=function(cid){
         document.getElementById('cf-name').value='';
         document.getElementById('cf-pw').value='';
     } else {
-        const cl=allClubs[cid]; if(!cl) return;
+        const cl=allClubs[cid]||{};
         document.getElementById('cf-name').value=cl.name||'';
         document.getElementById('cf-pw').value=cl.password||'';
         renderClubMemberList();
