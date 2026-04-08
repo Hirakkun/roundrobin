@@ -252,15 +252,15 @@ body.viewer-mode #initialSetup { display: none !important; }
 
     <!-- 参加者・途中変更エリア（試合開始後に表示） -->
     <div id="liveSetup" style="display:none;">
-        <div style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
+        <div class="admin-only" style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
             名前の割り当て・休憩・コート数の変更は次の試合から反映されます。
         </div>
-        <div class="court-change-row admin-only">
-            <div class="setup-label">🏸 次の試合からのコート数</div>
+        <div class="court-change-row">
+            <div class="setup-label">🏸 コート数</div>
             <div class="counter-row">
-                <button type="button" class="counter-btn" onclick="changeCourts(-1)">－</button>
+                <button type="button" class="counter-btn admin-only" onclick="changeCourts(-1)">－</button>
                 <div class="counter-val" id="disp-courts-live">2</div>
-                <button type="button" class="counter-btn" onclick="changeCourts(+1)">＋</button>
+                <button type="button" class="counter-btn admin-only" onclick="changeCourts(+1)">＋</button>
             </div>
         </div>
         <div id="playerList" class="player-list"></div>
