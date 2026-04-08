@@ -2042,6 +2042,16 @@ window._fbApply = function(remoteState) {
     if (isApplyingRemote) return;
     isApplyingRemote = true;
     try {
+        // Firebase は空配列/空オブジェクトを null として保存するため、
+        // 受信データで null になっているものを適切な空値に戻す
+        if (!Array.isArray(remoteState.players))    remoteState.players    = [];
+        if (!Array.isArray(remoteState.roster))     remoteState.roster     = [];
+        if (!Array.isArray(remoteState.schedule))   remoteState.schedule   = [];
+        if (!remoteState.pairMatrix  || typeof remoteState.pairMatrix  !== 'object') remoteState.pairMatrix  = {};
+        if (!remoteState.oppMatrix   || typeof remoteState.oppMatrix   !== 'object') remoteState.oppMatrix   = {};
+        if (!remoteState.tsMap       || typeof remoteState.tsMap       !== 'object') remoteState.tsMap       = {};
+        if (!remoteState.scores      || typeof remoteState.scores      !== 'object') remoteState.scores      = {};
+        if (!remoteState.playerNames || typeof remoteState.playerNames !== 'object') remoteState.playerNames = {};
         Object.assign(state, remoteState);
         localStorage.setItem('rr_state_v2', JSON.stringify(state));
         // コート名トグルを同期
