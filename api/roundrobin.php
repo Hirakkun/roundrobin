@@ -181,6 +181,10 @@ body.viewer-mode #initialSetup { display: none !important; }
     </button>
 </div>
 
+<!-- 内部状態保持用（非表示） -->
+<input type="hidden" id="sessionIdInput">
+<div id="sessionUrlBtns" style="display:none;"></div>
+
 <!-- STEP1: 設定＋参加者統合 -->
 <div id="step-setup" class="panel active">
     <div class="panel-title">
