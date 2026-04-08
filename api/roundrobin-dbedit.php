@@ -43,6 +43,32 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 }
 #statusDot { font-size: 16px; }
 
+/* タブ切り替え */
+.tab-bar {
+    background: #fff;
+    padding: 0 14px;
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #e0e0e0;
+}
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #888;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color .15s, border-color .15s;
+}
+.tab-btn.active {
+    color: #1a237e;
+    border-bottom-color: #1a237e;
+}
+.tab-btn:hover:not(.active) { color: #555; }
+
 /* ツールバー */
 .toolbar {
     background: #fff;
@@ -213,6 +239,89 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     margin-top: 6px;
 }
 
+/* イベント一覧 */
+#eventSection {
+    padding: 10px 12px;
+}
+.event-card {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.08);
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+.event-card-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+.event-card-header:hover { background: #f5f5f5; }
+.event-name-badge {
+    font-size: 15px;
+    font-weight: bold;
+    color: #4a148c;
+    background: #f3e5f5;
+    border-radius: 6px;
+    padding: 3px 10px;
+    letter-spacing: .5px;
+}
+.event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 12px;
+    color: #666;
+    flex: 1;
+}
+.event-meta span { white-space: nowrap; }
+.status-badge {
+    display: inline-block;
+    border-radius: 10px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.status-preparing { background: #fff9c4; color: #f57f17; }
+.status-open      { background: #c8e6c9; color: #1b5e20; }
+.status-closed    { background: #ffcdd2; color: #b71c1c; }
+.event-detail {
+    display: none;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 14px;
+    background: #fafafa;
+}
+.event-card.open .event-detail { display: block; }
+.event-card.open .expand-btn { transform: rotate(180deg); }
+.token-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.token-hidden {
+    font-family: monospace;
+    background: #e0e0e0;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #999;
+    cursor: pointer;
+    user-select: none;
+}
+.token-visible {
+    font-family: monospace;
+    background: #fffde7;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #333;
+    word-break: break-all;
+}
+
 /* 空状態・読込中 */
 .empty-state {
     text-align: center;
@@ -300,9 +409,9 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div class="header">
     <div>
         <h1>🗄️ Firebase DB エディタ</h1>
-        <div class="sub">roundrobin セッションデータ管理</div>
+        <div class="sub">roundrobin セッション / イベント管理</div>
     </div>
-    <button class="btn btn-primary" onclick="loadSessions()" id="reloadBtn">🔄 再読込</button>
+    <button class="btn btn-primary" onclick="loadAll()" id="reloadBtn">🔄 再読込</button>
 </div>
 
 <div id="statusBar">
@@ -310,27 +419,43 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <span id="statusText">接続中...</span>
 </div>
 
-<div class="toolbar">
-    <input type="text" id="filterInput" placeholder="🔍 IDで絞込（前方一致）" oninput="applyFilter()" />
-    <input type="date" id="filterDate1" oninput="applyFilter()" title="作成日：以降">
-    <span style="font-size:12px;color:#999;">〜</span>
-    <input type="date" id="filterDate2" oninput="applyFilter()" title="作成日：以前">
-    <button class="btn btn-gray" onclick="clearFilter()">✕ クリア</button>
+<!-- タブ切り替え -->
+<div class="tab-bar">
+    <button class="tab-btn active" id="tabEvents"   onclick="switchTab('events')">📅 イベント</button>
+    <button class="tab-btn"        id="tabSessions" onclick="switchTab('sessions')">🎾 セッション</button>
 </div>
 
-<div class="count-bar">
-    <span id="totalCount">0 件</span>
-    <span>｜</span>
-    <span>選択: <span id="selCount">0</span> 件</span>
-    <span style="flex:1;"></span>
-    <button class="btn btn-gray" style="font-size:12px;padding:5px 12px;" onclick="selectAll()">全選択</button>
-    <button class="btn btn-gray" style="font-size:12px;padding:5px 12px;" onclick="deselectAll()">全解除</button>
-    <button class="btn btn-danger" style="font-size:12px;padding:5px 12px;" id="deleteBtn" disabled onclick="confirmDelete()">🗑 選択削除</button>
+<!-- イベントセクション -->
+<div id="eventSectionWrap">
+    <div id="eventSection">
+        <div class="empty-state"><span class="loading-spinner"></span> Firebase からデータを読込中...</div>
+    </div>
 </div>
 
-<div id="sessionList">
-    <div class="empty-state">
-        <span class="loading-spinner"></span> Firebase からデータを読込中...
+<!-- セッションセクション -->
+<div id="sessionSectionWrap" style="display:none;">
+    <div class="toolbar">
+        <input type="text" id="filterInput" placeholder="🔍 IDで絞込（前方一致）" oninput="applyFilter()" />
+        <input type="date" id="filterDate1" oninput="applyFilter()" title="作成日：以降">
+        <span style="font-size:12px;color:#999;">〜</span>
+        <input type="date" id="filterDate2" oninput="applyFilter()" title="作成日：以前">
+        <button class="btn btn-gray" onclick="clearFilter()">✕ クリア</button>
+    </div>
+
+    <div class="count-bar">
+        <span id="totalCount">0 件</span>
+        <span>｜</span>
+        <span>選択: <span id="selCount">0</span> 件</span>
+        <span style="flex:1;"></span>
+        <button class="btn btn-gray" style="font-size:12px;padding:5px 12px;" onclick="selectAll()">全選択</button>
+        <button class="btn btn-gray" style="font-size:12px;padding:5px 12px;" onclick="deselectAll()">全解除</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:5px 12px;" id="deleteBtn" disabled onclick="confirmDelete()">🗑 選択削除</button>
+    </div>
+
+    <div id="sessionList">
+        <div class="empty-state">
+            <span class="loading-spinner"></span> Firebase からデータを読込中...
+        </div>
     </div>
 </div>
 
@@ -338,7 +463,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <h2>⚠️ 削除の確認</h2>
-        <p>以下のセッションデータを <strong>完全に削除</strong> します。<br>この操作は元に戻せません。</p>
+        <p id="modalDesc">以下のセッションデータを <strong>完全に削除</strong> します。<br>この操作は元に戻せません。</p>
         <div class="modal-ids" id="modalIds"></div>
         <p style="color:#c62828;font-weight:bold;">本当に削除しますか？</p>
         <div class="modal-btns">
@@ -370,8 +495,22 @@ const db  = getDatabase(app);
 
 // ─── グローバルデータ ───────────────────────────────────────────
 let allSessions  = []; // { fbKey, sid, data }
+let allEvents    = []; // { fbKey, eid, data }
 let filteredKeys = new Set();
 let selectedKeys = new Set();
+
+// 削除対象種別（'session' or 'event'）
+let deleteMode = 'session';
+let pendingEventKey = null; // イベント単体削除用
+
+// ─── タブ切り替え ───────────────────────────────────────────────
+window.switchTab = function(tab) {
+    const isEvents = tab === 'events';
+    document.getElementById('eventSectionWrap').style.display   = isEvents ? '' : 'none';
+    document.getElementById('sessionSectionWrap').style.display = isEvents ? 'none' : '';
+    document.getElementById('tabEvents').classList.toggle('active',   isEvents);
+    document.getElementById('tabSessions').classList.toggle('active', !isEvents);
+};
 
 // ─── ステータス更新 ─────────────────────────────────────────────
 function setStatus(dot, text, color) {
@@ -380,42 +519,74 @@ function setStatus(dot, text, color) {
     document.getElementById('statusText').style.color = color || '#888';
 }
 
-// ─── セッション読込 ─────────────────────────────────────────────
-window.loadSessions = async function() {
+// ─── 全データ読込 ───────────────────────────────────────────────
+window.loadAll = async function() {
     setStatus('🟡', '読込中...', '#e65100');
     document.getElementById('reloadBtn').disabled = true;
     document.getElementById('sessionList').innerHTML =
+        '<div class="empty-state"><span class="loading-spinner"></span> Firebase からデータを読込中...</div>';
+    document.getElementById('eventSection').innerHTML =
         '<div class="empty-state"><span class="loading-spinner"></span> Firebase からデータを読込中...</div>';
     selectedKeys.clear();
     updateSelCount();
 
     try {
-        const snap = await get(ref(db, 'sessions'));
+        const [sessSnap, evSnap] = await Promise.all([
+            get(ref(db, 'sessions')),
+            get(ref(db, 'events'))
+        ]);
+
+        // ── セッション ──
         allSessions = [];
-        if (snap.exists()) {
-            snap.forEach(child => {
+        if (sessSnap.exists()) {
+            sessSnap.forEach(child => {
                 const fbKey = child.key;
                 let sid = fbKey;
                 try { sid = decodeURIComponent(fbKey); } catch(e) {}
                 allSessions.push({ fbKey, sid, data: child.val() });
             });
         }
-        // 作成日の新しい順に並べる
         allSessions.sort((a, b) => {
             const da = a.data?.createdAt || '';
             const db_ = b.data?.createdAt || '';
             return db_ > da ? 1 : db_ < da ? -1 : 0;
         });
-        setStatus('🟢', `${allSessions.length} 件のセッションを取得`, '#2e7d32');
+
+        // ── イベント ──
+        allEvents = [];
+        if (evSnap.exists()) {
+            evSnap.forEach(child => {
+                const fbKey = child.key;
+                let eid = fbKey;
+                try { eid = decodeURIComponent(fbKey); } catch(e) {}
+                allEvents.push({ fbKey, eid, data: child.val() });
+            });
+        }
+        allEvents.sort((a, b) => {
+            const da = a.data?.date || '';
+            const db_ = b.data?.date || '';
+            return db_ > da ? 1 : db_ < da ? -1 : 0;
+        });
+
+        setStatus('🟢',
+            `セッション ${allSessions.length} 件 ／ イベント ${allEvents.length} 件 を取得`,
+            '#2e7d32');
+
         applyFilter();
+        renderEvents();
     } catch(err) {
         setStatus('🔴', 'エラー: ' + err.message, '#c62828');
         document.getElementById('sessionList').innerHTML =
+            `<div class="empty-state" style="color:#c62828;">❌ 読込失敗：${err.message}</div>`;
+        document.getElementById('eventSection').innerHTML =
             `<div class="empty-state" style="color:#c62828;">❌ 読込失敗：${err.message}</div>`;
     } finally {
         document.getElementById('reloadBtn').disabled = false;
     }
 };
+
+// 後方互換 alias
+window.loadSessions = window.loadAll;
 
 // ─── フィルタ適用 ───────────────────────────────────────────────
 window.applyFilter = function() {
@@ -435,7 +606,6 @@ window.applyFilter = function() {
     });
 
     filteredKeys = new Set(filtered.map(s => s.fbKey));
-    // 絞込外のものを選択解除
     for (const k of [...selectedKeys]) {
         if (!filteredKeys.has(k)) selectedKeys.delete(k);
     }
@@ -452,7 +622,7 @@ window.clearFilter = function() {
     applyFilter();
 };
 
-// ─── リスト描画 ─────────────────────────────────────────────────
+// ─── セッションリスト描画 ────────────────────────────────────────
 function renderList(sessions) {
     const list = document.getElementById('sessionList');
     if (sessions.length === 0) {
@@ -562,7 +732,122 @@ function buildDetail(s) {
     return html;
 }
 
-// ─── カード開閉 ─────────────────────────────────────────────────
+// ─── イベント一覧描画 ────────────────────────────────────────────
+function renderEvents() {
+    const sec = document.getElementById('eventSection');
+    if (allEvents.length === 0) {
+        sec.innerHTML = '<div class="empty-state">📭 イベントデータがありません</div>';
+        return;
+    }
+    sec.innerHTML = allEvents.map(ev => buildEventCard(ev)).join('');
+}
+
+function statusLabel(status) {
+    if (status === 'open')   return '<span class="status-badge status-open">開催中</span>';
+    if (status === 'closed') return '<span class="status-badge status-closed">終了</span>';
+    return '<span class="status-badge status-preparing">準備中</span>';
+}
+
+function fmtDate(yyyymmdd) {
+    if (!yyyymmdd || yyyymmdd.length !== 8) return yyyymmdd || '—';
+    return yyyymmdd.slice(0,4) + '/' + yyyymmdd.slice(4,6) + '/' + yyyymmdd.slice(6,8);
+}
+
+function buildEventCard(ev) {
+    const d   = ev.data || {};
+    const eid = ev.eid;
+    const fk  = ev.fbKey;
+
+    const dateStr   = fmtDate(d.date);
+    const clubs     = d.usedClubs
+        ? (Array.isArray(d.usedClubs) ? d.usedClubs : Object.values(d.usedClubs)).join(', ')
+        : '—';
+    const jsonStr   = JSON.stringify(d, null, 2);
+    const tokenId   = 'token-' + CSS.escape(fk);
+    const jsonId    = 'evjson-' + CSS.escape(fk);
+
+    return `
+<div class="event-card" id="evcard-${CSS.escape(fk)}">
+    <div class="event-card-header" onclick="toggleEventCard('${esc(fk)}')">
+        <span class="event-name-badge">${escHtml(eid)}</span>
+        <div class="event-meta">
+            <span>📅 ${dateStr}</span>
+            <span>${statusLabel(d.status)}</span>
+            <span style="color:#999;font-family:monospace;font-size:11px;">events/${escHtml(fk)}</span>
+        </div>
+        <button class="expand-btn" title="詳細">▼</button>
+    </div>
+    <div class="event-detail" id="evdetail-${CSS.escape(fk)}">
+        <div class="detail-row">
+            <div class="detail-label">日付</div>
+            <div class="detail-val">${dateStr}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">状態</div>
+            <div class="detail-val">${statusLabel(d.status)}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">参加グループ</div>
+            <div class="detail-val">${escHtml(clubs)}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">adminToken</div>
+            <div class="detail-val">
+                <div class="token-wrap">
+                    <span class="token-hidden" id="${tokenId}" onclick="toggleToken('${esc(fk)}')">
+                        ●●●●●●●● (クリックで表示)
+                    </span>
+                </div>
+            </div>
+        </div>
+        <button class="show-json-btn" onclick="toggleEvJson('${esc(fk)}')">📋 生データを表示 / 非表示</button>
+        <pre class="json-box" id="${jsonId}">${escHtml(jsonStr)}</pre>
+        <div style="margin-top:12px;">
+            <button class="btn btn-danger" style="font-size:13px;padding:7px 16px;"
+                onclick="confirmDeleteEvent('${esc(fk)}', '${esc(eid)}')">
+                🗑 このイベントを削除
+            </button>
+        </div>
+    </div>
+</div>`;
+}
+
+// ─── イベントカード操作 ──────────────────────────────────────────
+window.toggleEventCard = function(fbKey) {
+    const card = document.getElementById('evcard-' + CSS.escape(fbKey));
+    if (card) card.classList.toggle('open');
+};
+
+window.toggleToken = function(fbKey) {
+    const span = document.getElementById('token-' + CSS.escape(fbKey));
+    if (!span) return;
+    const ev = allEvents.find(e => e.fbKey === fbKey);
+    const token = ev?.data?.adminToken || '(なし)';
+    if (span.classList.contains('token-visible')) {
+        span.className = 'token-hidden';
+        span.textContent = '●●●●●●●● (クリックで表示)';
+    } else {
+        span.className = 'token-visible';
+        span.textContent = token;
+    }
+};
+
+window.toggleEvJson = function(fbKey) {
+    const el = document.getElementById('evjson-' + CSS.escape(fbKey));
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+// ─── イベント削除 ────────────────────────────────────────────────
+window.confirmDeleteEvent = function(fbKey, eid) {
+    deleteMode      = 'event';
+    pendingEventKey = fbKey;
+    document.getElementById('modalDesc').innerHTML =
+        '以下のイベントと関連セッション（<code>sessions/' + escHtml(fbKey) + '</code>）を <strong>完全に削除</strong> します。<br>この操作は元に戻せません。';
+    document.getElementById('modalIds').textContent = 'events/' + fbKey + '\nsessions/' + fbKey;
+    document.getElementById('modalOverlay').classList.add('show');
+};
+
+// ─── カード開閉（セッション） ────────────────────────────────────
 window.toggleCard = function(fbKey) {
     const card = document.getElementById('card-' + CSS.escape(fbKey));
     if (card) card.classList.toggle('open');
@@ -615,8 +900,9 @@ function updateSelCount() {
     document.getElementById('deleteBtn').disabled   = n === 0;
 }
 
-// ─── 削除フロー ─────────────────────────────────────────────────
+// ─── 削除フロー（セッション） ────────────────────────────────────
 window.selectOnlyAndDelete = function(fbKey) {
+    deleteMode = 'session';
     deselectAll();
     selectedKeys.add(fbKey);
     rerenderCheckboxes();
@@ -626,11 +912,14 @@ window.selectOnlyAndDelete = function(fbKey) {
 
 window.confirmDelete = function() {
     if (selectedKeys.size === 0) return;
+    deleteMode = 'session';
     const ids = [...selectedKeys].map(k => {
         let sid = k;
         try { sid = decodeURIComponent(k); } catch(e) {}
         return sid + (sid !== k ? ' (' + k + ')' : '');
     });
+    document.getElementById('modalDesc').innerHTML =
+        '以下のセッションデータを <strong>完全に削除</strong> します。<br>この操作は元に戻せません。';
     document.getElementById('modalIds').textContent = ids.join('\n');
     document.getElementById('modalOverlay').classList.add('show');
 };
@@ -644,16 +933,33 @@ window.executeDelete = async function() {
     btn.disabled    = true;
     btn.textContent = '⏳ 削除中...';
 
-    const toDelete = [...selectedKeys];
     let ok = 0, ng = 0;
 
-    for (const fbKey of toDelete) {
+    if (deleteMode === 'event' && pendingEventKey) {
+        // イベント削除：events/{key} と sessions/{key} の両方
+        const fk = pendingEventKey;
         try {
-            await remove(ref(db, 'sessions/' + fbKey));
+            await Promise.all([
+                remove(ref(db, 'events/' + fk)),
+                remove(ref(db, 'sessions/' + fk))
+            ]);
             ok++;
         } catch(err) {
-            console.error('削除失敗:', fbKey, err);
+            console.error('イベント削除失敗:', fk, err);
             ng++;
+        }
+        pendingEventKey = null;
+    } else {
+        // セッション一括削除
+        const toDelete = [...selectedKeys];
+        for (const fbKey of toDelete) {
+            try {
+                await remove(ref(db, 'sessions/' + fbKey));
+                ok++;
+            } catch(err) {
+                console.error('削除失敗:', fbKey, err);
+                ng++;
+            }
         }
     }
 
@@ -663,7 +969,7 @@ window.executeDelete = async function() {
     selectedKeys.clear();
 
     showToast(ng === 0 ? `✅ ${ok} 件削除しました` : `⚠️ ${ok} 件削除、${ng} 件失敗`);
-    await loadSessions();
+    await loadAll();
 };
 
 // ─── トースト ───────────────────────────────────────────────────
@@ -685,7 +991,7 @@ function esc(s) {
 }
 
 // ─── 初期読込 ───────────────────────────────────────────────────
-loadSessions();
+loadAll();
 </script>
 </body>
 </html>
