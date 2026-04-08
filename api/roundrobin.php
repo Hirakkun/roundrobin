@@ -361,11 +361,6 @@ body.viewer-mode #initialSetup { display: none !important; }
 
 <script>
 // =====================================================================
-// 定数・初期データ
-// =====================================================================
-const defaultRoster = [{name:"青木 千秋",age:75,gender:"F"},{name:"赤岡 政典",age:67,gender:"M"},{name:"浅海 初江",age:60,gender:"F"},{name:"荒木 章太",age:38,gender:"M"},{name:"荒地 紗花",age:22,gender:"F"},{name:"荒地 ミドリ",age:53,gender:"F"},{name:"荒地 開",age:54,gender:"M"},{name:"池田 英子",age:83,gender:"F"},{name:"石河 五月",age:69,gender:"F"},{name:"和泉 愛美",age:38,gender:"F"},{name:"和泉 孝太",age:38,gender:"M"},{name:"坂尾 良美",age:69,gender:"F"},{name:"井場木 啓子",age:78,gender:"F"},{name:"今村 勝範",age:82,gender:"M"},{name:"岩崎 ミチ代",age:75,gender:"F"},{name:"上田 靖之",age:82,gender:"M"},{name:"上田 利治",age:84,gender:"M"},{name:"内山 秀美",age:74,gender:"F"},{name:"江口 靖宏",age:86,gender:"M"},{name:"大隅 政信",age:83,gender:"M"},{name:"岡 弥生",age:66,gender:"F"},{name:"岡島 好美",age:77,gender:"F"},{name:"岡本 万里子",age:71,gender:"F"},{name:"小川 広昭",age:73,gender:"M"},{name:"尾﨑 園",age:59,gender:"F"},{name:"尾﨑 幸子",age:77,gender:"F"},{name:"菊地 教充",age:82,gender:"M"},{name:"北原 吉博",age:85,gender:"M"},{name:"木村 千代美",age:52,gender:"F"},{name:"木村 六郎",age:75,gender:"M"},{name:"草木原 登美子",age:78,gender:"F"},{name:"草木原 由幸",age:77,gender:"M"},{name:"藤田 要子",age:69,gender:"F"},{name:"楠本 富男",age:74,gender:"M"},{name:"桑原 由久美",age:71,gender:"F"},{name:"河野 久子",age:72,gender:"F"},{name:"坂本 紅子",age:83,gender:"F"},{name:"芝 孝博",age:67,gender:"M"},{name:"清水 紀子",age:72,gender:"F"},{name:"武井 繁夫",age:78,gender:"M"},{name:"竹場 由美",age:67,gender:"F"},{name:"竹平 以千代",age:62,gender:"F"},{name:"竹村 サカエ",age:84,gender:"F"},{name:"田原 嘉利恵",age:68,gender:"F"},{name:"鶴岡 美保",age:69,gender:"F"},{name:"中尾 智美",age:71,gender:"F"},{name:"長山 開都",age:27,gender:"M"},{name:"浪口 千恵",age:49,gender:"F"},{name:"西口 孝",age:77,gender:"M"},{name:"西口 百恵",age:75,gender:"F"},{name:"野平 美委子",age:82,gender:"F"},{name:"橋本 真知子",age:72,gender:"F"},{name:"福村 久",age:76,gender:"M"},{name:"古田 八重子",age:77,gender:"F"},{name:"豊久 京子",age:74,gender:"F"},{name:"本多 克代",age:72,gender:"F"},{name:"本多 千代",age:65,gender:"F"},{name:"本多 良子",age:81,gender:"F"},{name:"本田 重夫",age:79,gender:"M"},{name:"牧野 ヒデミ",age:78,gender:"F"},{name:"増田 マサミ",age:82,gender:"F"},{name:"松田 昌稔",age:27,gender:"M"},{name:"松原 郁子",age:65,gender:"F"},{name:"松田 冨美江",age:80,gender:"F"},{name:"松本 睦美",age:71,gender:"F"},{name:"宮下 照",age:70,gender:"F"},{name:"宮本 勲",age:77,gender:"M"},{name:"宮本 千寿子",age:75,gender:"F"},{name:"宮本 美枝子",age:72,gender:"F"},{name:"安田 照美",age:73,gender:"F"},{name:"山口 英人",age:66,gender:"M"},{name:"山口 三保子",age:67,gender:"F"},{name:"山口 章子",age:69,gender:"F"},{name:"山口 菫",age:82,gender:"F"},{name:"山下 芳子",age:70,gender:"F"},{name:"山田 リカ",age:57,gender:"F"},{name:"山西 美和",age:72,gender:"F"},{name:"山西 百合子",age:79,gender:"F"},{name:"山本 四生枝",age:72,gender:"F"},{name:"山本 真也",age:73,gender:"M"},{name:"山本 多津美",age:73,gender:"F"},{name:"渡辺 妙子",age:81,gender:"F"}];
-
-// =====================================================================
 // 試合状態 (全てメモリ管理、localStorageへ随時保存)
 // =====================================================================
 let state = {
@@ -676,8 +671,7 @@ function addPlayerToState(id, isNew = false) {
 // STEP2: 参加者リスト描画
 // =====================================================================
 function renderPlayerList() {
-    const roster = JSON.parse(localStorage.getItem('tournament_roster') || '[]');
-    const rosterNames = roster.map(r => r.name);
+    const rosterNames = (state.roster || []).map(r => r.name);
 
     const list = document.getElementById('playerList');
     list.innerHTML = '';
@@ -2206,10 +2200,6 @@ function loadState() {
 // 初期化
 // =====================================================================
 window.onload = function () {
-    // 毎回デフォルト名簿をセット
-    localStorage.setItem('tournament_roster', JSON.stringify(defaultRoster));
-    renderRoster();
-    renderSessionHistory();
     loadCourtNameSetting();
 
     // URLハッシュ・localStorageからセッションIDを先に確認
