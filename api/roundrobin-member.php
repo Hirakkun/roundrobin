@@ -687,33 +687,28 @@ window.importPlayers=async function(input){
     const header=rows[0];
     const col=name=>header.indexOf(name);
     const iName=col('氏名'),iKana=col('ふりがな'),iGender=col('性別'),iBirth=col('生年月日'),iMu=col('μ'),iSigma=col('σ'),iGroups=col('所属グループ');
-    if(iName<0||iKana<0){showToast('⚠️ ヘッダーが正しくありません（氏名・ふりがな が必要）');return;}
+    if(iName<0){showToast('⚠️ ヘッダーが正しくありません（氏名 が必要）');return;}
     let added=0,updated=0,errors=0;
     for(const row of rows.slice(1)){
         const name=(row[iName]||'').trim();
-        const kana=(row[iKana]||'').trim();
-        if(!name||!kana){errors++;continue;}
+        if(!name){errors++;continue;}
+        const kana=iKana>=0?(row[iKana]||'').trim():'';
         const gender=iGender>=0?(row[iGender]||'').trim():'';
         const birthdate=iBirth>=0?(row[iBirth]||'').replace(/-/g,'/').trim():'';
         const mu=iMu>=0?parseFloat(row[iMu])||25.0:25.0;
         const sigma=iSigma>=0?parseFloat(row[iSigma])||8.33:8.33;
-        // 所属グループ → club IDに変換
+        // 所属グループ → club IDに変換（存在するグループのみ）
         const groupNames=iGroups>=0?(row[iGroups]||'').split('/').map(s=>s.trim()).filter(Boolean):[];
-        const clubsMap={};
-        for(const gname of groupNames){
-            const cid=encodeURIComponent(gname);
-            if(allClubs[cid]) clubsMap[cid]=true;
-        }
-        // 同名選手を検索（氏名+ふりがな一致）
-        const existEntry=Object.entries(allPlayers).find(([,p])=>p.name===name&&p.kana===kana);
+        const newClubIds=groupNames.map(g=>encodeURIComponent(g)).filter(cid=>allClubs[cid]);
+        // 氏名＋生年月日で既存選手を検索
+        const existEntry=Object.entries(allPlayers).find(([,p])=>p.name===name&&(p.birthdate||'')===(birthdate||'')&&birthdate!=='');
         try{
             if(existEntry){
-                const [pid,op]=existEntry;
-                const upd={name,kana,gender,birthdate,mu,sigma};
-                await fbUpdate('players/'+pid,upd);
-                Object.assign(allPlayers[pid],upd);
-                // グループ追加（既存は保持）
-                for(const cid of Object.keys(clubsMap)){
+                // 既存：μ・σのみ更新、グループは重複なく追加
+                const [pid]=existEntry;
+                await fbUpdate('players/'+pid,{mu,sigma});
+                allPlayers[pid].mu=mu; allPlayers[pid].sigma=sigma;
+                for(const cid of newClubIds){
                     if(!allPlayers[pid].clubs?.[cid]){
                         await fbUpdate('players/'+pid+'/clubs',{[cid]:true});
                         await fbUpdate('clubs/'+cid+'/playerIds',{[pid]:true});
@@ -725,11 +720,13 @@ window.importPlayers=async function(input){
                 }
                 updated++;
             } else {
+                // 新規：全フィールドで登録
                 const pid=genId();
+                const clubsMap={}; newClubIds.forEach(cid=>clubsMap[cid]=true);
                 const pd={name,kana,gender,birthdate,mu,sigma,clubs:clubsMap};
                 await fbSet('players/'+pid,pd);
                 allPlayers[pid]=pd;
-                for(const cid of Object.keys(clubsMap)){
+                for(const cid of newClubIds){
                     await fbUpdate('clubs/'+cid+'/playerIds',{[pid]:true});
                     if(!allClubs[cid].playerIds)allClubs[cid].playerIds={};
                     allClubs[cid].playerIds[pid]=true;
