@@ -188,24 +188,13 @@ body.viewer-mode #initialSetup { display: none !important; }
     </div>
 
     <!-- クラウド同期・イベント状態カード -->
-    <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:0;overflow:hidden;">
-        <!-- ヘッダー（常に表示・クリックで開閉） -->
-        <div onclick="toggleSyncPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:16px;font-weight:bold;color:#1565c0;">☁️</span>
-                <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
-                <span id="eventStatusBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
-                <span id="syncPanelArrow" style="font-size:16px;color:#1565c0;transition:transform 0.2s;">▼</span>
-            </div>
+    <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:15px;color:#1565c0;">☁️</span>
+            <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
+            <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
         </div>
-        <!-- 開閉エリア -->
-        <div id="syncPanelBody" style="display:none;padding:0 16px 14px;">
-            <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:8px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
-            <div id="eventStatusBar" style="padding:8px 10px;border-radius:8px;font-size:14px;font-weight:bold;text-align:center;display:none;"></div>
-        </div>
+        <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:13px;line-height:1.6;"></div>
     </div>
 
     <!-- 初期設定エリア -->
@@ -1994,52 +1983,53 @@ function _copyToClipboard(url, msg) {
     }
 }
 
-function toggleSyncPanel(forceOpen) {
-    const body  = document.getElementById('syncPanelBody');
-    const arrow = document.getElementById('syncPanelArrow');
-    if (!body) return;
-    const open = forceOpen !== undefined ? forceOpen : body.style.display === 'none';
-    body.style.display  = open ? 'block' : 'none';
-    if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
-}
-
 function updateSyncStatus(msg, color) {
-    const bar   = document.getElementById('syncStatusBar');
     const badge = document.getElementById('syncBadge');
-    if (bar)   { bar.textContent = msg; bar.style.color = color || '#888'; }
-    if (badge) { badge.textContent = msg; badge.style.color = color || '#888';
+    if (badge) {
+        badge.textContent = msg;
+        badge.style.color = color || '#888';
         badge.style.background = color === '#2e7d32' ? '#e8f5e9'
                                : color === '#e65100' ? '#fff3e0' : '#eee';
     }
 }
 window.updateSyncStatus = updateSyncStatus;
 
-function updateEventStatus(status) {
-    const badge = document.getElementById('eventStatusBadge');
-    const bar   = document.getElementById('eventStatusBar');
-    if (!badge) return;
-    if (!status) {
-        badge.style.display = 'none';
-        if (bar) bar.style.display = 'none';
-        return;
-    }
-    // バッジ（ヘッダー常時表示）
-    badge.style.display = 'inline-block';
-    badge.textContent = status;
-    const styles = {
-        '開催中': { bg: '#e8f5e9', color: '#2e7d32', border: '1px solid #a5d6a7' },
-        '終了':   { bg: '#f5f5f5', color: '#9e9e9e', border: '1px solid #e0e0e0' },
-        '準備中': { bg: '#fff3e0', color: '#e65100', border: '1px solid #ffcc80' },
+function _escH(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function updateEventInfo(ev) {
+    const bar = document.getElementById('eventInfoBar');
+    if (!bar) return;
+    if (!ev || !ev.name) { bar.style.display = 'none'; return; }
+    const name    = ev.name || '';
+    const rawDate = ev.date || '';
+    const date    = rawDate.length === 8
+        ? rawDate.slice(0,4) + '/' + rawDate.slice(4,6) + '/' + rawDate.slice(6,8)
+        : rawDate;
+    const status = ev.status || '準備中';
+    const stMap = {
+        '開催中': { bg:'#e8f5e9', color:'#2e7d32', border:'1px solid #a5d6a7' },
+        '終了':   { bg:'#f5f5f5', color:'#9e9e9e', border:'1px solid #e0e0e0' },
+        '準備中': { bg:'#fff3e0', color:'#e65100', border:'1px solid #ffcc80' },
     };
-    const s = styles[status] || styles['準備中'];
-    badge.style.background = s.bg; badge.style.color = s.color; badge.style.border = s.border;
-    // 詳細バー（展開エリア）
-    if (bar) {
-        bar.style.display = 'block';
-        bar.textContent = '🎾 イベント状態：' + status;
-        bar.style.background = s.bg; bar.style.color = s.color;
-        bar.style.border = s.border; bar.style.borderRadius = '8px';
-        bar.style.padding = '8px 10px'; bar.style.fontSize = '14px'; bar.style.fontWeight = 'bold';
+    const s = stMap[status] || stMap['準備中'];
+    const stBadge = `<span style="background:${s.bg};color:${s.color};border:${s.border};border-radius:12px;padding:1px 8px;font-size:11px;font-weight:bold;white-space:nowrap;">${status}</span>`;
+    bar.style.display = 'block';
+    bar.innerHTML = `<span style="font-weight:bold;color:#1565c0;">${_escH(name)}</span>`
+                  + (date ? `&emsp;<span style="color:#555;">${_escH(date)}</span>` : '')
+                  + `&emsp;${stBadge}`;
+    // dataset に保存（status のみ更新時に参照）
+    bar.dataset.evName = name;
+    bar.dataset.evDate = rawDate;
+    bar.dataset.evStatus = status;
+}
+window.updateEventInfo = updateEventInfo;
+
+// 後方互換：status のみ渡された場合
+function updateEventStatus(status) {
+    const bar = document.getElementById('eventInfoBar');
+    if (!status) { updateEventInfo(null); return; }
+    if (bar && bar.dataset.evName) {
+        updateEventInfo({ name: bar.dataset.evName, date: bar.dataset.evDate, status });
     }
 }
 window.updateEventStatus = updateEventStatus;
@@ -2315,11 +2305,11 @@ window._fbStart = function(sessionId) {
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
     });
-    // イベント状態を監視
+    // イベント情報（名前・日付・状態）を監視
     if (_evRef) off(_evRef);
-    _evRef = ref(db, 'events/' + encodeURIComponent(sessionId) + '/status');
+    _evRef = ref(db, 'events/' + encodeURIComponent(sessionId));
     onValue(_evRef, snap => {
-        if (window.updateEventStatus) window.updateEventStatus(snap.exists() ? snap.val() : null);
+        if (window.updateEventInfo) window.updateEventInfo(snap.exists() ? snap.val() : null);
     });
 };
 
