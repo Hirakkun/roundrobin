@@ -183,42 +183,28 @@ body.viewer-mode #initialSetup { display: none !important; }
 
 <!-- STEP1: 設定＋参加者統合 -->
 <div id="step-setup" class="panel active">
-    <div class="panel-title" style="justify-content:space-between;">
+    <div class="panel-title">
         <span>⚙️ 設定・参加者</span>
-        <span style="display:flex;gap:8px;" class="admin-only">
-            <button onclick="exportData()" style="font-size:14px;padding:6px 12px;background:#546e7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">📤 書出</button>
-            <label style="font-size:14px;padding:6px 12px;background:#546e7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">📥 読込<input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
-        </span>
     </div>
 
-    <!-- クラウド同期カード -->
+    <!-- クラウド同期・イベント状態カード -->
     <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:0;overflow:hidden;">
         <!-- ヘッダー（常に表示・クリックで開閉） -->
-        <div onclick="toggleSyncPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;">
-            <div style="display:flex;align-items:center;gap:8px;">
+        <div onclick="toggleSyncPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span style="font-size:16px;font-weight:bold;color:#1565c0;">☁️</span>
                 <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
+                <span id="eventStatusBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:4px 12px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
                 <span id="syncPanelArrow" style="font-size:16px;color:#1565c0;transition:transform 0.2s;">▼</span>
             </div>
         </div>
-        <!-- 開閉エリア（初期は閉じている） -->
+        <!-- 開閉エリア -->
         <div id="syncPanelBody" style="display:none;padding:0 16px 14px;">
-            <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:10px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
-            <div style="margin-bottom:8px;">
-                <a href="/roundrobin-event.php" style="display:block;text-align:center;padding:10px;background:#2e7d32;color:#fff;border-radius:8px;font-size:15px;font-weight:bold;text-decoration:none;">🎾 イベント（枠）を作成する</a>
-            </div>
-            <div id="sessionUrlBtns" style="display:none;flex-direction:column;gap:8px;margin-bottom:8px;">
-                <button onclick="copyAdminUrl()" style="width:100%;padding:10px;background:#e65100;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🔑 管理者URLをコピー（自分用に保存）</button>
-                <button onclick="copyViewerUrl()" style="width:100%;padding:10px;background:#546e7a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">👥 参加者URLをコピー（LINEで送信）</button>
-            </div>
-            <div style="display:flex;gap:8px;">
-                <input id="sessionIdInput" type="text" placeholder="IDを入力（英数字・記号可）" style="flex:1;padding:10px;font-size:15px;border:2px solid #ccc;border-radius:8px;letter-spacing:1px;" maxlength="30">
-                <button onclick="joinSession()" style="padding:10px 16px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">参加</button>
-            </div>
-            <div id="sessionHistory" style="margin-top:8px;"></div>
+            <div id="syncStatusBar" style="padding:8px 10px;border-radius:8px;background:#f5f5f5;font-size:14px;margin-bottom:8px;font-weight:bold;color:#888;text-align:center;">⚪ 未接続</div>
+            <div id="eventStatusBar" style="padding:8px 10px;border-radius:8px;font-size:14px;font-weight:bold;text-align:center;display:none;"></div>
         </div>
     </div>
 
@@ -2028,6 +2014,36 @@ function updateSyncStatus(msg, color) {
 }
 window.updateSyncStatus = updateSyncStatus;
 
+function updateEventStatus(status) {
+    const badge = document.getElementById('eventStatusBadge');
+    const bar   = document.getElementById('eventStatusBar');
+    if (!badge) return;
+    if (!status) {
+        badge.style.display = 'none';
+        if (bar) bar.style.display = 'none';
+        return;
+    }
+    // バッジ（ヘッダー常時表示）
+    badge.style.display = 'inline-block';
+    badge.textContent = status;
+    const styles = {
+        '開催中': { bg: '#e8f5e9', color: '#2e7d32', border: '1px solid #a5d6a7' },
+        '終了':   { bg: '#f5f5f5', color: '#9e9e9e', border: '1px solid #e0e0e0' },
+        '準備中': { bg: '#fff3e0', color: '#e65100', border: '1px solid #ffcc80' },
+    };
+    const s = styles[status] || styles['準備中'];
+    badge.style.background = s.bg; badge.style.color = s.color; badge.style.border = s.border;
+    // 詳細バー（展開エリア）
+    if (bar) {
+        bar.style.display = 'block';
+        bar.textContent = '🎾 イベント状態：' + status;
+        bar.style.background = s.bg; bar.style.color = s.color;
+        bar.style.border = s.border; bar.style.borderRadius = '8px';
+        bar.style.padding = '8px 10px'; bar.style.fontSize = '14px'; bar.style.fontWeight = 'bold';
+    }
+}
+window.updateEventStatus = updateEventStatus;
+
 window._fbApply = function(remoteState) {
     if (isApplyingRemote) return;
     isApplyingRemote = true;
@@ -2284,6 +2300,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 let _ref = null;
 
+let _evRef = null;
 window._fbStart = function(sessionId) {
     if (_ref) off(_ref);
     _ref = ref(db, 'sessions/' + encodeURIComponent(sessionId));
@@ -2296,6 +2313,12 @@ window._fbStart = function(sessionId) {
         if (d._cid === CLIENT_ID) return;
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
+    });
+    // イベント状態を監視
+    if (_evRef) off(_evRef);
+    _evRef = ref(db, 'events/' + encodeURIComponent(sessionId) + '/status');
+    onValue(_evRef, snap => {
+        if (window.updateEventStatus) window.updateEventStatus(snap.exists() ? snap.val() : null);
     });
 };
 
