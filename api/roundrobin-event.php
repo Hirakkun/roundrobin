@@ -163,9 +163,10 @@ function fmtDate(d){ if(!d||d.length<8)return d||''; return `${d.slice(0,4)}/${d
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 // 誕生日(YYYYMMDD)とイベント日付(YYYYMMDD)から年齢を計算。誕生日なしは0
 function calcAge(birthdate, eventDate){
-    const b=String(birthdate||'').replace(/-/g,'');
+    const b=String(birthdate||'').replace(/[-\/]/g,''); // ハイフン・スラッシュ両対応
     if(b.length<8) return 0;
-    const ref=eventDate||todayStr().replace(/-/g,'');
+    const ref=(String(eventDate||'').replace(/[-\/]/g,'')||todayStr().replace(/-/g,''));
+    if(ref.length<8) return 0;
     const age=Math.floor((parseInt(ref)-parseInt(b))/10000);
     return age>=0?age:0;
 }

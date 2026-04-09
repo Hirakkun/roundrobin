@@ -468,11 +468,6 @@ function initTournament() {
         for (let i = 1; i <= setupPlayers; i++) { addPlayerToState(i, false); }
     }
 
-    // Firebaseのイベント状態を「開催中」に変更
-    if (_sessionId && window._fbSetEventStatus) {
-        window._fbSetEventStatus(_sessionId, '開催中');
-    }
-
     saveState();
     showLiveSetup();
     enableTabs();
@@ -549,21 +544,29 @@ function renderEntryList() {
     const list = document.getElementById('entryList');
     if (!list) return;
     list.querySelectorAll('.entry-confirmed-row').forEach(r => r.remove());
+    // schedule が1件以上あれば「開催中」とみなしてロック
+    const isActive = currentEventStatus === '開催中' || (state.schedule && state.schedule.length > 0);
     const frag = document.createDocumentFragment();
     entryPlayers.forEach(p => {
         const div = document.createElement('div');
         div.className = 'entry-confirmed-row';
         div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0f0f0;';
+        const delBtn = isActive
+            ? `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:11px;white-space:nowrap;">🔒 参加済</span>`
+            : `<button type="button" onclick="removeConfirmedEntry('${_esc(p.pid)}')"
+                style="padding:5px 12px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;white-space:nowrap;">削除</button>`;
         div.innerHTML = `
             <div style="flex:1;">
                 <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}</div>
                 <div style="font-size:11px;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
             </div>
-            <button type="button" onclick="removeConfirmedEntry('${_esc(p.pid)}')"
-                style="padding:5px 12px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;white-space:nowrap;">削除</button>`;
+            ${delBtn}`;
         frag.appendChild(div);
     });
     list.insertBefore(frag, list.firstChild);
+    // 開催中は「追加」ボタンも非表示
+    const addBtn = list.parentElement?.querySelector('.player-add-btn');
+    if (addBtn) addBtn.style.display = isActive ? 'none' : '';
     const lbl = document.getElementById('entry-count-label');
     if (lbl) lbl.textContent = entryPlayers.length + '人登録中';
 }
@@ -1240,6 +1243,11 @@ function generateNextRound() {
 
     state.schedule.push({ round: roundNum, courts: courtsFormatted });
     state.roundCount = roundNum;
+
+    // 初回組合せ作成でイベント状態を「開催中」に変更
+    if (roundNum === 1 && _sessionId && window._fbSetEventStatus) {
+        window._fbSetEventStatus(_sessionId, '開催中');
+    }
 
     saveState();
     renderMatchContainer();
@@ -1961,6 +1969,8 @@ window.updateSyncStatus = updateSyncStatus;
 
 function _escH(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+let currentEventStatus = '準備中'; // イベント状態をグローバルで保持
+
 function updateEventInfo(ev) {
     const bar = document.getElementById('eventInfoBar');
     if (!bar) return;
@@ -1986,6 +1996,7 @@ function updateEventInfo(ev) {
     bar.dataset.evName = name;
     bar.dataset.evDate = rawDate;
     bar.dataset.evStatus = status;
+    currentEventStatus = status;
 }
 window.updateEventInfo = updateEventInfo;
 
