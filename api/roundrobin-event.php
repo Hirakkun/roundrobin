@@ -205,9 +205,10 @@ function renderEvents(){
         const sid=decodeURIComponent(eid);
         const st=getStatus(ev);
         const ended=st==='終了';
+        const hasClubs=Object.keys(ev.usedClubs||{}).length>0;
         const grpBtn=ended
             ? `<button class="btn-sm btn-sm-gray" disabled title="終了済みのため変更できません">参加グループ登録</button>`
-            : `<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">参加グループ登録</button>`;
+            : `<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">${hasClubs?'参加グループ変更':'⚠️ 参加グループ登録'}</button>`;
         h+=`<tr style="cursor:pointer;" onclick="toggleERow('${esc(eid)}')">
             <td style="font-weight:bold;color:#1565c0;">${escH(ev.name)}</td>
             <td style="font-size:13px;white-space:nowrap;">${fmtDate(ev.date)}</td>
@@ -218,13 +219,18 @@ function renderEvents(){
         <tr id="erow-${CSS.escape(eid)}" style="display:none;">
             <td colspan="5"><div class="event-expand-body">
                 <span class="event-id-badge">ID: ${escH(sid)}</span>
+                ${!hasClubs ? `
+                <div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;color:#e65100;font-size:13px;display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:18px;">⚠️</span>
+                    <span>参加グループが設定されていません。<br>先に「参加グループ登録」ボタンから参加グループを設定してください。</span>
+                </div>` : `
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     ${st==='準備中' ? `<button class="btn btn-green" style="flex:1;" onclick="changeStatus('${esc(eid)}','開催中')">▶ 開催中にする</button>` : ''}
                     ${st==='開催中' ? `<button class="btn btn-dark"  style="flex:1;" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
                     ${st==='終了'   ? `<button class="btn btn-gray"  style="flex:1;" onclick="changeStatus('${esc(eid)}','準備中')">↩ 準備中に戻す</button>` : ''}
                 </div>
                 <button class="btn btn-orange" style="width:100%;text-align:left;" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー（自分用に保存）</button>
-                <button class="btn btn-dark" style="width:100%;text-align:left;" onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINEで送信）</button>
+                <button class="btn btn-dark" style="width:100%;text-align:left;" onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINEで送信）</button>`}
             </div></td>
         </tr>`;
     }
