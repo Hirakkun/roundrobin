@@ -580,6 +580,7 @@ function _saveEntryToState() {
     if (entryPlayers.length === 0) {
         state.players = [];
         state.playerNames = {};
+        state.playerClubs = {};
         state.tsMap = {};
         state.pairMatrix = {};
         state.oppMatrix = {};
@@ -588,6 +589,7 @@ function _saveEntryToState() {
     }
     state.players = [];
     state.playerNames = {};
+    state.playerClubs = {};
     state.tsMap = {};
     state.pairMatrix = {};
     state.oppMatrix = {};
@@ -595,6 +597,7 @@ function _saveEntryToState() {
         const id = i + 1;
         state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
+        if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
     });
     const ids = state.players.map(p => p.id);
@@ -620,6 +623,15 @@ function _rebuildEntryPlayers() {
     }
 }
 
+// idから所属クラブ名を取得（stateのplayerClubsまたはrosterから推測）
+function getPlayerClubName(id) {
+    if (state.playerClubs && state.playerClubs[id]) return state.playerClubs[id];
+    const name = state.playerNames?.[id];
+    if (!name) return '';
+    const rp = (state.roster || []).find(r => r.name === name);
+    return rp?.clubName || '';
+}
+
 function renderEntryList() {
     const list = document.getElementById('entryList');
     if (!list) return;
@@ -635,9 +647,12 @@ function renderEntryList() {
             ? `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:11px;white-space:nowrap;">🔒 参加済</span>`
             : `<button type="button" onclick="removeConfirmedEntry('${_esc(p.pid)}')"
                 style="padding:5px 12px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;white-space:nowrap;">削除</button>`;
+        const clubBadge = p.clubName
+            ? ` <span style="font-size:11px;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
+            : '';
         div.innerHTML = `
             <div style="flex:1;">
-                <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}</div>
+                <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}${clubBadge}</div>
                 <div style="font-size:11px;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
             </div>
             ${delBtn}`;
@@ -656,6 +671,7 @@ function applyEntryPlayers() {
     if (!entryPlayers.length) { alert('参加者を1人以上追加してください'); return false; }
     state.players     = [];
     state.playerNames = {};
+    state.playerClubs = {};
     state.tsMap       = {};
     state.pairMatrix  = {};
     state.oppMatrix   = {};
@@ -668,6 +684,7 @@ function applyEntryPlayers() {
         const id = i + 1;
         state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
+        if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
     });
     const ids = state.players.map(p => p.id);
@@ -866,9 +883,14 @@ function renderPlayerList() {
             ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
             : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
 
+        const clubName = getPlayerClubName(p.id);
+        const clubLabel = clubName
+            ? `<span style="font-size:11px;color:#666;font-weight:normal;white-space:nowrap;">(${clubName})</span>`
+            : '';
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
             <select class="playerSelect" ${selectDisabled} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
+            ${clubLabel}
             ${restBtnHtml}
         `;
         list.appendChild(div);
@@ -877,7 +899,13 @@ function renderPlayerList() {
 
 function setPlayerName(id, name) {
     state.playerNames[id] = name || ('選手' + id);
+    // 所属クラブ名をrosterから自動反映
+    if (!state.playerClubs) state.playerClubs = {};
+    const rp = (state.roster || []).find(r => r.name === name);
+    if (rp && rp.clubName) state.playerClubs[id] = rp.clubName;
+    else delete state.playerClubs[id];
     updateMatchNames();
+    renderPlayerList();
     saveState();
 }
 
@@ -1826,6 +1854,7 @@ function calcRank() {
     const stats = {};
     state.players.forEach(p => {
         const name = state.playerNames[p.id] || ('選手' + p.id);
+        const clubName = getPlayerClubName(p.id);
 
         // 出場回数: scheduleを直接走査してカウント（最も正確）
         let appearedCount = 0;
@@ -1840,7 +1869,7 @@ function calcRank() {
         const restCount = p.restCount || 0;
         const eligibleRounds = Math.max(0, (state.roundCount - joinedRound) - restCount);
 
-        stats[p.id] = { name, wins: 0, losses: 0, played: 0, diff: 0,
+        stats[p.id] = { name, clubName, wins: 0, losses: 0, played: 0, diff: 0,
             age: ageMap[name] || 0,
             appearedCount,
             eligibleRounds
@@ -1897,10 +1926,13 @@ function calcRank() {
         const intvLabel = r.eligibleRounds > 0 ? `間隔${intv}R` : '-';
         const muDisp = r.mu.toFixed(1);
         const sigmaDisp = r.sigma.toFixed(2);
+        const clubHtml = r.clubName
+            ? `<span style="font-size:11px;color:#666;font-weight:normal;margin-left:3px;">(${r.clubName})</span>`
+            : '';
         h += `<tr${rc}>
             <td style="font-size:17px;font-weight:bold;">${rank}</td>
             <td class="name-cell">
-                <span class="name-text">${r.name}</span>
+                <span class="name-text">${r.name}</span>${clubHtml}
                 <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span><span>μ:${muDisp}</span><span>σ:${sigmaDisp}</span></div>
             </td>
             <td>${wr}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td>

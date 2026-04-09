@@ -124,6 +124,22 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     </div>
 </div>
 
+<!-- Club Choose Modal -->
+<div class="modal-overlay" id="modal-clubchoose">
+    <div class="modal" style="max-width:520px;">
+        <h2 style="color:#1565c0;">👥 参加クラブの選択</h2>
+        <p style="font-size:13px;color:#444;margin-bottom:10px;">
+            以下の選手は複数のクラブに登録されています。<br>
+            このイベントでどのクラブとして参加するかを選択してください。
+        </p>
+        <div id="cc-list" style="max-height:50vh;overflow-y:auto;margin:8px 0;padding:4px 6px;border:1px solid #eee;border-radius:8px;"></div>
+        <div class="modal-btns">
+            <button class="btn btn-gray" onclick="closeClubChoose()">キャンセル</button>
+            <button class="btn btn-green" onclick="execClubChoose()">✅ 決定</button>
+        </div>
+    </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
@@ -153,6 +169,7 @@ let allEvents={}, allClubs={}, allPlayers={};
 let currentEventId=null;
 let selectedClubs=new Set();
 let pendingConfirmCb=null;
+let pendingClubChoiceCb=null;
 
 // ─── Utils ────────────────────────────────────────────────────────────
 function genId(){ return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -323,11 +340,95 @@ function renderClubsScreen(){
     c.innerHTML=h;
 }
 window.toggleClub=function(cid,checked){ if(checked) selectedClubs.add(cid); else selectedClubs.delete(cid); };
+
+// pid -> [cid,...] map を作成（選択中クラブ内のみ）
+function computePidToClubs(clubIds){
+    const m={};
+    for(const cid of clubIds){
+        const club=allClubs[cid]; if(!club||!club.playerIds) continue;
+        for(const pid of Object.keys(club.playerIds)){
+            if(!allPlayers[pid]?.name) continue;
+            if(!m[pid]) m[pid]=[];
+            m[pid].push(cid);
+        }
+    }
+    return m;
+}
+
+// 複数クラブ登録プレイヤーだけを抽出
+function findMultiClubPlayers(clubIds){
+    const pidToClubs=computePidToClubs(clubIds);
+    const multi={};
+    for(const [pid,clubs] of Object.entries(pidToClubs)){
+        if(clubs.length>1) multi[pid]=clubs;
+    }
+    return multi;
+}
+
+// クラブ選択モーダル
+function showClubChoose(multi, prevChoice, cb){
+    pendingClubChoiceCb=cb;
+    const c=document.getElementById('cc-list');
+    // 名前順にソート
+    const entries=Object.entries(multi).sort((a,b)=>{
+        const na=allPlayers[a[0]]?.kana||allPlayers[a[0]]?.name||'';
+        const nb=allPlayers[b[0]]?.kana||allPlayers[b[0]]?.name||'';
+        return na.localeCompare(nb,'ja');
+    });
+    let h='';
+    for(const [pid,clubs] of entries){
+        const p=allPlayers[pid]||{};
+        const defCid=prevChoice[pid]&&clubs.includes(prevChoice[pid])?prevChoice[pid]:clubs[0];
+        h+=`<div style="padding:10px 6px;border-bottom:1px solid #f0f0f0;">
+            <div style="font-weight:bold;font-size:14px;color:#1565c0;margin-bottom:4px;">${escH(p.name||pid)}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+        for(const cid of clubs){
+            const cn=allClubs[cid]?.name||cid;
+            const chk=cid===defCid?'checked':'';
+            h+=`<label style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #90caf9;border-radius:14px;background:#f5f9ff;font-size:13px;cursor:pointer;">
+                <input type="radio" name="cc-${escH(pid)}" value="${escH(cid)}" ${chk} style="cursor:pointer;">${escH(cn)}
+            </label>`;
+        }
+        h+='</div></div>';
+    }
+    c.innerHTML=h;
+    document.getElementById('modal-clubchoose').classList.add('show');
+}
+window.closeClubChoose=function(){
+    document.getElementById('modal-clubchoose').classList.remove('show');
+    pendingClubChoiceCb=null;
+};
+window.execClubChoose=function(){
+    const cb=pendingClubChoiceCb;
+    // ラジオボタンの選択値を回収
+    const choice={};
+    document.querySelectorAll('#cc-list input[type="radio"]:checked').forEach(r=>{
+        const pid=r.name.replace(/^cc-/,'');
+        choice[pid]=r.value;
+    });
+    document.getElementById('modal-clubchoose').classList.remove('show');
+    pendingClubChoiceCb=null;
+    cb&&cb(choice);
+};
+
 window.confirmClubs=async function(){
     const ev=allEvents[currentEventId]||{};
-    const courts=ev.courts||2;
+    const clubIds=[...selectedClubs];
+    const multi=findMultiClubPlayers(clubIds);
+    if(Object.keys(multi).length>0){
+        // 既存rosterから前回選択を読み込み
+        const curSession=await fbGet('sessions/'+currentEventId)||{};
+        const prev={};
+        (curSession.roster||[]).forEach(p=>{ if(p.pid&&p.clubId) prev[p.pid]=p.clubId; });
+        showClubChoose(multi, prev, (choice)=>{ _saveConfirmClubs(ev, clubIds, choice); });
+    } else {
+        _saveConfirmClubs(ev, clubIds, {});
+    }
+};
+
+async function _saveConfirmClubs(ev, clubIds, playerClubChoice){
     const status=getStatus(ev);
-    const usedClubsMap={}; selectedClubs.forEach(cid=>usedClubsMap[cid]=true);
+    const usedClubsMap={}; clubIds.forEach(cid=>usedClubsMap[cid]=true);
     try{
         await fbUpdate('events/'+currentEventId,{usedClubs:usedClubsMap});
         allEvents[currentEventId]={...ev,usedClubs:usedClubsMap};
@@ -335,8 +436,7 @@ window.confirmClubs=async function(){
         if(status==='開催中'){
             // ── 開催中：全選手の情報を最新データで更新（試合データは保持）──
             const curSession=await fbGet('sessions/'+currentEventId)||{};
-            const newRoster=buildRoster([...selectedClubs], ev.date);
-            // 追加人数を表示用に算出
+            const newRoster=buildRoster(clubIds, ev.date, playerClubChoice);
             const existPids=new Set((curSession.roster||[]).map(p=>p.pid));
             const addedCount=newRoster.filter(p=>!existPids.has(p.pid)).length;
             await fbUpdate('sessions/'+currentEventId,{roster:newRoster});
@@ -350,41 +450,45 @@ window.confirmClubs=async function(){
                 async ()=>{
                     try{
                         const courts=ev.courts||2;
-                        const st=buildSessionState([...selectedClubs], courts, ev.date);
+                        const st=buildSessionState(clubIds, courts, ev.date, playerClubChoice);
                         await fbSet('sessions/'+currentEventId,st);
-                        showToast(`✅ 参加確定しました（${selectedClubs.size}グループ・${st.roster.length}人）`);
+                        showToast(`✅ 参加確定しました（${clubIds.length}グループ・${st.roster.length}人）`);
                         showScreen('screen-events'); loadEvents();
                     }catch(e){showToast('❌ '+e.message);}
                 },
                 '✅ リセットして保存'
             );
-            return; // 確認待ち（tryのcatchで処理しない）
         }
     }catch(e){showToast('❌ '+e.message);}
-};
-function buildRoster(clubIds, eventDate){
-    const rosterMap={};
-    for(const cid of clubIds){
-        const club=allClubs[cid]; if(!club||!club.playerIds) continue;
-        for(const pid of Object.keys(club.playerIds)){
-            if(!rosterMap[pid]&&allPlayers[pid]?.name) rosterMap[pid]=allPlayers[pid];
-        }
-    }
+}
+
+function buildRoster(clubIds, eventDate, playerClubChoice={}){
+    const pidToClubs=computePidToClubs(clubIds);
     const refDate=eventDate||todayStr().replace(/-/g,'');
-    return Object.entries(rosterMap)
-        .map(([pid,p])=>({
-            pid,
-            name:     p.name,
-            kana:     p.kana||'',
-            mu:       p.mu??25.0,
-            sigma:    p.sigma??(25/3),
-            birthdate:p.birthdate||'',
-            age:      calcAge(p.birthdate, refDate)
-        }))
+    return Object.entries(pidToClubs)
+        .map(([pid,clubs])=>{
+            const p=allPlayers[pid]||{};
+            // 所属クラブ決定：1つなら自動、複数ならchoice優先・デフォルトは先頭
+            const chosenCid = clubs.length===1
+                ? clubs[0]
+                : (playerClubChoice[pid] && clubs.includes(playerClubChoice[pid]) ? playerClubChoice[pid] : clubs[0]);
+            const clubName=allClubs[chosenCid]?.name||'';
+            return {
+                pid,
+                name:     p.name,
+                kana:     p.kana||'',
+                mu:       p.mu??25.0,
+                sigma:    p.sigma??(25/3),
+                birthdate:p.birthdate||'',
+                age:      calcAge(p.birthdate, refDate),
+                clubId:   chosenCid,
+                clubName,
+            };
+        })
         .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
 }
-function buildSessionState(clubIds, courts, eventDate){
-    const roster=buildRoster(clubIds, eventDate);
+function buildSessionState(clubIds, courts, eventDate, playerClubChoice={}){
+    const roster=buildRoster(clubIds, eventDate, playerClubChoice);
     return {courts:courts||2,roundCount:0,matchingRule:'random',roster,players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()};
 }
 
