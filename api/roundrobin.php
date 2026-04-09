@@ -1629,10 +1629,10 @@ function renderMatchContainer() {
 
         // 自動展開の判定
         // 管理者：末尾（最新）のみ展開
-        // 閲覧者：先頭（最新）から末尾の1個手前まで展開、最古だけ折りたたむ
+        // 閲覧者：先頭から2試合分（最新・直前）だけ展開
         const isLast = isAdmin
             ? ri === state.schedule.length - 1
-            : ri < scheduleOrdered.length - 1;
+            : ri <= 1;
         block.innerHTML = `
             <div class="round-toggle${isLast ? ' open' : ''}" onclick="toggleRound(this)">
                 <span class="round-label">
@@ -1775,7 +1775,20 @@ function toggleRound(el) {
         t.classList.remove('open');
         t.nextElementSibling.classList.remove('open');
     });
-    if (!isOpen) openRound(el);
+    if (!isOpen) {
+        openRound(el);
+        // 閲覧モード：クリックした試合の直前（1つ下の古い試合）も自動展開
+        if (!isAdmin) {
+            const nextBlock = el.closest('.round-block')?.nextElementSibling;
+            if (nextBlock?.classList.contains('round-block')) {
+                const nextToggle = nextBlock.querySelector('.round-toggle');
+                if (nextToggle) {
+                    nextToggle.classList.add('open');
+                    nextToggle.nextElementSibling?.classList.add('open');
+                }
+            }
+        }
+    }
 }
 
 function openRound(el) {
