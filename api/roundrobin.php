@@ -2113,6 +2113,7 @@ window._fbApply = function(remoteState) {
             document.getElementById('disp-courts').textContent = setupCourts;
             document.getElementById('disp-courts-live').textContent = setupCourts;
             if (isAdmin) {
+                _rebuildEntryPlayers(); // roster変更時にentryPlayersをリセット（state.players=[]なら空になる）
                 showEntryMode();
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else {
@@ -2151,6 +2152,7 @@ window._fbApply = function(remoteState) {
             document.getElementById('rankBody').innerHTML = '';
             if (isAdmin && Array.isArray(state.roster) && state.roster.length > 0) {
                 // 管理者かつ名簿あり → エントリーモードを表示し、組合せタブも有効化
+                _rebuildEntryPlayers(); // state.players=[]の場合はentryPlayersを空にリセット
                 showEntryMode();
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else if (isAdmin) {

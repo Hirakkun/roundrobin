@@ -91,7 +91,6 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
             <label>日付 <span class="req">※</span></label>
             <input type="date" id="ne-date">
         </div>
-        <div id="ne-info" style="font-size:13px;color:#666;background:#fff3e0;border-radius:8px;padding:10px;display:none;"></div>
         <button class="btn btn-green" style="width:100%;padding:14px;" onclick="submitNewEvent()">🎾 イベントを作成する</button>
     </div>
 </div>
@@ -252,13 +251,6 @@ async function deleteEvent(eid){ try{ await fbRemove('events/'+eid); await fbRem
 
 // ─── New Event ────────────────────────────────────────────────
 document.getElementById('ne-date').value=todayStr();
-document.getElementById('ne-name').addEventListener('input',function(){
-    const name=this.value.trim();
-    const info=document.getElementById('ne-info');
-    const match=Object.values(allEvents).find(e=>e.name===name);
-    if(match){ info.style.display='block'; info.textContent=`💡「${name}」と同じイベント名が存在します。参加クラブ情報をコピーします。`; }
-    else info.style.display='none';
-});
 window.submitNewEvent=async function(){
     const name=(document.getElementById('ne-name').value||'').trim();
     const date=(document.getElementById('ne-date').value||'').replace(/-/g,'');
@@ -267,10 +259,8 @@ window.submitNewEvent=async function(){
     const sid=name+date;
     const eid=encodeURIComponent(sid);
     if(allEvents[eid]){showToast('⚠️ 同じイベント名・日付の組合せが既に存在します');return;}
-    const sameNameEntry=Object.entries(allEvents).find(([,v])=>v.name===name);
-    const copiedClubs=sameNameEntry?(sameNameEntry[1].usedClubs||{}):{};
     const token=Math.random().toString(36).substr(2,8).toUpperCase();
-    const evData={name,date,adminToken:token,usedClubs:copiedClubs,status:'準備中',createdAt:new Date().toISOString()};
+    const evData={name,date,adminToken:token,usedClubs:{},status:'準備中',createdAt:new Date().toISOString()};
     try{
         await fbSet('events/'+eid,evData);
         localStorage.setItem('rr_admin:'+sid,token);
