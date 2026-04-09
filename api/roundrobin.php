@@ -683,32 +683,46 @@ function enableTabs() {
     document.getElementById('btn-rank').classList.remove('disabled');
 }
 
+// 評価バッジ生成
+function _evalBadge(mark) {
+    const cfg = {
+        '◎': { bg: '#e8f5e9', color: '#2e7d32', border: '#a5d6a7' },
+        '△': { bg: '#fff8e1', color: '#f57f17', border: '#ffe082' },
+        '×': { bg: '#fce4ec', color: '#b71c1c', border: '#f48fb1' },
+    }[mark] || {};
+    return `<span style="display:inline-block;font-size:12px;font-weight:bold;padding:1px 7px;border-radius:10px;border:1px solid ${cfg.border};background:${cfg.bg};color:${cfg.color};margin-left:4px;">${mark}</span>`;
+}
+
 const RULE_DESCS = {
     random: {
         label: '🎲 ランダムマッチ',
-        detail: `
-            <b>① 出場回数を均等に</b> — 出場率（出場数÷対象ラウンド数）が低い人を優先的に選出します。<br>
-            <b>② 同じペアを避ける</b> — 過去に同じチームになった相手との重複を抑えます。<br>
-            <b>③ 同じ対戦相手を避ける</b> — 毎回違う相手と戦えるよう対戦履歴を考慮します。<br>
-            <b>④ 出場間隔を均等に</b> — 長く休んでいる人を優先的に選出します。`,
-        priority: '①出場回数均等 › ②ペア重複なし › ③対戦重複なし › ④間隔均等',
+        rows: [
+            { num:'①', text:'出場回数を均等に', mark:'◎', note:'出場率が低い人から必ず選出。常に保証されます。' },
+            { num:'②', text:'同じペアを避ける',  mark:'◎', note:'ペア重複ゼロの組み合わせを全探索で探します。' },
+            { num:'③', text:'同じ対戦相手を避ける', mark:'△', note:'①②を満たした残りの選択肢の中で最小化。参加人数が少ないと保証できないことがあります。' },
+            { num:'④', text:'出場間隔を均等に', mark:'×', note:'①〜③が優先されるため、間隔の調整は限定的です。' },
+        ],
+        summary: '参加人数が多いほど③④も機能しやすくなります。',
     },
     rating: {
         label: '📊 レーティングマッチ',
-        detail: `
-            <b>① 出場回数を均等に</b> — 出場率が低い人から優先的に選出します。<br>
-            <b>② 同じペアを避ける</b> — 過去に組んだ相手との重複を抑えます。<br>
-            <b>③ μ値が近い4人を同コートに</b> — TrueSkillレーティングで実力が近い人同士をグループ化します。<br>
-            <b>④ 同じ対戦相手を避ける</b> — 対戦履歴を考慮してチームを割り当てます。`,
-        priority: '①出場回数均等 › ②ペア重複なし › ③μ値均衡 › ④対戦重複なし',
+        rows: [
+            { num:'①', text:'出場回数を均等に',   mark:'◎', note:'出場率が低い人から必ず選出。常に保証されます。' },
+            { num:'②', text:'同じペアを避ける',   mark:'◎', note:'ペア重複を抑えた上でグループを構成します。' },
+            { num:'③', text:'μ値が近い4人を同コートに', mark:'△', note:'①②で絞られた出場者の中で最良のグループ化を試みます。全員のμ差が小さい場合はランダムに切り替わります。' },
+            { num:'④', text:'同じ対戦相手を避ける', mark:'×', note:'③のグループ内でのみ調整。①〜③の制約が強いため保証できないことがあります。' },
+        ],
+        summary: 'レーティングに差がついてくるほど③の精度が上がります。',
     },
     balance: {
         label: '⚖️ バランスマッチ',
-        detail: `
-            選出・ペア・対戦相手を<b>総合スコアで一括最適化</b>します（山登り法）。<br>
-            <b>出場回数均等</b>（分散最小）＋ <b>ペア重複回避</b>（最優先）＋ <b>未対戦相手優先</b>＋ <b>連休・連投防止</b>。<br>
-            固定グループになりやすい少人数大会や、途中参加・休憩が多い場合に特に効果的です。`,
-        priority: '総合スコア最小化（出場均等 ＋ ペア重複 ＋ 対戦重複 ＋ 休憩バランス）',
+        rows: [
+            { num:'①', text:'出場回数を均等に',     mark:'◎', note:'コストとして全候補を同時評価。必ず考慮されます。' },
+            { num:'②', text:'同じペアを避ける',      mark:'◎', note:'最も重いペナルティ（×100）で強力に排除します。' },
+            { num:'③', text:'未対戦相手を優先する',  mark:'◎', note:'未対戦ペアにボーナスを付与し、交流を広げます。' },
+            { num:'④', text:'連休・連投を防止する',  mark:'◎', note:'連続休み・連続出場をコスト化して自動調整します。' },
+        ],
+        summary: '①〜④をすべて同時に最適化するため、全項目で高い効果を発揮します。',
     },
 };
 
@@ -716,15 +730,30 @@ function updateMatchRuleDesc() {
     const rule = matchingRule || state.matchingRule || 'random';
     const desc = RULE_DESCS[rule] || RULE_DESCS.random;
 
+    const buildRows = rows => rows.map(r =>
+        `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;">
+            <span style="min-width:1.4em;font-weight:bold;color:#1565c0;">${r.num}</span>
+            ${_evalBadge(r.mark)}
+            <span><b>${r.text}</b> <span style="color:#666;font-size:12px;">— ${r.note}</span></span>
+        </div>`
+    ).join('');
+
+    const buildDetail = desc =>
+        buildRows(desc.rows) +
+        `<div style="margin-top:6px;font-size:12px;color:#888;border-top:1px solid #ddd;padding-top:6px;">💡 ${desc.summary}</div>`;
+
+    const buildPriority = desc =>
+        desc.rows.map(r => `${r.num}${r.text} ${_evalBadge(r.mark)}`).join('<span style="color:#aaa;margin:0 4px;">›</span>');
+
     // 設定タブ内の説明欄
     const setup = document.getElementById('setupRuleDesc');
-    if (setup) setup.innerHTML = desc.detail;
+    if (setup) setup.innerHTML = buildDetail(desc);
 
     // 組合せタブ内の優先順位欄
     const el = document.getElementById('matchRuleDesc');
     if (!el) return;
     el.style.display = '';
-    el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（${desc.label}）</div>${desc.priority}`;
+    el.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;color:#1565c0;">📌 組合せの優先順位（${desc.label}）</div>${buildRows(desc.rows)}<div style="margin-top:4px;font-size:12px;color:#888;">💡 ${desc.summary}</div>`;
 }
 
 function _resetState() {
