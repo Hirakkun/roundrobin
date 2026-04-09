@@ -852,8 +852,9 @@ function renderPlayerList() {
         div.className = 'player-item';
         div.style.opacity = p.resting ? '0.5' : '1';
 
-        // 名前プルダウン：試合開始後は管理者でもロック
-        const selectDisabled = (!isAdmin || matchStarted) ? 'disabled' : '';
+        // 名前プルダウン：試合開始後はロック。ただし未出場（lastRound===-1）の選手は名前未確定なので編集可
+        const neverPlayed = p.lastRound === -1;
+        const selectDisabled = (!isAdmin || (matchStarted && !neverPlayed)) ? 'disabled' : '';
         let opts = `<option value="">選手${p.id}</option>`;
         rosterNames.forEach(n => {
             opts += `<option value="${n}"${name===n?' selected':''}>${n}</option>`;
