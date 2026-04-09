@@ -757,18 +757,16 @@ function addPlayerToState(id, isNew = false) {
     state.pairMatrix[id][id] = 0;
     state.oppMatrix[id][id] = 0;
 
-    // 途中参加の場合はplay_countを現在の最小値-1に（急激な連続出場を防ぐ）
-    let playCount = 0;
-    if (isNew && state.players.length > 0) {
-        const active = state.players.filter(p => !p.resting);
-        if (active.length > 0) {
-            playCount = Math.max(0, Math.min(...active.map(p => p.playCount)) - 1);
-        }
+    // 途中参加: 過去ラウンドに not-joined を遡及記録
+    if (isNew && state.schedule.length > 0) {
+        state.schedule.forEach(rd => {
+            if (!rd.playerStates) rd.playerStates = {};
+            rd.playerStates[id] = 'not-joined';
+        });
     }
 
-    state.players.push({ id, playCount, lastRound: -1, resting: false,
-        joinedRound: state.roundCount,
-        restCount: 0
+    state.players.push({ id, playCount: 0, lastRound: -1, resting: false,
+        joinedRound: state.roundCount
     });
 
     // TrueSkill初期値（μ=25, σ=25/3）
@@ -825,15 +823,8 @@ function setPlayerName(id, name) {
 function toggleRest(id) {
     const p = state.players.find(p => p.id === id);
     if (!p) return;
-    if (p.resting) {
-        // 復帰時: 途中参加者と同じ扱いでplayCount・restCountをリセット
-        // これにより次のラウンドで優先的に選出される
-        const active = state.players.filter(x => !x.resting);
-        if (active.length > 0) {
-            p.playCount = Math.max(0, Math.min(...active.map(x => x.playCount)) - 1);
-        }
-        p.restCount = 0;
-    }
+    // 復帰時: playerStates履歴に基づく playRatio で自動的に優先度が計算されるため
+    // playCount や restCount の手動操作は不要
     p.resting = !p.resting;
     renderPlayerList();
     saveState();
@@ -1005,6 +996,16 @@ function shuffle(arr) {
     return arr;
 }
 
+// 参加後の出場対象ラウンド数（not-joined以外）をhistoryから算出
+function getEligibleRounds(id) {
+    const player = state.players.find(p => p.id === id);
+    const joinedRound = player?.joinedRound || 0;
+    return state.schedule.filter(rd => {
+        if (rd.playerStates) return rd.playerStates[id] !== 'not-joined';
+        return rd.round > joinedRound; // fallback for old data
+    }).length;
+}
+
 function selectRoundPlayers() {
     const active = state.players.filter(p => !p.resting);
     // 必ず4の倍数人数（1コート=4人のため）
@@ -1013,11 +1014,15 @@ function selectRoundPlayers() {
     if (must < 4) return []; // 4人未満は試合不可
     if (active.length <= must) return active.map(p => p.id);
 
-    // 実質出場数 = playCount + restCount
-    const effectiveCount = p => p.playCount + (p.restCount || 0);
+    // 出場率 = playCount / eligibleRounds（低いほど優先）
+    const eps = 1e-9;
+    const playRatio = p => {
+        const eligible = getEligibleRounds(p.id);
+        return eligible === 0 ? 0 : p.playCount / eligible;
+    };
 
-    const minCount = Math.min(...active.map(p => effectiveCount(p)));
-    let tier1 = active.filter(p => effectiveCount(p) === minCount);
+    const minRatio = Math.min(...active.map(p => playRatio(p)));
+    let tier1 = active.filter(p => playRatio(p) <= minRatio + eps);
 
     if (tier1.length >= must) {
         // lastRoundが小さい（長く休んでいる）人を優先しつつ、
@@ -1027,13 +1032,14 @@ function selectRoundPlayers() {
         return tier1.slice(0, must).map(p => p.id);
     }
 
-    // tier1だけでは足りない: 実質出場数昇順 → lastRound昇順で補充
+    // tier1だけでは足りない: 出場率昇順 → lastRound昇順で補充
     const selected = tier1.map(p => p.id);
     const rest = active
-        .filter(p => effectiveCount(p) > minCount)
-        .sort((a, b) => effectiveCount(a) !== effectiveCount(b)
-            ? effectiveCount(a) - effectiveCount(b)
-            : a.lastRound - b.lastRound);
+        .filter(p => playRatio(p) > minRatio + eps)
+        .sort((a, b) => {
+            const dr = playRatio(a) - playRatio(b);
+            return Math.abs(dr) > eps ? dr : a.lastRound - b.lastRound;
+        });
     while (selected.length < must && rest.length > 0) {
         selected.push(rest.shift().id);
     }
@@ -1320,8 +1326,17 @@ function generateNextRound() {
         }));
     });
 
-    // 休憩中プレイヤーのrestCountを加算
-    state.players.forEach(p => { if (p.resting) p.restCount++; });
+    // このラウンドの全選手状態を記録
+    const playerStates = {};
+    state.players.forEach(p => {
+        if (ids.includes(p.id)) {
+            playerStates[p.id] = 'play';
+        } else if (p.resting) {
+            playerStates[p.id] = 'rest';
+        } else {
+            playerStates[p.id] = 'bench'; // active but not selected (sitting out)
+        }
+    });
 
     // play_count更新
     ids.forEach(id => {
@@ -1329,7 +1344,7 @@ function generateNextRound() {
         if (p) { p.playCount++; p.lastRound = roundNum; }
     });
 
-    state.schedule.push({ round: roundNum, courts: courtsFormatted });
+    state.schedule.push({ round: roundNum, courts: courtsFormatted, playerStates });
     state.roundCount = roundNum;
 
     // 初回組合せ作成でイベント状態を「開催中」に変更
