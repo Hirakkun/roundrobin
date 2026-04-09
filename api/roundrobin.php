@@ -246,6 +246,11 @@ body.viewer-mode #initialSetup { display: none !important; }
                     レーティングマッチ
                     <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・μ値でチームバランス</div>
                 </button>
+                <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
+                    <span class="rule-icon">⚖️</span>
+                    バランスマッチ
+                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
+                </button>
             </div>
         </div>
         </div>
@@ -391,6 +396,8 @@ function selectRule(rule) {
     state.matchingRule = rule; // stateにも即反映
     document.getElementById('rule-random').classList.toggle('selected', rule === 'random');
     document.getElementById('rule-rating').classList.toggle('selected', rule === 'rating');
+    const rb = document.getElementById('rule-balance');
+    if (rb) rb.classList.toggle('selected', rule === 'balance');
     updateMatchRuleDesc();
     saveState(); // _fbApply中はisApplyingRemote=trueなのでpushされない（echo防止）
 }
@@ -691,6 +698,13 @@ function updateMatchRuleDesc() {
             <span style="display:inline-block;margin:2px 4px;">②同じペアにならない</span><span style="color:#aaa;">›</span>
             <span style="display:inline-block;margin:2px 4px;">③μ値が近いチームで対戦</span><span style="color:#aaa;">›</span>
             <span style="display:inline-block;margin:2px 4px;">④同じ相手と当たらない</span>`;
+    } else if (rule === 'balance') {
+        el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（バランスマッチ）</div>
+            <span style="display:inline-block;margin:2px 4px 2px 0;">総合スコア最適化：</span>
+            <span style="display:inline-block;margin:2px 4px;">出場回数均等</span><span style="color:#aaa;">＋</span>
+            <span style="display:inline-block;margin:2px 4px;">ペア重複回避</span><span style="color:#aaa;">＋</span>
+            <span style="display:inline-block;margin:2px 4px;">未対戦相手優先</span><span style="color:#aaa;">＋</span>
+            <span style="display:inline-block;margin:2px 4px;">連休・連投防止</span>`;
     } else {
         el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（ランダムマッチ）</div>
             <span style="display:inline-block;margin:2px 4px 2px 0;">①出場回数を均等に</span><span style="color:#aaa;">›</span>
@@ -1276,6 +1290,182 @@ function assignCourtsRandom(pairs, attempts = 20) {
     }
     return best;
 }
+
+// =====================================================================
+// バランスマッチ用ロジック（スコア評価型）
+// 選出・ペア・対戦を単一タスクで総合最適化（山登り法）
+// =====================================================================
+const BALANCE_WEIGHTS = {
+    CPLAY:       50,   // 出場回数分散（(count-avg)²）
+    CPAIR:       100,  // ペア重複（過去ペア回数）
+    COPP:        30,   // 対戦重複（過去対戦回数）
+    COPP_NEW:    -20,  // 未対戦ボーナス（コート内の未対戦ペア1組あたり）
+    REST2:       100,  // 2連続休み
+    REST3:       200,  // 3連続以上休み
+    PLAY3:       20,   // 3連続以上出場
+};
+const BALANCE_ITERATIONS = 1500;
+
+// 連続休み数（直近ラウンドから遡って rest が続く数）
+function getRestStreak(id) {
+    let streak = 0;
+    for (let i = state.schedule.length - 1; i >= 0; i--) {
+        const rd = state.schedule[i];
+        if (!rd.playerStates) break;
+        const st = rd.playerStates[id];
+        if (st === 'rest' || st === 'bench') streak++;
+        else break;
+    }
+    return streak;
+}
+
+// 連続出場数
+function getPlayStreak(id) {
+    let streak = 0;
+    for (let i = state.schedule.length - 1; i >= 0; i--) {
+        const rd = state.schedule[i];
+        if (!rd.playerStates) break;
+        if (rd.playerStates[id] === 'play') streak++;
+        else break;
+    }
+    return streak;
+}
+
+// 配置案のスコア評価（低いほど良い）
+// assignment = { courts: [[id,id,id,id], ...], bench: [id,...] }
+function evaluateBalanceScore(assignment, active) {
+    const W = BALANCE_WEIGHTS;
+    const playingIds = assignment.courts.flat();
+
+    // ① 出場回数均等化（次ラウンド後の分散）
+    const nextCounts = active.map(p => {
+        const c = p.playCount + (playingIds.includes(p.id) ? 1 : 0);
+        const elig = getEligibleRounds(p.id) + 1;
+        return c / elig;
+    });
+    const avg = nextCounts.reduce((s, v) => s + v, 0) / nextCounts.length;
+    const Cplay = nextCounts.reduce((s, v) => s + (v - avg) * (v - avg), 0) * W.CPLAY * nextCounts.length;
+
+    // ② ペア重複 / ③ 対戦重複 / 未対戦ボーナス（コート単位）
+    let Cpair = 0, Copp = 0;
+    assignment.courts.forEach(group => {
+        // コート内4人のペアバランス最良を仮選択（makeBestPairInGroup相当の簡易版）
+        const [a, b, c, d] = group;
+        const options = [
+            [[a,b],[c,d]],
+            [[a,c],[b,d]],
+            [[a,d],[b,c]],
+        ];
+        let bestPairDup = Infinity;
+        let bestT1 = null, bestT2 = null;
+        for (const [t1, t2] of options) {
+            const pd = (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0);
+            if (pd < bestPairDup) { bestPairDup = pd; bestT1 = t1; bestT2 = t2; }
+        }
+        Cpair += bestPairDup * W.CPAIR;
+        // 対戦重複（team1 × team2 の4組）
+        bestT1.forEach(x => bestT2.forEach(y => {
+            const c = state.oppMatrix[x]?.[y] || 0;
+            Copp += c * W.COPP;
+            if (c === 0) Copp += W.COPP_NEW; // 未対戦ボーナス
+        }));
+    });
+
+    // ④ 休み・連投ペナルティ（benchに入ると休み扱い）
+    let Crest = 0;
+    assignment.bench.forEach(id => {
+        const rs = getRestStreak(id);
+        if (rs >= 2) Crest += W.REST3;
+        else if (rs === 1) Crest += W.REST2;
+    });
+    playingIds.forEach(id => {
+        const ps = getPlayStreak(id);
+        if (ps >= 2) Crest += W.PLAY3;
+    });
+
+    return Cplay + Cpair + Copp + Crest;
+}
+
+// 初期配置を生成
+function makeInitialBalanceAssignment(active, courtCount) {
+    const shuffled = shuffle(active.map(p => p.id));
+    const need = courtCount * 4;
+    const playing = shuffled.slice(0, need);
+    const bench = shuffled.slice(need);
+    const courts = [];
+    for (let i = 0; i < courtCount; i++) {
+        courts.push(playing.slice(i * 4, i * 4 + 4));
+    }
+    return { courts, bench };
+}
+
+// 配置の深いコピー
+function cloneAssignment(a) {
+    return { courts: a.courts.map(c => [...c]), bench: [...a.bench] };
+}
+
+// ランダムに2人をswap（コート間・コート↔bench）
+function swapInAssignment(a) {
+    const allSlots = []; // [{type:'court', idx, i}, {type:'bench', idx}]
+    a.courts.forEach((c, ci) => c.forEach((_, i) => allSlots.push({ type: 'court', ci, i })));
+    a.bench.forEach((_, i) => allSlots.push({ type: 'bench', i }));
+    if (allSlots.length < 2) return a;
+
+    const s1 = allSlots[Math.floor(Math.random() * allSlots.length)];
+    let s2;
+    do {
+        s2 = allSlots[Math.floor(Math.random() * allSlots.length)];
+    } while (s1 === s2 || (s1.type === 'court' && s2.type === 'court' && s1.ci === s2.ci));
+
+    const getId = s => s.type === 'court' ? a.courts[s.ci][s.i] : a.bench[s.i];
+    const setId = (s, id) => {
+        if (s.type === 'court') a.courts[s.ci][s.i] = id;
+        else a.bench[s.i] = id;
+    };
+    const id1 = getId(s1), id2 = getId(s2);
+    setId(s1, id2);
+    setId(s2, id1);
+    return a;
+}
+
+function generateCourtsBalance(active, courtCount) {
+    // 必要人数が足りない場合
+    if (active.length < 4) return null;
+    const maxCourts = Math.min(courtCount, Math.floor(active.length / 4));
+    if (maxCourts < 1) return null;
+
+    // 初期解
+    let current = makeInitialBalanceAssignment(active, maxCourts);
+    let currentScore = evaluateBalanceScore(current, active);
+    let best = cloneAssignment(current);
+    let bestScore = currentScore;
+
+    // 山登り + 簡易SA（悪化を一定確率で受容）
+    for (let iter = 0; iter < BALANCE_ITERATIONS; iter++) {
+        const trial = cloneAssignment(current);
+        swapInAssignment(trial);
+        const trialScore = evaluateBalanceScore(trial, active);
+
+        const temperature = 1 - iter / BALANCE_ITERATIONS;
+        const accept = trialScore < currentScore
+            || (Math.random() < 0.05 * temperature);
+
+        if (accept) {
+            current = trial;
+            currentScore = trialScore;
+            if (currentScore < bestScore) {
+                best = cloneAssignment(current);
+                bestScore = currentScore;
+            }
+        }
+    }
+
+    // 最良解から各コートのペア分けを確定
+    const selectedIds = best.courts.flat();
+    const courts = best.courts.map(group => makeBestPairInGroup(group));
+    return { courts, selectedIds };
+}
+
 // =====================================================================
 function generateNextRound() {
     // 参加者未登録チェック
@@ -1298,15 +1488,23 @@ function generateNextRound() {
     }
 
     const roundNum = state.roundCount + 1;
-    const ids = selectRoundPlayers();
+    let ids;
     let courts;
 
     if (state.matchingRule === 'rating') {
         // レーティングマッチ: μ近接グループ先行方式
+        ids = selectRoundPlayers();
         courts = generateCourtsRating(ids);
         if (!courts) { alert('コート割り当てに失敗しました'); return; }
+    } else if (state.matchingRule === 'balance') {
+        // バランスマッチ: 選出・ペア・対戦を総合最適化
+        const result = generateCourtsBalance(active, state.courts);
+        if (!result) { alert('バランスマッチの組合せ生成に失敗しました'); return; }
+        ids = result.selectedIds;
+        courts = result.courts;
     } else {
         // ランダムマッチ: 試合数均等>ペア重複なし>対戦相手重複なし>間隔均等
+        ids = selectRoundPlayers();
         const pairs = makePairsRandom(ids);
         if (!pairs) { alert('ペア生成に失敗しました'); return; }
         courts = assignCourtsRandom(pairs);
