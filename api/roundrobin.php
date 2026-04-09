@@ -402,6 +402,10 @@ function changeCount(key, delta) {
     } else {
         setupCourts = Math.max(1, Math.min(20, setupCourts + delta));
         document.getElementById('disp-courts').textContent = setupCourts;
+        // state.courtsにも即反映（generateNextRoundが直接参照するため）
+        state.courts = setupCourts;
+        document.getElementById('disp-courts-live').textContent = setupCourts;
+        if (_sessionId) saveState();
     }
 }
 
