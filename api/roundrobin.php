@@ -246,7 +246,6 @@ body.viewer-mode #initialSetup { display: none !important; }
                 </button>
             </div>
         </div>
-        <button class="start-btn" onclick="initTournament()">▶ イベントを開始</button>
     </div>
 
     <!-- 参加者・途中変更エリア（試合開始後に表示） -->
@@ -264,7 +263,6 @@ body.viewer-mode #initialSetup { display: none !important; }
         </div>
         <div id="playerList" class="player-list"></div>
         <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
-        <button class="start-btn admin-only" style="margin-top:14px;background:#c62828;" onclick="resetTournament()">🔄 最初からやり直す</button>
     </div>
 </div>
 
@@ -544,8 +542,8 @@ function renderEntryList() {
     const list = document.getElementById('entryList');
     if (!list) return;
     list.querySelectorAll('.entry-confirmed-row').forEach(r => r.remove());
-    // schedule が1件以上あれば「開催中」とみなしてロック
-    const isActive = currentEventStatus === '開催中' || (state.schedule && state.schedule.length > 0);
+    // 組合せ（schedule）が1件以上あれば開催中とみなしてロック
+    const isActive = Array.isArray(state.schedule) && state.schedule.length > 0;
     const frag = document.createDocumentFragment();
     entryPlayers.forEach(p => {
         const div = document.createElement('div');
@@ -635,6 +633,10 @@ function _resetState() {
     state.matchingRule = 'random';
     state.createdAt    = new Date().toISOString();
     if (savedRoster) state.roster = savedRoster;
+    // 組合せがなくなったのでFirebaseのイベント状態を準備中に戻す
+    if (_sessionId && window._fbSetEventStatus) {
+        window._fbSetEventStatus(_sessionId, '準備中');
+    }
 }
 
 function _resetUI() {
@@ -1186,14 +1188,22 @@ function assignCourtsRandom(pairs, attempts = 20) {
 }
 // =====================================================================
 function generateNextRound() {
-    const active = state.players.filter(p => !p.resting);
-
-    // state未初期化チェック
+    // 参加者未確定の場合：entryPlayersから自動初期化
     if (!state.players || state.players.length === 0) {
-        alert('まず「⚙️設定」タブで「組合せを作る」を押してください。');
-        showStep('step-setup', document.getElementById('btn-setup'));
-        return;
+        if (entryPlayers.length === 0) {
+            alert('⚙️設定タブで参加者を追加してください。');
+            showStep('step-setup', document.getElementById('btn-setup'));
+            return;
+        }
+        if (!applyEntryPlayers()) return;
+        enableTabs();
+        updateMatchRuleDesc();
+        showLiveSetup();
+        renderPlayerList();
+        document.getElementById('disp-courts-live').textContent = state.courts;
     }
+
+    const active = state.players.filter(p => !p.resting);
     if (active.length < 4) {
         alert('出場できる参加者が4人以上必要です（現在' + active.length + '人）');
         return;
