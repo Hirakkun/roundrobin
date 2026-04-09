@@ -1449,6 +1449,7 @@ function deleteRound(e, roundNum) {
         if (_sessionId && window._fbSetEventStatus) {
             window._fbSetEventStatus(_sessionId, '準備中');
         }
+        renderMatchContainer(); // 組合せ画面をクリア
         document.getElementById('initialSetup').style.display = 'block';
         document.getElementById('liveSetup').style.display = 'none';
         _rebuildEntryPlayers();
