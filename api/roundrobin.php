@@ -2028,6 +2028,13 @@ function updateAdminUI() {
         document.body.classList.add('viewer-mode');
         if (ind) { ind.style.display = ''; ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
     }
+    // 閲覧者モードは「①設定」→「①参加者」に変更
+    const btnSetup = document.getElementById('btn-setup');
+    if (btnSetup) {
+        btnSetup.innerHTML = isAdmin
+            ? '<span class="step-icon">⚙️</span>①設定'
+            : '<span class="step-icon">👥</span>①参加者';
+    }
 }
 
 function copyAdminUrl() {
