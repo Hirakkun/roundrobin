@@ -1617,12 +1617,20 @@ function renderMatchContainer() {
     const container = document.getElementById('matchContainer');
     container.innerHTML = '';
 
-    state.schedule.forEach((rd, ri) => {
+    // 閲覧モードは降順（最新が先頭）、管理者モードは昇順
+    const scheduleOrdered = isAdmin
+        ? state.schedule
+        : [...state.schedule].reverse();
+
+    scheduleOrdered.forEach((rd, ri) => {
         const block = document.createElement('div');
         block.className = 'round-block';
         block.dataset.round = rd.round;
 
-        const isLast = ri === state.schedule.length - 1;
+        // 最新ラウンド（= 自動で開く対象）の判定
+        const isLast = isAdmin
+            ? ri === state.schedule.length - 1  // 昇順：末尾が最新
+            : ri === 0;                          // 降順：先頭が最新
         block.innerHTML = `
             <div class="round-toggle${isLast ? ' open' : ''}" onclick="toggleRound(this)">
                 <span class="round-label">
