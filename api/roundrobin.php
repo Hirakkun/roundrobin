@@ -388,9 +388,11 @@ let matchingRule = 'random'; // 'random' or 'rating'
 
 function selectRule(rule) {
     matchingRule = rule;
+    state.matchingRule = rule; // stateにも即反映
     document.getElementById('rule-random').classList.toggle('selected', rule === 'random');
     document.getElementById('rule-rating').classList.toggle('selected', rule === 'rating');
     updateMatchRuleDesc();
+    saveState(); // _fbApply中はisApplyingRemote=trueなのでpushされない（echo防止）
 }
 
 function changeCount(key, delta) {
@@ -670,9 +672,15 @@ function enableTabs() {
 }
 
 function updateMatchRuleDesc() {
-    const rule = state.matchingRule || matchingRule;
+    const rule = matchingRule || state.matchingRule || 'random';
     const el = document.getElementById('matchRuleDesc');
     if (!el) return;
+    // 第1試合が作成されるまでは非表示
+    if (!Array.isArray(state.schedule) || state.schedule.length === 0) {
+        el.style.display = 'none';
+        return;
+    }
+    el.style.display = '';
     if (rule === 'rating') {
         el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（レーティングマッチ）</div>
             <span style="display:inline-block;margin:2px 4px 2px 0;">①出場回数を均等に</span><span style="color:#aaa;">›</span>
