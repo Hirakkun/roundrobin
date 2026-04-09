@@ -1627,10 +1627,12 @@ function renderMatchContainer() {
         block.className = 'round-block';
         block.dataset.round = rd.round;
 
-        // 最新ラウンド（= 自動で開く対象）の判定
+        // 自動展開の判定
+        // 管理者：末尾（最新）のみ展開
+        // 閲覧者：先頭（最新）から末尾の1個手前まで展開、最古だけ折りたたむ
         const isLast = isAdmin
-            ? ri === state.schedule.length - 1  // 昇順：末尾が最新
-            : ri === 0;                          // 降順：先頭が最新
+            ? ri === state.schedule.length - 1
+            : ri < scheduleOrdered.length - 1;
         block.innerHTML = `
             <div class="round-toggle${isLast ? ' open' : ''}" onclick="toggleRound(this)">
                 <span class="round-label">
