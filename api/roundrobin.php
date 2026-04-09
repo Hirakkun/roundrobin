@@ -252,6 +252,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                     <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
                 </button>
             </div>
+            <div id="setupRuleDesc" style="margin-top:10px;font-size:13px;color:#444;background:#f0f4ff;border-radius:8px;padding:10px 12px;border-left:3px solid #1565c0;line-height:1.7;"></div>
         </div>
         </div>
     </div>
@@ -682,36 +683,48 @@ function enableTabs() {
     document.getElementById('btn-rank').classList.remove('disabled');
 }
 
+const RULE_DESCS = {
+    random: {
+        label: '🎲 ランダムマッチ',
+        detail: `
+            <b>① 出場回数を均等に</b> — 出場率（出場数÷対象ラウンド数）が低い人を優先的に選出します。<br>
+            <b>② 同じペアを避ける</b> — 過去に同じチームになった相手との重複を抑えます。<br>
+            <b>③ 同じ対戦相手を避ける</b> — 毎回違う相手と戦えるよう対戦履歴を考慮します。<br>
+            <b>④ 出場間隔を均等に</b> — 長く休んでいる人を優先的に選出します。`,
+        priority: '①出場回数均等 › ②ペア重複なし › ③対戦重複なし › ④間隔均等',
+    },
+    rating: {
+        label: '📊 レーティングマッチ',
+        detail: `
+            <b>① 出場回数を均等に</b> — 出場率が低い人から優先的に選出します。<br>
+            <b>② 同じペアを避ける</b> — 過去に組んだ相手との重複を抑えます。<br>
+            <b>③ μ値が近い4人を同コートに</b> — TrueSkillレーティングで実力が近い人同士をグループ化します。<br>
+            <b>④ 同じ対戦相手を避ける</b> — 対戦履歴を考慮してチームを割り当てます。`,
+        priority: '①出場回数均等 › ②ペア重複なし › ③μ値均衡 › ④対戦重複なし',
+    },
+    balance: {
+        label: '⚖️ バランスマッチ',
+        detail: `
+            選出・ペア・対戦相手を<b>総合スコアで一括最適化</b>します（山登り法）。<br>
+            <b>出場回数均等</b>（分散最小）＋ <b>ペア重複回避</b>（最優先）＋ <b>未対戦相手優先</b>＋ <b>連休・連投防止</b>。<br>
+            固定グループになりやすい少人数大会や、途中参加・休憩が多い場合に特に効果的です。`,
+        priority: '総合スコア最小化（出場均等 ＋ ペア重複 ＋ 対戦重複 ＋ 休憩バランス）',
+    },
+};
+
 function updateMatchRuleDesc() {
     const rule = matchingRule || state.matchingRule || 'random';
+    const desc = RULE_DESCS[rule] || RULE_DESCS.random;
+
+    // 設定タブ内の説明欄
+    const setup = document.getElementById('setupRuleDesc');
+    if (setup) setup.innerHTML = desc.detail;
+
+    // 組合せタブ内の優先順位欄
     const el = document.getElementById('matchRuleDesc');
     if (!el) return;
-    // 第1試合が作成されるまでは非表示
-    if (!Array.isArray(state.schedule) || state.schedule.length === 0) {
-        el.style.display = 'none';
-        return;
-    }
     el.style.display = '';
-    if (rule === 'rating') {
-        el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（レーティングマッチ）</div>
-            <span style="display:inline-block;margin:2px 4px 2px 0;">①出場回数を均等に</span><span style="color:#aaa;">›</span>
-            <span style="display:inline-block;margin:2px 4px;">②同じペアにならない</span><span style="color:#aaa;">›</span>
-            <span style="display:inline-block;margin:2px 4px;">③μ値が近いチームで対戦</span><span style="color:#aaa;">›</span>
-            <span style="display:inline-block;margin:2px 4px;">④同じ相手と当たらない</span>`;
-    } else if (rule === 'balance') {
-        el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（バランスマッチ）</div>
-            <span style="display:inline-block;margin:2px 4px 2px 0;">総合スコア最適化：</span>
-            <span style="display:inline-block;margin:2px 4px;">出場回数均等</span><span style="color:#aaa;">＋</span>
-            <span style="display:inline-block;margin:2px 4px;">ペア重複回避</span><span style="color:#aaa;">＋</span>
-            <span style="display:inline-block;margin:2px 4px;">未対戦相手優先</span><span style="color:#aaa;">＋</span>
-            <span style="display:inline-block;margin:2px 4px;">連休・連投防止</span>`;
-    } else {
-        el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（ランダムマッチ）</div>
-            <span style="display:inline-block;margin:2px 4px 2px 0;">①出場回数を均等に</span><span style="color:#aaa;">›</span>
-            <span style="display:inline-block;margin:2px 4px;">②同じペアにならない</span><span style="color:#aaa;">›</span>
-            <span style="display:inline-block;margin:2px 4px;">③同じ相手と当たらない</span><span style="color:#aaa;">›</span>
-            <span style="display:inline-block;margin:2px 4px;">④出場間隔を均等に</span>`;
-    }
+    el.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;color:#1565c0;">📌 組合せの優先順位（${desc.label}）</div>${desc.priority}`;
 }
 
 function _resetState() {
