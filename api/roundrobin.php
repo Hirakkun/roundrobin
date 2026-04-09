@@ -494,7 +494,7 @@ function showEntryMode() {
     if (!isAdmin) return;
     document.getElementById('entryListCard').style.display = 'block';
     document.getElementById('manualMode').style.display = 'none';
-    document.getElementById('manualModeExtra').style.display = 'none';
+    document.getElementById('manualModeExtra').style.display = 'block'; // 準備中はコート数・ルールを表示
     renderEntryList();
     // 管理者は準備中でも組合せタブを有効化
     document.getElementById('btn-match').classList.remove('disabled');
@@ -2087,6 +2087,9 @@ window._fbApply = function(remoteState) {
         if (!remoteState.playerNames || typeof remoteState.playerNames !== 'object') remoteState.playerNames = {};
         Object.assign(state, remoteState);
         localStorage.setItem('rr_state_v2', JSON.stringify(state));
+        // マッチングルールを同期
+        matchingRule = state.matchingRule || 'random';
+        selectRule(matchingRule);
         // コート名トグルを同期
         const toggle = document.getElementById('courtNameToggle');
         if (toggle) toggle.checked = !!state.courtNameAlpha;
@@ -2152,6 +2155,8 @@ window._fbApply = function(remoteState) {
             document.getElementById('rankBody').innerHTML = '';
             if (isAdmin && Array.isArray(state.roster) && state.roster.length > 0) {
                 // 管理者かつ名簿あり → エントリーモードを表示し、組合せタブも有効化
+                setupCourts = state.courts || 2;
+                document.getElementById('disp-courts').textContent = setupCourts;
                 _rebuildEntryPlayers(); // state.players=[]の場合はentryPlayersを空にリセット
                 showEntryMode();
                 showStep('step-setup', document.getElementById('btn-setup'));
