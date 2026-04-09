@@ -496,8 +496,9 @@ function showEntryMode() {
     document.getElementById('manualMode').style.display = 'none';
     document.getElementById('manualModeExtra').style.display = 'block'; // 準備中はコート数・ルールを表示
     renderEntryList();
-    // 管理者は準備中でも組合せタブを有効化
+    // 管理者は準備中でも組合せ・順位タブを有効化
     document.getElementById('btn-match').classList.remove('disabled');
+    document.getElementById('btn-rank').classList.remove('disabled');
 }
 
 function _esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -773,6 +774,8 @@ function addPlayerToState(id, isNew = false) {
 // =====================================================================
 function renderPlayerList() {
     const rosterNames = (state.roster || []).map(r => r.name);
+    // 試合開始後（対戦表あり）は名前変更をロック
+    const matchStarted = Array.isArray(state.schedule) && state.schedule.length > 0;
 
     const list = document.getElementById('playerList');
     list.innerHTML = '';
@@ -783,7 +786,8 @@ function renderPlayerList() {
         div.className = 'player-item';
         div.style.opacity = p.resting ? '0.5' : '1';
 
-        // 名前プルダウン
+        // 名前プルダウン：試合開始後は管理者でもロック
+        const selectDisabled = (!isAdmin || matchStarted) ? 'disabled' : '';
         let opts = `<option value="">選手${p.id}</option>`;
         rosterNames.forEach(n => {
             opts += `<option value="${n}"${name===n?' selected':''}>${n}</option>`;
@@ -797,7 +801,7 @@ function renderPlayerList() {
 
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
-            <select class="playerSelect" ${isAdmin ? '' : 'disabled'} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
+            <select class="playerSelect" ${selectDisabled} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
             ${restBtnHtml}
         `;
         list.appendChild(div);
