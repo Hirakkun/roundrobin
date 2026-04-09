@@ -214,7 +214,10 @@ function renderEvents(){
             <td style="font-size:13px;white-space:nowrap;">${fmtDate(ev.date)}</td>
             <td>${statusBadge(st)}</td>
             <td>${grpBtn}</td>
-            <td><button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button></td>
+            <td>${st==='開催中'
+                ? `<button class="btn-sm btn-sm-del" disabled title="開催中は削除できません" style="opacity:0.4;cursor:not-allowed;" onclick="event.stopPropagation()">削除</button>`
+                : `<button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button>`
+            }</td>
         </tr>
         <tr id="erow-${CSS.escape(eid)}" style="display:none;">
             <td colspan="5"><div class="event-expand-body">
