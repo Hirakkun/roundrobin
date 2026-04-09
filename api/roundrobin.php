@@ -1440,16 +1440,23 @@ function deleteRound(e, roundNum) {
         ? Math.max(...state.schedule.map(r => r.round))
         : 0;
 
-    // 最後の1ラウンドを削除した場合はイベント状態を準備中に戻す
-    if (state.schedule.length === 0 && _sessionId && window._fbSetEventStatus) {
-        window._fbSetEventStatus(_sessionId, '準備中');
-    }
-
     // 残った試合結果からレートを再計算
     recalcAllTrueSkill();
-
     saveState();
-    renderMatchContainer();
+
+    if (state.schedule.length === 0) {
+        // 最後の1ラウンドを削除 → イベント状態を準備中に戻し、設定画面へ切り替え
+        if (_sessionId && window._fbSetEventStatus) {
+            window._fbSetEventStatus(_sessionId, '準備中');
+        }
+        document.getElementById('initialSetup').style.display = 'block';
+        document.getElementById('liveSetup').style.display = 'none';
+        _rebuildEntryPlayers();
+        showEntryMode();
+        showStep('step-setup', document.getElementById('btn-setup'));
+    } else {
+        renderMatchContainer();
+    }
 }
 
 function saveScores() {
