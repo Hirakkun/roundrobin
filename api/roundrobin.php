@@ -212,8 +212,8 @@ body.viewer-mode #initialSetup { display: none !important; }
             <div id="entryList"></div>
             <button type="button" class="player-add-btn" style="margin-top:8px;" onclick="addEntryPlayer()">＋ 参加者を追加</button>
         </div>
-        <!-- 手動モード：参加人数カウンター（名簿なし） -->
-        <div id="manualMode">
+        <!-- 手動モード：参加人数カウンター（名簿なし・非表示） -->
+        <div id="manualMode" style="display:none;">
         <div class="setup-card">
             <div class="setup-label">👤 参加人数</div>
             <div class="counter-row">
@@ -223,6 +223,8 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
         </div>
         </div>
+        <!-- コート数・マッチングルール（名簿なし時のみ表示） -->
+        <div id="manualModeExtra" style="display:none;">
         <div class="setup-card">
             <div class="setup-label">🏸 コート数</div>
             <div class="counter-row">
@@ -245,6 +247,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                     <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・μ値でチームバランス</div>
                 </button>
             </div>
+        </div>
         </div>
     </div>
 
@@ -491,9 +494,8 @@ function showEntryMode() {
     if (!isAdmin) return;
     document.getElementById('entryListCard').style.display = 'block';
     document.getElementById('manualMode').style.display = 'none';
-    // entryPlayersが空の場合のみ初期化（リロード後の復元を壊さない）
-    if (entryPlayers.length === 0) renderEntryList();
-    else renderEntryList();
+    document.getElementById('manualModeExtra').style.display = 'none';
+    renderEntryList();
     // 管理者は準備中でも組合せタブを有効化
     document.getElementById('btn-match').classList.remove('disabled');
 }
@@ -706,6 +708,7 @@ function _resetUI() {
     } else {
         document.getElementById('entryListCard').style.display = 'none';
         document.getElementById('manualMode').style.display = 'block';
+        document.getElementById('manualModeExtra').style.display = 'block';
     }
 }
 
@@ -2141,13 +2144,27 @@ window._fbApply = function(remoteState) {
                 showStep('step-setup', document.getElementById('btn-setup'));
             }
         } else {
-            // 試合データなし（手動モード初期状態）
-            document.getElementById('btn-match').classList.add('disabled');
+            // 試合データなし（初期状態）
             document.getElementById('btn-rank').classList.add('disabled');
             document.getElementById('matchContainer').innerHTML =
                 '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が試合を準備中です</div>';
             document.getElementById('rankBody').innerHTML = '';
-            showStep('step-match', document.getElementById('btn-match'));
+            if (isAdmin && Array.isArray(state.roster) && state.roster.length > 0) {
+                // 管理者かつ名簿あり → エントリーモードを表示し、組合せタブも有効化
+                showEntryMode();
+                showStep('step-setup', document.getElementById('btn-setup'));
+            } else if (isAdmin) {
+                // 管理者だが名簿なし → 手動モード表示
+                document.getElementById('btn-match').classList.add('disabled');
+                document.getElementById('entryListCard').style.display = 'none';
+                document.getElementById('manualMode').style.display = 'block';
+                document.getElementById('manualModeExtra').style.display = 'block';
+                showStep('step-setup', document.getElementById('btn-setup'));
+            } else {
+                // 閲覧者 → 組合せタブ無効
+                document.getElementById('btn-match').classList.add('disabled');
+                showStep('step-match', document.getElementById('btn-match'));
+            }
         }
         updateSyncStatus('🟢 同期中', '#2e7d32');
     } finally {
