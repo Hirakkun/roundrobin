@@ -2159,6 +2159,7 @@ window._fbApply = function(remoteState) {
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else {
                 showLiveSetup();
+                renderMatchContainer(); // roundCount=0でもschedule変化を閲覧側に反映
                 renderPlayerList();
                 showStep('step-setup', document.getElementById('btn-setup'));
             }
