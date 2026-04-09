@@ -275,7 +275,6 @@ window.submitNewEvent=async function(){
         showToast('✅ イベントを作成しました');
         document.getElementById('ne-name').value='';
         document.getElementById('ne-date').value=todayStr();
-        document.getElementById('ne-info').style.display='none';
         showScreen('screen-events'); renderEvents();
     }catch(e){showToast('❌ '+e.message);}
 };
