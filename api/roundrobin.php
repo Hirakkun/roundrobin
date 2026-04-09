@@ -1440,6 +1440,11 @@ function deleteRound(e, roundNum) {
         ? Math.max(...state.schedule.map(r => r.round))
         : 0;
 
+    // 最後の1ラウンドを削除した場合はイベント状態を準備中に戻す
+    if (state.schedule.length === 0 && _sessionId && window._fbSetEventStatus) {
+        window._fbSetEventStatus(_sessionId, '準備中');
+    }
+
     // 残った試合結果からレートを再計算
     recalcAllTrueSkill();
 
