@@ -508,6 +508,21 @@ function getUnusedRoster() {
 }
 
 function addEntryPlayer() {
+    // 既存の未確定行に選手が選択済みなら自動で確定する
+    document.querySelectorAll('.entry-pending-row').forEach(row => {
+        const sel = row.querySelector('select');
+        if (sel && sel.value) {
+            const pid = sel.value;
+            if (!entryPlayers.find(p => p.pid === pid)) {
+                const rp = (state.roster || []).find(p => p.pid === pid);
+                if (rp) entryPlayers.push(rp);
+            }
+            row.remove();
+        }
+    });
+    // 自動確定が発生した場合は保存・再描画
+    renderEntryList();
+    _saveEntryToState();
     const unused = getUnusedRoster();
     if (!unused.length) { showToast('名簿の全員が登録済みです'); return; }
     const list = document.getElementById('entryList');
