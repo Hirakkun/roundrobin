@@ -491,8 +491,11 @@ function showEntryMode() {
     if (!isAdmin) return;
     document.getElementById('entryListCard').style.display = 'block';
     document.getElementById('manualMode').style.display = 'none';
-    entryPlayers = [];
-    renderEntryList();
+    // entryPlayersが空の場合のみ初期化（リロード後の復元を壊さない）
+    if (entryPlayers.length === 0) renderEntryList();
+    else renderEntryList();
+    // 管理者は準備中でも組合せタブを有効化
+    document.getElementById('btn-match').classList.remove('disabled');
 }
 
 function _esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -531,12 +534,59 @@ function confirmEntryRow(btn) {
     entryPlayers.push(rp);
     row.remove();
     renderEntryList();
+    _saveEntryToState(); // Firebaseに即保存
 }
 
 window.removeConfirmedEntry = function(pid) {
     entryPlayers = entryPlayers.filter(p => p.pid !== pid);
     renderEntryList();
+    _saveEntryToState(); // Firebaseに即保存
 };
+
+// entryPlayersをstate.playersに即反映してFirebaseに保存
+function _saveEntryToState() {
+    if (entryPlayers.length === 0) {
+        state.players = [];
+        state.playerNames = {};
+        state.tsMap = {};
+        state.pairMatrix = {};
+        state.oppMatrix = {};
+        saveState();
+        return;
+    }
+    state.players = [];
+    state.playerNames = {};
+    state.tsMap = {};
+    state.pairMatrix = {};
+    state.oppMatrix = {};
+    entryPlayers.forEach((p, i) => {
+        const id = i + 1;
+        state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
+        state.playerNames[id] = p.name;
+        state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
+    });
+    const ids = state.players.map(p => p.id);
+    ids.forEach(i => {
+        state.pairMatrix[i] = {}; state.oppMatrix[i] = {};
+        ids.forEach(j => { state.pairMatrix[i][j] = 0; state.oppMatrix[i][j] = 0; });
+    });
+    saveState();
+}
+
+// state.players + state.roster からentryPlayersを復元
+function _rebuildEntryPlayers() {
+    entryPlayers = [];
+    const roster = state.roster || [];
+    const playerNames = state.playerNames || {};
+    // playerNames の順序（id順）でrosterから一致するものを探す
+    const maxId = state.players ? Math.max(0, ...state.players.map(p => p.id)) : 0;
+    for (let id = 1; id <= maxId; id++) {
+        const name = playerNames[id];
+        if (!name) continue;
+        const rp = roster.find(r => r.name === name);
+        if (rp) entryPlayers.push(rp);
+    }
+}
 
 function renderEntryList() {
     const list = document.getElementById('entryList');
@@ -1188,16 +1238,14 @@ function assignCourtsRandom(pairs, attempts = 20) {
 }
 // =====================================================================
 function generateNextRound() {
-    // 参加者未確定の場合：entryPlayersから自動初期化
+    // 参加者未登録チェック
     if (!state.players || state.players.length === 0) {
-        if (entryPlayers.length === 0) {
-            alert('⚙️設定タブで参加者を追加してください。');
-            showStep('step-setup', document.getElementById('btn-setup'));
-            return;
-        }
-        if (!applyEntryPlayers()) return;
-        enableTabs();
-        updateMatchRuleDesc();
+        alert('⚙️設定タブで参加者を追加してください。');
+        showStep('step-setup', document.getElementById('btn-setup'));
+        return;
+    }
+    // 初回組合せ作成時にliveSetupへ切り替え
+    if (state.schedule.length === 0) {
         showLiveSetup();
         renderPlayerList();
         document.getElementById('disp-courts-live').textContent = state.courts;
@@ -2073,7 +2121,8 @@ window._fbApply = function(remoteState) {
                 showStep('step-match', document.getElementById('btn-match'));
             }
         } else if (Array.isArray(state.players) && state.players.length > 0) {
-            // エントリー確定済み・試合未開始
+            // エントリー確定済み・試合未開始（または途中）
+            _rebuildEntryPlayers(); // entryPlayersをstateから復元
             document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
             document.getElementById('disp-players').textContent = state.players.length;
@@ -2081,9 +2130,16 @@ window._fbApply = function(remoteState) {
             document.getElementById('disp-courts-live').textContent = state.courts;
             setupPlayers = state.players.length;
             setupCourts = state.courts;
-            showLiveSetup();
-            renderPlayerList();
-            showStep('step-setup', document.getElementById('btn-setup'));
+            if (isAdmin && state.schedule.length === 0) {
+                // 準備中（参加者あり・試合なし）→エントリー画面を表示
+                showEntryMode();
+                renderEntryList();
+                showStep('step-setup', document.getElementById('btn-setup'));
+            } else {
+                showLiveSetup();
+                renderPlayerList();
+                showStep('step-setup', document.getElementById('btn-setup'));
+            }
         } else {
             // 試合データなし（手動モード初期状態）
             document.getElementById('btn-match').classList.add('disabled');
