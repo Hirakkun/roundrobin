@@ -79,8 +79,9 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .player-item:last-child { border-bottom: none; }
 .player-num { width: 30px; height: 30px; border-radius: 50%; background: #1565c0; color: #fff; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .playerSelectWrap { flex: 1; position: relative; height: 52px; }
-.playerSelectWrap > select.playerSelect { position: absolute; inset: 0; width: 100%; height: 100%; font-size: 22px; border: 2px solid #aaa; border-radius: 8px; font-weight: bold; padding: 0 6px; background: #fff; color: transparent; }
+.playerSelectWrap > select.playerSelect { position: absolute; inset: 0; width: 100%; height: 100%; font-size: 22px; border: 2px solid #aaa; border-radius: 8px; font-weight: bold; padding: 0 6px; background: #fff; color: transparent; text-shadow: none; }
 .playerSelectWrap > select.playerSelect:disabled { background: #f5f5f5; }
+.playerSelectWrap > select.playerSelect option { color: #000; background: #fff; }
 .playerSelectWrap > .playerSelectLabel { position: absolute; left: 8px; right: 26px; top: 0; bottom: 0; display: flex; align-items: center; pointer-events: none; font-weight: bold; font-size: 22px; color: #000; overflow: hidden; white-space: nowrap; }
 .playerSelectWrap > .playerSelectLabel .club { font-size: 12px; color: #666; font-weight: normal; margin-left: 2px; }
 .playerSelectWrap > .playerSelectLabel.placeholder { color: #888; }
