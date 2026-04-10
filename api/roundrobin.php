@@ -1516,7 +1516,7 @@ function getPlayStreak(id) {
 
 // 配置案のスコア評価（低いほど良い）
 // assignment = { courts: [[id,id,id,id], ...], bench: [id,...] }
-function evaluateBalanceScore(assignment, active) {
+function evaluateBalanceScore(assignment, active, courtCount) {
     const W = BALANCE_WEIGHTS;
     const playingIds = assignment.courts.flat();
 
@@ -1527,7 +1527,10 @@ function evaluateBalanceScore(assignment, active) {
         return c / elig;
     });
     const avg = nextCounts.reduce((s, v) => s + v, 0) / nextCounts.length;
-    const Cplay = nextCounts.reduce((s, v) => s + (v - avg) * (v - avg), 0) * W.CPLAY * nextCounts.length;
+    // 参加人数/コート数 が 2未満（bench枠が1以下）の場合は CPLAY を 20倍
+    const ratio = courtCount > 0 ? active.length / courtCount : Infinity;
+    const cplayMul = ratio < 2 ? 20 : 1;
+    const Cplay = nextCounts.reduce((s, v) => s + (v - avg) * (v - avg), 0) * W.CPLAY * cplayMul * nextCounts.length;
 
     // ② ペア重複 / ③ 対戦重複 / 未対戦ボーナス（コート単位）
     let Cpair = 0, Copp = 0;
@@ -1619,7 +1622,7 @@ function generateCourtsBalance(active, courtCount) {
 
     // 初期解
     let current = makeInitialBalanceAssignment(active, maxCourts);
-    let currentScore = evaluateBalanceScore(current, active);
+    let currentScore = evaluateBalanceScore(current, active, maxCourts);
     let best = cloneAssignment(current);
     let bestScore = currentScore;
 
@@ -1627,7 +1630,7 @@ function generateCourtsBalance(active, courtCount) {
     for (let iter = 0; iter < BALANCE_ITERATIONS; iter++) {
         const trial = cloneAssignment(current);
         swapInAssignment(trial);
-        const trialScore = evaluateBalanceScore(trial, active);
+        const trialScore = evaluateBalanceScore(trial, active, maxCourts);
 
         const temperature = 1 - iter / BALANCE_ITERATIONS;
         const accept = trialScore < currentScore
