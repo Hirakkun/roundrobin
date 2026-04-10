@@ -57,6 +57,43 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .chip { display: inline-block; background: #ede7f6; color: #4527a0; border-radius: 20px; padding: 2px 10px; font-size: 12px; margin: 2px; }
 .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
 .mu-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; border-radius: 6px; padding: 2px 7px; font-size: 12px; font-weight: bold; }
+
+/* ── 選手カード（スマホ向け） ── */
+.player-list { padding: 6px 10px 80px; display: flex; flex-direction: column; gap: 8px; }
+.player-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; }
+.player-card .pc-name { font-weight: bold; color: #222; font-size: 15px; word-break: break-word; }
+.player-card .pc-meta { font-size: 12px; color: #888; grid-column: 1 / 2; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.player-card .pc-edit { grid-row: 1 / 3; }
+.player-card .pc-clubs { grid-column: 1 / -1; font-size: 12px; }
+
+/* ── グループカード ── */
+.club-list { padding: 6px 10px 80px; display: flex; flex-direction: column; gap: 8px; }
+.club-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.club-card .cc-name { flex: 1; font-weight: bold; color: #222; font-size: 15px; word-break: break-word; }
+.club-card .cc-count { font-size: 12px; color: #666; white-space: nowrap; }
+
+/* ── 縦長スマホ（〜520px） ── */
+@media (max-width: 520px) {
+    body { font-size: 14px; }
+    .hdr { padding: 10px 10px; gap: 6px; }
+    .hdr h1 { font-size: 15px; }
+    .back-btn { font-size: 11px; padding: 5px 8px; }
+    .tab-btn { padding: 10px 4px; font-size: 13px; }
+    .search-bar { padding: 8px 10px; gap: 6px; }
+    .search-bar input, .search-bar select { font-size: 13px; padding: 7px 10px; min-width: 0; }
+    .form-body { padding: 12px; gap: 12px; }
+    .field label { font-size: 12px; }
+    .field input, .field select { font-size: 15px; padding: 10px; }
+    .btn { padding: 10px 12px; font-size: 13px; }
+    .btn-sm { padding: 6px 9px; font-size: 11px; }
+    .bottom-bar { padding: 10px; }
+    .modal { padding: 18px; }
+    .modal h2 { font-size: 15px; }
+    .player-card { padding: 9px 11px; }
+    .player-card .pc-name { font-size: 14px; }
+    .club-card { padding: 10px 12px; }
+    .club-card .cc-name { font-size: 14px; }
+}
 </style>
 </head>
 <body>
@@ -68,12 +105,12 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <button class="back-btn" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
     </div>
     <div class="tab-bar">
-        <button class="tab-btn active" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
-        <button class="tab-btn" id="tab-clubs" onclick="switchTab('clubs')">🏢 グループ一覧</button>
+        <button class="tab-btn" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
+        <button class="tab-btn active" id="tab-clubs" onclick="switchTab('clubs')">🏢 グループ一覧</button>
     </div>
 
     <!-- 選手一覧タブ -->
-    <div id="pane-players">
+    <div id="pane-players" style="display:none;">
         <div class="search-bar">
             <input type="text" id="p-search" placeholder="🔍 氏名・ふりがな" oninput="renderPlayers()">
             <select id="p-filter-club" onchange="renderPlayers()">
@@ -89,7 +126,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     </div>
 
     <!-- グループ一覧タブ -->
-    <div id="pane-clubs" style="display:none;">
+    <div id="pane-clubs">
         <div class="search-bar">
             <input type="text" id="c-search" placeholder="🔍 グループ名" oninput="renderClubs()">
         </div>
@@ -103,8 +140,8 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 
     <div class="bottom-bar" id="main-bottom-bar">
         <div style="display:flex;gap:8px;">
-            <button class="btn btn-purple" style="flex:1;" id="btn-add-player" onclick="openPlayerForm(null)">➕ 新規選手登録</button>
-            <button class="btn btn-dark" style="flex:1;" id="btn-add-club" onclick="openClubForm(null)" style="display:none;">🏢 新規グループ登録</button>
+            <button class="btn btn-purple" style="flex:1;display:none;" id="btn-add-player" onclick="openPlayerForm(null)">➕ 新規選手登録</button>
+            <button class="btn btn-dark" style="flex:1;" id="btn-add-club" onclick="openClubForm(null)">🏢 新規グループ登録</button>
         </div>
     </div>
 </div>
@@ -265,7 +302,7 @@ async function fbRemove(path)   { await remove(ref(db,path)); }
 
 // ─── State ────────────────────────────────────────────────────────────
 let allClubs={}, allPlayers={};
-let currentTab='players';
+let currentTab='clubs';
 let currentPlayerId=null, currentPlayerIsNew=true;
 let currentClubId=null, currentClubIsNew=true;
 let pendingPwCb=null, pendingPwExp=null, pendingConfirmCb=null;
@@ -348,19 +385,22 @@ window.renderPlayers=function(){
     if(q) entries=entries.filter(([,p])=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].kana||a[1].name||'').localeCompare(b[1].kana||b[1].name||'','ja'));
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 選手が見つかりません</div>'; return; }
-    let h='<table class="data-table" style="margin-bottom:60px;"><thead><tr><th>氏名</th><th>ふりがな</th><th>性別</th><th>μ</th><th>所属グループ</th><th></th></tr></thead><tbody>';
+    let h='<div class="player-list">';
     for(const [pid,p] of entries){
         const clubs=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid));
-        h+=`<tr>
-            <td style="font-weight:bold;white-space:nowrap;">${escH(p.name||'')}</td>
-            <td style="font-size:12px;color:#888;">${escH(p.kana||'')}</td>
-            <td style="font-size:12px;">${escH(p.gender||'')}</td>
-            <td><span class="mu-badge">${(p.mu??25).toFixed(1)}</span></td>
-            <td style="font-size:12px;">${clubs.map(n=>`<span class="chip">${escH(n)}</span>`).join('')||'—'}</td>
-            <td><button class="btn-sm btn-sm-edit" onclick="openPlayerForm('${esc(pid)}')">編集</button></td>
-        </tr>`;
+        const genderIcon = p.gender==='男性' ? '♂' : p.gender==='女性' ? '♀' : '';
+        h+=`<div class="player-card">
+            <div class="pc-name">${escH(p.name||'')}</div>
+            <button class="btn-sm btn-sm-edit pc-edit" onclick="openPlayerForm('${esc(pid)}')">編集</button>
+            <div class="pc-meta">
+                <span style="color:#888;">${escH(p.kana||'')}</span>
+                ${genderIcon?`<span style="color:${p.gender==='男性'?'#1565c0':'#c2185b'};font-weight:bold;">${genderIcon}</span>`:''}
+                <span class="mu-badge">μ ${(p.mu??25).toFixed(1)}</span>
+            </div>
+            <div class="pc-clubs">${clubs.map(n=>`<span class="chip">${escH(n)}</span>`).join('')||'<span style="color:#bbb;">所属なし</span>'}</div>
+        </div>`;
     }
-    h+='</tbody></table>';
+    h+='</div>';
     c.innerHTML=h;
 };
 
@@ -374,16 +414,16 @@ window.renderClubs=function(){
     if(q) entries=entries.filter(([,cl])=>(cl.name||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 グループが登録されていません</div>'; return; }
-    let h='<table class="data-table" style="margin-bottom:60px;"><thead><tr><th>グループ名</th><th>人数</th><th></th></tr></thead><tbody>';
+    let h='<div class="club-list">';
     for(const [cid,cl] of entries){
         const cnt=Object.keys(cl.playerIds||{}).length;
-        h+=`<tr>
-            <td style="font-weight:bold;">${escH(cl.name||'')}</td>
-            <td style="color:#666;">${cnt}人</td>
-            <td><button class="btn-sm btn-sm-edit" onclick="openClubForm('${esc(cid)}')">編集</button></td>
-        </tr>`;
+        h+=`<div class="club-card">
+            <span class="cc-name">${escH(cl.name||'')}</span>
+            <span class="cc-count">${cnt}人</span>
+            <button class="btn-sm btn-sm-edit" onclick="openClubForm('${esc(cid)}')">編集</button>
+        </div>`;
     }
-    h+='</tbody></table>';
+    h+='</div>';
     c.innerHTML=h;
 };
 
@@ -868,10 +908,8 @@ async function init(){
     const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
     allClubs=cd||{}; allPlayers=pd||{};
     buildClubFilter();
-    renderPlayers();
+    renderClubs();
 }
-// bottom-bar の btn-add-club 初期非表示
-document.getElementById('btn-add-club').style.display='none';
 init();
 </script>
 </body>
