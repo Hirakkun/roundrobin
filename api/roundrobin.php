@@ -877,9 +877,27 @@ function renderPlayerList() {
 
         // 名前プルダウン：試合開始後はロック。ただし未出場（lastRound===-1）の選手は名前未確定なので編集可
         const neverPlayed = p.lastRound === -1;
+        const isMidGameNew = matchStarted && (p.joinedRound || 0) > 0 && neverPlayed;
         const selectDisabled = (!isAdmin || (matchStarted && !neverPlayed)) ? 'disabled' : '';
-        let opts = `<option value="">選手${p.id}</option>`;
-        rosterNames.forEach(n => {
+
+        // 途中参加の新規枠は、未使用のroster名のみ・選手N表示なし
+        let availableNames;
+        if (isMidGameNew) {
+            const usedNames = new Set();
+            state.players.forEach(pp => {
+                if (pp.id === p.id) return;
+                const nm = state.playerNames[pp.id];
+                if (nm) usedNames.add(nm);
+            });
+            availableNames = rosterNames.filter(n => !usedNames.has(n));
+        } else {
+            availableNames = rosterNames;
+        }
+
+        let opts = isMidGameNew
+            ? `<option value="" disabled${state.playerNames[p.id]?'':' selected'}>選手を選択</option>`
+            : `<option value="">選手${p.id}</option>`;
+        availableNames.forEach(n => {
             const rp = (state.roster || []).find(r => r.name === n);
             const cn = rp && rp.clubName ? rp.clubName : '';
             const label = cn ? `${n}(${cn})` : n;
@@ -896,7 +914,7 @@ function renderPlayerList() {
         const hasName = !!state.playerNames[p.id];
         const labelHtml = hasName
             ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}`
-            : `選手${p.id}`;
+            : (isMidGameNew ? '選手を選択' : `選手${p.id}`);
         const labelClass = hasName ? 'playerSelectLabel' : 'playerSelectLabel placeholder';
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
@@ -1563,6 +1581,15 @@ function generateNextRound() {
         showLiveSetup();
         renderPlayerList();
         document.getElementById('disp-courts-live').textContent = state.courts;
+    }
+
+    // 途中参加の新規選手で名前未選択のものがあれば中断
+    const unnamedMidGame = state.players.filter(p =>
+        (p.joinedRound || 0) > 0 && p.lastRound === -1 && !state.playerNames[p.id]
+    );
+    if (unnamedMidGame.length > 0) {
+        alert('追加した参加者の名前を選択してください');
+        return;
     }
 
     const active = state.players.filter(p => !p.resting);
