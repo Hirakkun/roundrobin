@@ -78,7 +78,12 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .player-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #eee; }
 .player-item:last-child { border-bottom: none; }
 .player-num { width: 30px; height: 30px; border-radius: 50%; background: #1565c0; color: #fff; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-select.playerSelect { flex: 1; font-size: 22px; height: 52px; border: 2px solid #aaa; border-radius: 8px; font-weight: bold; padding: 0 6px; background: #fff; }
+.playerSelectWrap { flex: 1; position: relative; height: 52px; }
+.playerSelectWrap > select.playerSelect { position: absolute; inset: 0; width: 100%; height: 100%; font-size: 22px; border: 2px solid #aaa; border-radius: 8px; font-weight: bold; padding: 0 6px; background: #fff; color: transparent; }
+.playerSelectWrap > select.playerSelect:disabled { background: #f5f5f5; }
+.playerSelectWrap > .playerSelectLabel { position: absolute; left: 8px; right: 26px; top: 0; bottom: 0; display: flex; align-items: center; pointer-events: none; font-weight: bold; font-size: 22px; color: #000; overflow: hidden; white-space: nowrap; }
+.playerSelectWrap > .playerSelectLabel .club { font-size: 12px; color: #666; font-weight: normal; margin-left: 2px; }
+.playerSelectWrap > .playerSelectLabel.placeholder { color: #888; }
 /* 休憩ボタン */
 .rest-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #e65100; background: #fff; color: #e65100; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
 .rest-btn.resting { background: #e65100; color: #fff; }
@@ -886,9 +891,18 @@ function renderPlayerList() {
             ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
             : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
 
+        const curClubName = getPlayerClubName(p.id);
+        const hasName = !!state.playerNames[p.id];
+        const labelHtml = hasName
+            ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}`
+            : `選手${p.id}`;
+        const labelClass = hasName ? 'playerSelectLabel' : 'playerSelectLabel placeholder';
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
-            <select class="playerSelect" ${selectDisabled} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
+            <div class="playerSelectWrap">
+                <select class="playerSelect" ${selectDisabled} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
+                <div class="${labelClass}">${labelHtml}</div>
+            </div>
             ${restBtnHtml}
         `;
         list.appendChild(div);
