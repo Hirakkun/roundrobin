@@ -874,7 +874,10 @@ function renderPlayerList() {
         const selectDisabled = (!isAdmin || (matchStarted && !neverPlayed)) ? 'disabled' : '';
         let opts = `<option value="">選手${p.id}</option>`;
         rosterNames.forEach(n => {
-            opts += `<option value="${n}"${name===n?' selected':''}>${n}</option>`;
+            const rp = (state.roster || []).find(r => r.name === n);
+            const cn = rp && rp.clubName ? rp.clubName : '';
+            const label = cn ? `${n}(${cn})` : n;
+            opts += `<option value="${n}"${name===n?' selected':''}>${label}</option>`;
         });
 
         const restLabel = p.resting ? '復帰' : '休憩';
@@ -883,14 +886,9 @@ function renderPlayerList() {
             ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
             : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
 
-        const clubName = getPlayerClubName(p.id);
-        const clubLabel = clubName
-            ? `<span style="font-size:11px;color:#666;font-weight:normal;white-space:nowrap;">(${clubName})</span>`
-            : '';
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
             <select class="playerSelect" ${selectDisabled} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
-            ${clubLabel}
             ${restBtnHtml}
         `;
         list.appendChild(div);
