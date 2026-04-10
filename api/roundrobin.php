@@ -279,6 +279,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         </div>
         <div id="playerList" class="player-list"></div>
         <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
+        <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:15px;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">🏁 イベントを終了</button>
     </div>
 </div>
 
@@ -602,7 +603,7 @@ function _saveEntryToState() {
     state.oppMatrix = {};
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
-        state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
+        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
         if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
@@ -689,7 +690,7 @@ function applyEntryPlayers() {
     state.matchingRule = matchingRule;
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
-        state.players.push({ id, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
+        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
         if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
@@ -943,6 +944,7 @@ function renderPlayerList() {
 }
 
 function setPlayerName(id, name) {
+    if (isEventLocked()) { renderPlayerList(); return; }
     state.playerNames[id] = name || ('選手' + id);
     // 所属クラブ名をrosterから自動反映
     if (!state.playerClubs) state.playerClubs = {};
@@ -954,7 +956,41 @@ function setPlayerName(id, name) {
     saveState();
 }
 
+function isEventLocked() {
+    return currentEventStatus === '終了';
+}
+
+async function endEvent() {
+    if (isEventLocked()) { showToast('既に終了しています'); return; }
+    if (!state.players || state.players.length === 0) { showToast('参加者がいません'); return; }
+    if (!confirm('⚠️ このイベントを終了しますか？\n・終了後は管理者でも編集できません。\n・各選手の最終 μ/σ が元の選手データに上書き反映されます。')) return;
+
+    // 元の選手データへ mu/sigma を上書き
+    const updates = [];
+    state.players.forEach(p => {
+        if (!p.pid) return;
+        const ts = state.tsMap && state.tsMap[p.id];
+        if (!ts) return;
+        if (typeof window._fbUpdatePlayerRating === 'function') {
+            updates.push(window._fbUpdatePlayerRating(p.pid, ts.mu, ts.sigma));
+        }
+    });
+    try { await Promise.all(updates); } catch(e) { console.error(e); }
+
+    // イベント状態を 終了 に
+    if (_sessionId && window._fbSetEventStatus) {
+        await window._fbSetEventStatus(_sessionId, '終了');
+    }
+    currentEventStatus = '終了';
+    updateEventStatus('終了');
+    updateAdminUI();
+    renderPlayerList();
+    renderMatchContainer();
+    showToast('🏁 イベントを終了しました');
+}
+
 function removeUnplayedPlayer(id) {
+    if (isEventLocked()) return;
     const p = state.players.find(p => p.id === id);
     if (!p) return;
     if (p.lastRound !== -1) { showToast('試合に出場済みの選手は削除できません'); return; }
@@ -983,6 +1019,7 @@ function removeUnplayedPlayer(id) {
 }
 
 function toggleRest(id) {
+    if (isEventLocked()) return;
     const p = state.players.find(p => p.id === id);
     if (!p) return;
     // 復帰時: playerStates履歴に基づく playRatio で自動的に優先度が計算されるため
@@ -993,6 +1030,7 @@ function toggleRest(id) {
 }
 
 function addPlayer() {
+    if (isEventLocked()) return;
     const newId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
     addPlayerToState(newId, true);
     renderPlayerList();
@@ -1000,6 +1038,7 @@ function addPlayer() {
 }
 
 function changeCourts(delta) {
+    if (isEventLocked()) return;
     state.courts = Math.max(1, Math.min(20, state.courts + delta));
     document.getElementById('disp-courts-live').textContent = state.courts;
     saveState();
@@ -1612,6 +1651,7 @@ function generateCourtsBalance(active, courtCount) {
 
 // =====================================================================
 function generateNextRound() {
+    if (isEventLocked()) { showToast('このイベントは終了しています'); return; }
     // 参加者未登録チェック
     if (!state.players || state.players.length === 0) {
         alert('⚙️設定タブで参加者を追加してください。');
@@ -1801,6 +1841,7 @@ document.addEventListener('click', e => {
     const teamEl = e.target.closest('.team');
     if (!teamEl) return;
     if (!isAdmin) return; // 閲覧モードはスコア変更不可
+    if (isEventLocked()) return; // 終了イベントは変更不可
     const row = teamEl.closest('.match-row');
     const isLeft = teamEl.classList.contains('left-side');
     const scoreEl = row.querySelector(isLeft ? '.s1' : '.s2');
@@ -1812,6 +1853,7 @@ document.addEventListener('click', e => {
 
 function deleteRound(e, roundNum) {
     e.stopPropagation(); // アコーディオンが開閉しないように
+    if (isEventLocked()) { showToast('このイベントは終了しています'); return; }
     if (!confirm(`第${roundNum}試合を削除しますか？\nスコアも消去されます。`)) return;
 
     // スコアを削除
@@ -2425,11 +2467,15 @@ function joinSession() {
 
 function updateAdminUI() {
     const ind = document.getElementById('modeIndicator');
-    if (isAdmin) {
+    const locked = currentEventStatus === '終了';
+    if (isAdmin && !locked) {
         document.body.classList.remove('viewer-mode');
         if (ind) { ind.style.display = ''; ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
         const urlBtns = document.getElementById('sessionUrlBtns');
         if (urlBtns) urlBtns.style.display = 'flex';
+    } else if (isAdmin && locked) {
+        document.body.classList.add('viewer-mode');
+        if (ind) { ind.style.display = ''; ind.textContent = '🏁 終了（閲覧のみ）'; ind.style.background = '#f5f5f5'; ind.style.color = '#757575'; }
     } else if (_sessionId) {
         document.body.classList.add('viewer-mode');
         if (ind) { ind.style.display = ''; ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
@@ -2502,6 +2548,7 @@ function updateEventInfo(ev) {
     bar.dataset.evDate = rawDate;
     bar.dataset.evStatus = status;
     currentEventStatus = status;
+    if (typeof updateAdminUI === 'function') updateAdminUI();
 }
 window.updateEventInfo = updateEventInfo;
 
@@ -2778,6 +2825,12 @@ window._fbSetEventStatus = async function(sessionId, status) {
     try {
         await update(ref(db, 'events/' + encodeURIComponent(sessionId)), { status });
     } catch(e) { console.error('イベント状態更新失敗:', e); }
+};
+
+window._fbUpdatePlayerRating = async function(pid, mu, sigma) {
+    try {
+        await update(ref(db, 'players/' + encodeURIComponent(pid)), { mu, sigma });
+    } catch(e) { console.error('選手レーティング更新失敗:', e); }
 };
 
 // 前方一致＋期間フィルタでセッションを取得
