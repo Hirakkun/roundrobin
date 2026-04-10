@@ -85,9 +85,10 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .playerSelectWrap > .playerSelectLabel { position: absolute; left: 8px; right: 26px; top: 0; bottom: 0; display: flex; align-items: center; pointer-events: none; font-weight: bold; font-size: 22px; color: #000; overflow: hidden; white-space: nowrap; }
 .playerSelectWrap > .playerSelectLabel .club { font-size: 12px; color: #666; font-weight: normal; margin-left: 2px; }
 .playerSelectWrap > .playerSelectLabel.placeholder { color: #888; }
-/* 休憩ボタン */
-.rest-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #e65100; background: #fff; color: #e65100; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
-.rest-btn.resting { background: #e65100; color: #fff; }
+/* 休憩/復帰/削除ボタン */
+.rest-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #f57c00; background: #fff3e0; color: #e65100; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
+.rest-btn.resting { background: #2e7d32; border-color: #1b5e20; color: #fff; }
+.rest-btn.delete-btn { background: #ffebee; border-color: #c62828; color: #c62828; }
 .new-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #7b1fa2; background: #fff; color: #7b1fa2; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
 .player-add-btn { width: 100%; font-size: 17px; padding: 12px; background: #1565c0; color: #fff; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; }
 .court-change-row { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 10px; }
@@ -909,7 +910,7 @@ function renderPlayerList() {
         let restBtnHtml;
         if (neverPlayed && isAdmin) {
             // まだ試合に出ていない選手は削除ボタン
-            restBtnHtml = `<button class="rest-btn" style="border-color:#c62828;color:#c62828;" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
+            restBtnHtml = `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
         } else {
             restBtnHtml = isAdmin
                 ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
