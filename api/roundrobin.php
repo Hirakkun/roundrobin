@@ -906,9 +906,15 @@ function renderPlayerList() {
 
         const restLabel = p.resting ? '復帰' : '休憩';
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
-        const restBtnHtml = isAdmin
-            ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
-            : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
+        let restBtnHtml;
+        if (neverPlayed && isAdmin) {
+            // まだ試合に出ていない選手は削除ボタン
+            restBtnHtml = `<button class="rest-btn" style="border-color:#c62828;color:#c62828;" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
+        } else {
+            restBtnHtml = isAdmin
+                ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
+                : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
+        }
 
         const curClubName = getPlayerClubName(p.id);
         const hasName = !!state.playerNames[p.id];
@@ -936,6 +942,34 @@ function setPlayerName(id, name) {
     if (rp && rp.clubName) state.playerClubs[id] = rp.clubName;
     else delete state.playerClubs[id];
     updateMatchNames();
+    renderPlayerList();
+    saveState();
+}
+
+function removeUnplayedPlayer(id) {
+    const p = state.players.find(p => p.id === id);
+    if (!p) return;
+    if (p.lastRound !== -1) { showToast('試合に出場済みの選手は削除できません'); return; }
+    const nm = state.playerNames[id];
+    if (!confirm(`${nm || ('選手'+id)} を削除しますか？`)) return;
+
+    state.players = state.players.filter(pp => pp.id !== id);
+    delete state.playerNames[id];
+    if (state.playerClubs) delete state.playerClubs[id];
+    if (state.tsMap) delete state.tsMap[id];
+    if (state.pairMatrix) {
+        delete state.pairMatrix[id];
+        Object.keys(state.pairMatrix).forEach(k => { delete state.pairMatrix[k][id]; });
+    }
+    if (state.oppMatrix) {
+        delete state.oppMatrix[id];
+        Object.keys(state.oppMatrix).forEach(k => { delete state.oppMatrix[k][id]; });
+    }
+    if (Array.isArray(state.schedule)) {
+        state.schedule.forEach(rd => {
+            if (rd.playerStates) delete rd.playerStates[id];
+        });
+    }
     renderPlayerList();
     saveState();
 }
