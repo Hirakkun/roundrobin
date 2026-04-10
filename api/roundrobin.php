@@ -243,20 +243,20 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div class="setup-card">
             <div class="setup-label">🎯 マッチングルール</div>
             <div class="match-rule-row">
-                <button type="button" class="rule-btn selected" id="rule-random" onclick="selectRule('random')">
-                    <span class="rule-icon">🎲</span>
-                    ランダムマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・ペア重複なし・対戦偏りなし</div>
+                <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
+                    <span class="rule-icon">⚖️</span>
+                    バランスマッチ
+                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
                 </button>
                 <button type="button" class="rule-btn" id="rule-rating" onclick="selectRule('rating')">
                     <span class="rule-icon">📊</span>
                     レーティングマッチ
                     <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・μ値でチームバランス</div>
                 </button>
-                <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
-                    <span class="rule-icon">⚖️</span>
-                    バランスマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
+                <button type="button" class="rule-btn selected" id="rule-random" onclick="selectRule('random')">
+                    <span class="rule-icon">🎲</span>
+                    ランダムマッチ
+                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・ペア重複なし・対戦偏りなし</div>
                 </button>
             </div>
             <div id="setupRuleDesc" style="margin-top:10px;font-size:13px;color:#444;background:#f0f4ff;border-radius:8px;padding:10px 12px;border-left:3px solid #1565c0;line-height:1.7;"></div>
@@ -773,11 +773,18 @@ function updateMatchRuleDesc() {
     const setup = document.getElementById('setupRuleDesc');
     if (setup) setup.innerHTML = buildDetail(desc);
 
-    // 組合せタブ内の優先順位欄
+    // 組合せタブ内の優先順位欄（クリックで展開）
     const el = document.getElementById('matchRuleDesc');
     if (!el) return;
     el.style.display = '';
-    el.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;color:#1565c0;">📌 組合せの優先順位（${desc.label}）</div>${buildRows(desc.rows)}<div style="margin-top:4px;font-size:12px;color:#888;">💡 ${desc.summary}</div>`;
+    el.style.cursor = 'pointer';
+    const expanded = !!window._matchRuleDescOpen;
+    const arrow = expanded ? '▼' : '▶';
+    const bodyHtml = expanded
+        ? `<div style="margin-top:8px;">${buildRows(desc.rows)}<div style="margin-top:4px;font-size:12px;color:#888;">💡 ${desc.summary}</div></div>`
+        : '';
+    el.innerHTML = `<div style="font-weight:bold;color:#1565c0;display:flex;align-items:center;gap:6px;"><span style="font-size:11px;">${arrow}</span>📌 組合せの優先順位（${desc.label}）</div>${bodyHtml}`;
+    el.onclick = () => { window._matchRuleDescOpen = !window._matchRuleDescOpen; updateMatchRuleDesc(); };
 }
 
 function _resetState() {
