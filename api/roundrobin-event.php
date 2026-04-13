@@ -364,6 +364,11 @@ window.submitNewEvent=async function(){
         paramClubIds.forEach(cid=>usedClubs[cid]=true);
     }
     const clubIds=Object.keys(usedClubs);
+    // roster作成前に最新の選手データを取得（mu/sigma反映のため）
+    if(clubIds.length>0){
+        const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
+        allClubs=cd||{}; allPlayers=pd||{};
+    }
     // 複数クラブ所属の選手がいる場合は選択画面を表示
     if(clubIds.length>0){
         const multi=findMultiClubPlayers(clubIds);
@@ -523,6 +528,9 @@ window.execClubChoose=function(){
 };
 
 window.confirmClubs=async function(){
+    // 最新の選手データを取得（mu/sigma反映のため）
+    const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
+    allClubs=cd||{}; allPlayers=pd||{};
     const ev=allEvents[currentEventId]||{};
     const clubIds=[...selectedClubs];
     const multi=findMultiClubPlayers(clubIds);
