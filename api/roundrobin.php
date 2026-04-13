@@ -511,6 +511,7 @@ function showLiveSetup() {
 // 参加者エントリー（1名ずつ追加方式）
 // =====================================================================
 let entryPlayers = []; // 確定した参加者 [{pid,name,kana,mu,sigma,...}]
+const entryRestingPids = new Set(); // 開始前に休憩設定した選手のpid
 
 function showEntryMode() {
     if (!isAdmin) return;
@@ -579,8 +580,15 @@ function confirmEntryRow(btn) {
 
 window.removeConfirmedEntry = function(pid) {
     entryPlayers = entryPlayers.filter(p => p.pid !== pid);
+    entryRestingPids.delete(pid);
     renderEntryList();
     _saveEntryToState(); // Firebaseに即保存
+};
+
+window.toggleEntryRest = function(pid) {
+    if (entryRestingPids.has(pid)) entryRestingPids.delete(pid);
+    else entryRestingPids.add(pid);
+    renderEntryList();
 };
 
 // entryPlayersをstate.playersに即反映してFirebaseに保存
@@ -651,19 +659,27 @@ function renderEntryList() {
         const div = document.createElement('div');
         div.className = 'entry-confirmed-row';
         div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0f0f0;';
-        const delBtn = isActive
-            ? `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:11px;white-space:nowrap;">🔒 参加済</span>`
-            : `<button type="button" onclick="removeConfirmedEntry('${_esc(p.pid)}')"
-                style="padding:5px 12px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;white-space:nowrap;">削除</button>`;
+        const isResting = entryRestingPids.has(p.pid);
+        let actionBtns;
+        if (isActive) {
+            actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:11px;white-space:nowrap;">🔒 参加済</span>`;
+        } else {
+            const restBtn = isResting
+                ? `<button type="button" class="rest-btn resting" style="font-size:12px;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">復帰</button>`
+                : `<button type="button" class="rest-btn" style="font-size:12px;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">休憩</button>`;
+            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:12px;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(p.pid)}')">削除</button>`;
+            actionBtns = restBtn + delBtn;
+        }
         const clubBadge = p.clubName
             ? ` <span style="font-size:11px;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
             : '';
+        div.style.opacity = isResting ? '0.5' : '1';
         div.innerHTML = `
             <div style="flex:1;">
                 <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}${clubBadge}</div>
                 <div style="font-size:11px;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
             </div>
-            ${delBtn}`;
+            <div style="display:flex;gap:6px;">${actionBtns}</div>`;
         frag.appendChild(div);
     });
     list.insertBefore(frag, list.firstChild);
@@ -690,7 +706,8 @@ function applyEntryPlayers() {
     state.matchingRule = matchingRule;
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
-        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
+        const resting = entryRestingPids.has(p.pid);
+        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
         if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
