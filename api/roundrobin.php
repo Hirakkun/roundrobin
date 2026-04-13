@@ -1891,18 +1891,48 @@ function deleteRound(e, roundNum) {
     if (!confirm(`第${roundNum}試合を削除しますか？\nスコアも消去されます。`)) return;
 
     // スコアを削除
-    const rd = state.schedule.find(r => r.round === roundNum);
-    if (rd) {
-        rd.courts.forEach((ct, ci) => {
+    const rdDel = state.schedule.find(r => r.round === roundNum);
+    if (rdDel) {
+        rdDel.courts.forEach((ct, ci) => {
             delete state.scores[`r${roundNum}c${ci}`];
         });
     }
 
     // scheduleから削除
     state.schedule = state.schedule.filter(r => r.round !== roundNum);
-    state.roundCount = state.schedule.length > 0
-        ? Math.max(...state.schedule.map(r => r.round))
-        : 0;
+
+    // ラウンド番号を詰め直す（1,3,4 → 1,2,3）
+    state.schedule.sort((a, b) => a.round - b.round);
+    const newScores = {};
+    state.schedule.forEach((rd, idx) => {
+        const oldNum = rd.round;
+        const newNum = idx + 1;
+        // スコアキーをリマップ
+        rd.courts.forEach((ct, ci) => {
+            const oldKey = `r${oldNum}c${ci}`;
+            const newKey = `r${newNum}c${ci}`;
+            if (state.scores[oldKey] != null) {
+                newScores[newKey] = state.scores[oldKey];
+            }
+        });
+        rd.round = newNum;
+    });
+    state.scores = newScores;
+    state.roundCount = state.schedule.length;
+
+    // playCount / lastRound を再計算
+    state.players.forEach(p => {
+        p.playCount = 0;
+        p.lastRound = -1;
+    });
+    state.schedule.forEach(rd => {
+        if (!rd.playerStates) return;
+        Object.entries(rd.playerStates).forEach(([idStr, st]) => {
+            if (st !== 'play') return;
+            const p = state.players.find(pp => pp.id === Number(idStr));
+            if (p) { p.playCount++; p.lastRound = rd.round; }
+        });
+    });
 
     // 残った試合結果からレートを再計算
     recalcAllTrueSkill();
