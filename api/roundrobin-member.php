@@ -102,7 +102,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div id="screen-main" class="screen active">
     <div class="hdr">
         <h1>👤 選手・グループ管理</h1>
-        <button class="back-btn" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
+        <button class="back-btn" id="back-to-event" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
     </div>
     <div class="tab-bar">
         <button class="tab-btn" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
@@ -300,6 +300,11 @@ async function fbSet(path,d)    { await set(ref(db,path),d); }
 async function fbUpdate(path,d) { await update(ref(db,path),d); }
 async function fbRemove(path)   { await remove(ref(db,path)); }
 
+// ─── URL Parameters ──────────────────────────────────────────────────
+const _urlParams = new URLSearchParams(location.search);
+const PARAM_CLUB = _urlParams.get('club') || '';  // グループ名フィルタ
+let _paramClubIds = new Set(); // init後に解決
+
 // ─── State ────────────────────────────────────────────────────────────
 let allClubs={}, allPlayers={};
 let currentTab='clubs';
@@ -370,8 +375,9 @@ function buildClubFilter(){
     const sel=document.getElementById('p-filter-club');
     const cur=sel.value;
     sel.innerHTML='<option value="">全グループ</option>';
-    Object.values(allClubs).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja')).forEach(c=>{
-        const cid=encodeURIComponent(c.name);
+    let clubs=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
+    if(_paramClubIds.size>0) clubs=clubs.filter(([cid])=>_paramClubIds.has(cid));
+    clubs.forEach(([cid,c])=>{
         sel.innerHTML+=`<option value="${escH(cid)}" ${cur===cid?'selected':''}>${escH(c.name)}</option>`;
     });
 }
@@ -381,6 +387,8 @@ window.renderPlayers=function(){
     const filterCid=document.getElementById('p-filter-club').value;
     const c=document.getElementById('players-container');
     let entries=Object.entries(allPlayers);
+    // パラメータフィルタ：指定グループの選手のみ
+    if(_paramClubIds.size>0) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).some(cid=>_paramClubIds.has(cid)));
     if(filterCid) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).includes(filterCid));
     if(q) entries=entries.filter(([,p])=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].kana||a[1].name||'').localeCompare(b[1].kana||b[1].name||'','ja'));
@@ -411,6 +419,8 @@ window.renderClubs=function(){
     const q=(document.getElementById('c-search').value||'').toLowerCase();
     const c=document.getElementById('clubs-container');
     let entries=Object.entries(allClubs);
+    // パラメータフィルタ：指定グループのみ
+    if(_paramClubIds.size>0) entries=entries.filter(([cid])=>_paramClubIds.has(cid));
     if(q) entries=entries.filter(([,cl])=>(cl.name||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 グループが登録されていません</div>'; return; }
@@ -907,6 +917,23 @@ window.importClubs=async function(input){
 async function init(){
     const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
     allClubs=cd||{}; allPlayers=pd||{};
+    // パラメータからクラブIDを解決
+    if(PARAM_CLUB){
+        const names=PARAM_CLUB.split(',').map(s=>s.trim()).filter(Boolean);
+        for(const [cid,club] of Object.entries(allClubs)){
+            if(names.includes(club.name)) _paramClubIds.add(cid);
+        }
+        // ヘッダーにフィルタ表示
+        const hdr=document.querySelector('#screen-main .hdr h1');
+        if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
+        // 戻るリンクにパラメータ引き継ぎ
+        const backBtn=document.getElementById('back-to-event');
+        if(backBtn){
+            const ps=new URLSearchParams();
+            if(PARAM_CLUB) ps.set('club',PARAM_CLUB);
+            backBtn.onclick=()=>{location.href='/roundrobin-event.php?'+ps.toString();};
+        }
+    }
     buildClubFilter();
     renderClubs();
 }

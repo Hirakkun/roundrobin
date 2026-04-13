@@ -106,7 +106,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div id="screen-events" class="screen active">
     <div class="hdr">
         <h1>🎾 イベント作成編集</h1>
-        <a href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
+        <a id="link-member" href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
     </div>
     <div id="events-container"><div class="loading-msg">⏳ 読込中...</div></div>
     <div class="bottom-bar">
@@ -141,7 +141,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
             <h1 style="margin:0;font-size:15px;">参加グループ選択</h1>
             <div style="font-size:11px;opacity:.8;">ID: <span id="clubs-eid-label"></span></div>
         </div>
-        <a href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
+        <a id="link-member" href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
     </div>
     <div id="clubs-container"><div class="loading-msg">⏳ 読込中...</div></div>
     <div class="confirm-bar">
@@ -202,6 +202,11 @@ async function fbSet(path,d)    { await set(ref(db,path),d); }
 async function fbUpdate(path,d) { await update(ref(db,path),d); }
 async function fbRemove(path)   { await remove(ref(db,path)); }
 
+// ─── URL Parameters ──────────────────────────────────────────────────
+const _urlParams = new URLSearchParams(location.search);
+const PARAM_NAME = _urlParams.get('name') || '';        // イベント名固定
+const PARAM_CLUB = _urlParams.get('club') || '';        // グループ名フィルタ
+
 // ─── State ────────────────────────────────────────────────────────────
 let allEvents={}, allClubs={}, allPlayers={};
 let currentEventId=null;
@@ -240,7 +245,24 @@ window.closeConfirm = function(){ document.getElementById('modal-confirm').class
 // ═══════════════════════════════════════════════════════════════
 async function loadEvents(){
     document.getElementById('events-container').innerHTML='<div class="loading-msg">⏳ 読込中...</div>';
-    allEvents=await fbGet('events')||{};
+    // PARAM_CLUB用にクラブ・選手データも先に読み込む
+    if(PARAM_CLUB && !Object.keys(allClubs).length){
+        const [ev,cd,pd]=await Promise.all([fbGet('events'),fbGet('clubs'),fbGet('players')]);
+        allEvents=ev||{}; allClubs=cd||{}; allPlayers=pd||{};
+    } else {
+        allEvents=await fbGet('events')||{};
+    }
+    // ヘッダーにフィルタ表示
+    if(PARAM_NAME||PARAM_CLUB){
+        const hdr=document.querySelector('#screen-events .hdr h1');
+        if(hdr) hdr.innerHTML='🎾 '+escH(PARAM_NAME||'イベント管理');
+    }
+    // グループ管理リンクにパラメータを引き継ぐ
+    if(PARAM_CLUB){
+        document.querySelectorAll('#link-member, a[id="link-member"]').forEach(a=>{
+            a.href='/roundrobin-member.php?club='+encodeURIComponent(PARAM_CLUB);
+        });
+    }
     renderEvents();
 }
 
@@ -252,7 +274,9 @@ function statusBadge(st){
 
 function renderEvents(){
     const c=document.getElementById('events-container');
-    const entries=Object.entries(allEvents);
+    let entries=Object.entries(allEvents);
+    // パラメータ名フィルタ: 指定があればそのイベント名のみ表示
+    if(PARAM_NAME) entries=entries.filter(([,ev])=>ev.name===PARAM_NAME);
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 イベントがありません。新規作成してください。</div>'; return; }
     entries.sort((a,b)=>(b[1].date||'')>(a[1].date||'')?1:-1);
     let h='<div class="evt-list">';
@@ -314,6 +338,13 @@ async function deleteEvent(eid){ try{ await fbRemove('events/'+eid); await fbRem
 
 // ─── New Event ────────────────────────────────────────────────
 document.getElementById('ne-date').value=todayStr();
+// パラメータでイベント名固定
+if(PARAM_NAME){
+    document.getElementById('ne-name').value=PARAM_NAME;
+    document.getElementById('ne-name').readOnly=true;
+    document.getElementById('ne-name').style.background='#f5f5f5';
+    document.getElementById('ne-name').style.color='#555';
+}
 window.submitNewEvent=async function(){
     const name=(document.getElementById('ne-name').value||'').trim();
     const date=(document.getElementById('ne-date').value||'').replace(/-/g,'');
@@ -323,18 +354,41 @@ window.submitNewEvent=async function(){
     const eid=encodeURIComponent(sid);
     if(allEvents[eid]){showToast('⚠️ 同じイベント名・日付の組合せが既に存在します');return;}
     const token=Math.random().toString(36).substr(2,8).toUpperCase();
-    const evData={name,date,adminToken:token,usedClubs:{},status:'準備中',createdAt:new Date().toISOString()};
+    // パラメータでグループ指定されていれば自動で参加グループに設定
+    let usedClubs={};
+    if(PARAM_CLUB){
+        const paramClubIds=_resolveClubIds(PARAM_CLUB);
+        paramClubIds.forEach(cid=>usedClubs[cid]=true);
+    }
+    const evData={name,date,adminToken:token,usedClubs,status:'準備中',createdAt:new Date().toISOString()};
     try{
         await fbSet('events/'+eid,evData);
         localStorage.setItem('rr_admin:'+sid,token);
         allEvents[eid]=evData;
-        await fbSet('sessions/'+eid,buildEmptySession());
-        showToast('✅ イベントを作成しました');
-        document.getElementById('ne-name').value='';
+        // グループ指定時はroster付きセッション、なければ空セッション
+        const clubIds=Object.keys(usedClubs);
+        if(clubIds.length>0){
+            const st=buildSessionState(clubIds, 2, date, {});
+            await fbSet('sessions/'+eid,st);
+            showToast(`✅ イベントを作成しました（${clubIds.length}グループ・${st.roster.length}人）`);
+        } else {
+            await fbSet('sessions/'+eid,buildEmptySession());
+            showToast('✅ イベントを作成しました');
+        }
+        document.getElementById('ne-name').value=PARAM_NAME||'';
         document.getElementById('ne-date').value=todayStr();
         showScreen('screen-events'); renderEvents();
     }catch(e){showToast('❌ '+e.message);}
 };
+// グループ名からクラブIDを解決（カンマ区切り対応）
+function _resolveClubIds(clubNameParam){
+    const names=clubNameParam.split(',').map(s=>s.trim()).filter(Boolean);
+    const ids=[];
+    for(const [cid,club] of Object.entries(allClubs)){
+        if(names.includes(club.name)) ids.push(cid);
+    }
+    return ids;
+}
 function buildEmptySession(){ return {courts:2,roundCount:0,matchingRule:'random',roster:[],players:[],pairMatrix:{},oppMatrix:{},tsMap:{},schedule:[],scores:{},playerNames:{},courtNameAlpha:false,showPlayerNum:false,createdAt:new Date().toISOString()}; }
 
 // ═══════════════════════════════════════════════════════════════
@@ -353,7 +407,12 @@ window.openClubs=async function(eid){
 };
 function renderClubsScreen(){
     const c=document.getElementById('clubs-container');
-    const entries=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
+    let entries=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
+    // パラメータでグループフィルタ
+    if(PARAM_CLUB){
+        const paramIds=new Set(_resolveClubIds(PARAM_CLUB));
+        entries=entries.filter(([cid])=>paramIds.has(cid));
+    }
     if(!entries.length){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 グループ管理</a> から登録してください。</div>';return;}
     const st=getStatus(allEvents[currentEventId]||{});
     const isActive=st==='開催中';
