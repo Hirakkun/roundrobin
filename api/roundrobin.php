@@ -884,29 +884,12 @@ function renderPlayerList() {
         div.className = 'player-item';
         div.style.opacity = p.resting ? '0.5' : '1';
 
-        // 名前プルダウン：試合開始後はロック。ただし未出場（lastRound===-1）の選手は名前未確定なので編集可
+        // 名前プルダウン：試合開始後はロック（途中参加は addPlayer → confirmLiveAdd で名前確定済み）
         const neverPlayed = p.lastRound === -1;
-        const isMidGameNew = matchStarted && (p.joinedRound || 0) > 0 && neverPlayed;
-        const selectDisabled = (!isAdmin || (matchStarted && !neverPlayed)) ? 'disabled' : '';
+        const selectDisabled = (!isAdmin || matchStarted) ? 'disabled' : '';
 
-        // 途中参加の新規枠は、未使用のroster名のみ・選手N表示なし
-        let availableNames;
-        if (isMidGameNew) {
-            const usedNames = new Set();
-            state.players.forEach(pp => {
-                if (pp.id === p.id) return;
-                const nm = state.playerNames[pp.id];
-                if (nm) usedNames.add(nm);
-            });
-            availableNames = rosterNames.filter(n => !usedNames.has(n));
-        } else {
-            availableNames = rosterNames;
-        }
-
-        let opts = isMidGameNew
-            ? `<option value="" disabled${state.playerNames[p.id]?'':' selected'}>選手を選択</option>`
-            : `<option value="">選手${p.id}</option>`;
-        availableNames.forEach(n => {
+        let opts = `<option value="">選手${p.id}</option>`;
+        rosterNames.forEach(n => {
             const rp = (state.roster || []).find(r => r.name === n);
             const cn = rp && rp.clubName ? rp.clubName : '';
             const label = cn ? `${n}(${cn})` : n;
@@ -916,7 +899,7 @@ function renderPlayerList() {
         const restLabel = p.resting ? '復帰' : '休憩';
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
         let restBtnHtml;
-        if (neverPlayed && isAdmin) {
+        if (neverPlayed && isAdmin && !isEventLocked()) {
             // まだ試合に出ていない選手は削除ボタン
             restBtnHtml = `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
         } else {
@@ -929,7 +912,7 @@ function renderPlayerList() {
         const hasName = !!state.playerNames[p.id];
         const labelHtml = hasName
             ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}`
-            : (isMidGameNew ? '選手を選択' : `選手${p.id}`);
+            : `選手${p.id}`;
         const labelClass = hasName ? 'playerSelectLabel' : 'playerSelectLabel placeholder';
         div.innerHTML = `
             <span class="player-num">${p.id}</span>
@@ -1031,8 +1014,48 @@ function toggleRest(id) {
 
 function addPlayer() {
     if (isEventLocked()) return;
+    // 既に未確定行があれば追加しない
+    if (document.querySelector('.live-pending-row')) return;
+    // 使用済み名を除外
+    const usedNames = new Set(Object.values(state.playerNames));
+    const available = (state.roster || []).filter(r => !usedNames.has(r.name));
+    if (!available.length) { showToast('名簿の全員が参加済みです'); return; }
+    const opts = `<option value="">--- 選手を選択 ---</option>` +
+        available.map(r => {
+            const label = r.clubName ? `${_esc(r.name)}（${_esc(r.clubName)}）` : _esc(r.name);
+            return `<option value="${_esc(r.pid)}">${label}</option>`;
+        }).join('');
+    const row = document.createElement('div');
+    row.className = 'live-pending-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e8f5e9;border-radius:10px;margin-top:8px;';
+    row.innerHTML = `
+        <select style="flex:1;padding:9px;border:2px solid #2e7d32;border-radius:8px;font-size:14px;">${opts}</select>
+        <button type="button" onclick="confirmLiveAdd(this)"
+            style="padding:9px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:13px;white-space:nowrap;">✓ 決定</button>
+        <button type="button" onclick="this.closest('.live-pending-row').remove()"
+            style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:14px;">×</button>`;
+    const addBtn = document.querySelector('#liveSetup .player-add-btn');
+    addBtn.parentNode.insertBefore(row, addBtn);
+}
+
+function confirmLiveAdd(btn) {
+    const row = btn.closest('.live-pending-row');
+    const sel = row.querySelector('select');
+    const pid = sel.value;
+    if (!pid) { showToast('選手を選択してください'); return; }
+    const rp = (state.roster || []).find(r => r.pid === pid);
+    if (!rp) return;
     const newId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
     addPlayerToState(newId, true);
+    state.playerNames[newId] = rp.name;
+    if (!state.playerClubs) state.playerClubs = {};
+    if (rp.clubName) state.playerClubs[newId] = rp.clubName;
+    // pid を保存
+    const player = state.players.find(p => p.id === newId);
+    if (player) player.pid = rp.pid;
+    // TrueSkill初期値をrosterから引き継ぎ
+    state.tsMap[newId] = { mu: rp.mu ?? 25.0, sigma: rp.sigma ?? (25/3) };
+    row.remove();
     renderPlayerList();
     saveState();
 }
@@ -1666,15 +1689,6 @@ function generateNextRound() {
         showLiveSetup();
         renderPlayerList();
         document.getElementById('disp-courts-live').textContent = state.courts;
-    }
-
-    // 途中参加の新規選手で名前未選択のものがあれば中断
-    const unnamedMidGame = state.players.filter(p =>
-        (p.joinedRound || 0) > 0 && p.lastRound === -1 && !state.playerNames[p.id]
-    );
-    if (unnamedMidGame.length > 0) {
-        alert('追加した参加者の名前を選択してください');
-        return;
     }
 
     const active = state.players.filter(p => !p.resting);
