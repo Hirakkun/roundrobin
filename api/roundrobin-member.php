@@ -60,11 +60,12 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 
 /* ── 選手カード（スマホ向け） ── */
 .player-list { padding: 6px 10px 80px; display: flex; flex-direction: column; gap: 8px; }
-.player-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; }
-.player-card .pc-name { font-weight: bold; color: #222; font-size: 15px; word-break: break-word; grid-column: 1; grid-row: 1; }
-.player-card .pc-meta { font-size: 12px; color: #888; grid-column: 1; grid-row: 2; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.player-card .pc-edit { grid-column: 2; grid-row: 1 / 3; }
-.player-card .pc-clubs { grid-column: 1 / -1; font-size: 12px; }
+.player-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.player-card .pc-top { display: flex; align-items: center; gap: 8px; }
+.player-card .pc-name { font-weight: bold; color: #222; font-size: 15px; word-break: break-word; }
+.player-card .pc-edit { flex-shrink: 0; }
+.player-card .pc-meta { font-size: 12px; color: #888; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.player-card .pc-clubs { font-size: 12px; }
 
 /* ── グループカード ── */
 .club-list { padding: 6px 10px 80px; display: flex; flex-direction: column; gap: 8px; }
@@ -398,8 +399,10 @@ window.renderPlayers=function(){
         const clubs=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid));
         const genderIcon = p.gender==='男性' ? '♂' : p.gender==='女性' ? '♀' : '';
         h+=`<div class="player-card">
-            <button class="btn-sm btn-sm-edit pc-edit" onclick="openPlayerForm('${esc(pid)}')">編集</button>
-            <div class="pc-name">${escH(p.name||'')}</div>
+            <div class="pc-top">
+                <div class="pc-name">${escH(p.name||'')}</div>
+                <button class="btn-sm btn-sm-edit pc-edit" onclick="openPlayerForm('${esc(pid)}')">編集</button>
+            </div>
             <div class="pc-meta">
                 <span style="color:#888;">${escH(p.kana||'')}</span>
                 ${genderIcon?`<span style="color:${p.gender==='男性'?'#1565c0':'#c2185b'};font-weight:bold;">${genderIcon}</span>`:''}
