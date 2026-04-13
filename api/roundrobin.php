@@ -2916,7 +2916,7 @@ window._fbSetEventStatus = async function(sessionId, status) {
 
 window._fbUpdatePlayerRating = async function(pid, mu, sigma) {
     try {
-        await update(ref(db, 'players/' + encodeURIComponent(pid)), { mu, sigma });
+        await update(ref(db, 'players/' + pid), { mu, sigma });
     } catch(e) { console.error('選手レーティング更新失敗:', e); }
 };
 
