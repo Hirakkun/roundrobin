@@ -589,6 +589,7 @@ window.toggleEntryRest = function(pid) {
     if (entryRestingPids.has(pid)) entryRestingPids.delete(pid);
     else entryRestingPids.add(pid);
     renderEntryList();
+    _saveEntryToState();
 };
 
 // entryPlayersをstate.playersに即反映してFirebaseに保存
@@ -611,7 +612,8 @@ function _saveEntryToState() {
     state.oppMatrix = {};
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
-        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting: false, joinedRound: 0, restCount: 0 });
+        const resting = entryRestingPids.has(p.pid);
+        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
         if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
@@ -627,15 +629,22 @@ function _saveEntryToState() {
 // state.players + state.roster からentryPlayersを復元
 function _rebuildEntryPlayers() {
     entryPlayers = [];
+    entryRestingPids.clear();
     const roster = state.roster || [];
     const playerNames = state.playerNames || {};
+    const players = state.players || [];
     // playerNames の順序（id順）でrosterから一致するものを探す
-    const maxId = state.players ? Math.max(0, ...state.players.map(p => p.id)) : 0;
+    const maxId = players.length ? Math.max(0, ...players.map(p => p.id)) : 0;
     for (let id = 1; id <= maxId; id++) {
         const name = playerNames[id];
         if (!name) continue;
         const rp = roster.find(r => r.name === name);
-        if (rp) entryPlayers.push(rp);
+        if (rp) {
+            entryPlayers.push(rp);
+            // 休憩状態を復元
+            const sp = players.find(p => p.id === id);
+            if (sp && sp.resting && rp.pid) entryRestingPids.add(rp.pid);
+        }
     }
 }
 
