@@ -303,6 +303,7 @@ async function fbRemove(path)   { await remove(ref(db,path)); }
 // ─── URL Parameters ──────────────────────────────────────────────────
 const _urlParams = new URLSearchParams(location.search);
 const PARAM_CLUB = _urlParams.get('club') || '';  // グループ名フィルタ
+const PARAM_NAME = _urlParams.get('name') || '';  // イベント名（戻るリンク引き継ぎ用）
 let _paramClubIds = new Set(); // init後に解決
 
 // ─── State ────────────────────────────────────────────────────────────
@@ -914,6 +915,16 @@ window.importClubs=async function(input){
 // ═══════════════════════════════════════════════════════════════
 // Init
 // ═══════════════════════════════════════════════════════════════
+function _updateBackLink(){
+    const backBtn=document.getElementById('back-to-event');
+    if(!backBtn) return;
+    const ps=new URLSearchParams();
+    if(PARAM_CLUB) ps.set('club',PARAM_CLUB);
+    if(PARAM_NAME) ps.set('name',PARAM_NAME);
+    const qs=ps.toString();
+    backBtn.onclick=()=>{location.href='/roundrobin-event.php'+(qs?'?'+qs:'');};
+}
+
 async function init(){
     const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
     allClubs=cd||{}; allPlayers=pd||{};
@@ -927,12 +938,9 @@ async function init(){
         const hdr=document.querySelector('#screen-main .hdr h1');
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         // 戻るリンクにパラメータ引き継ぎ
-        const backBtn=document.getElementById('back-to-event');
-        if(backBtn){
-            const ps=new URLSearchParams();
-            if(PARAM_CLUB) ps.set('club',PARAM_CLUB);
-            backBtn.onclick=()=>{location.href='/roundrobin-event.php?'+ps.toString();};
-        }
+        _updateBackLink();
+    } else if(PARAM_NAME){
+        _updateBackLink();
     }
     buildClubFilter();
     renderClubs();

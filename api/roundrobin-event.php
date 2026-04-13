@@ -258,9 +258,12 @@ async function loadEvents(){
         if(hdr) hdr.innerHTML='🎾 '+escH(PARAM_NAME||'イベント管理');
     }
     // グループ管理リンクにパラメータを引き継ぐ
-    if(PARAM_CLUB){
-        document.querySelectorAll('#link-member, a[id="link-member"]').forEach(a=>{
-            a.href='/roundrobin-member.php?club='+encodeURIComponent(PARAM_CLUB);
+    if(PARAM_CLUB||PARAM_NAME){
+        const ps=new URLSearchParams();
+        if(PARAM_CLUB) ps.set('club',PARAM_CLUB);
+        if(PARAM_NAME) ps.set('name',PARAM_NAME);
+        document.querySelectorAll('a[id="link-member"]').forEach(a=>{
+            a.href='/roundrobin-member.php?'+ps.toString();
         });
     }
     renderEvents();
