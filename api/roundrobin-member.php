@@ -336,7 +336,6 @@ window.switchTab=function(tab){
     document.getElementById('pane-clubs').style.display=tab==='clubs'?'block':'none';
     document.getElementById('tab-players').classList.toggle('active',tab==='players');
     document.getElementById('tab-clubs').classList.toggle('active',tab==='clubs');
-    document.getElementById('btn-add-player').style.display=tab==='players'?'':'none';
     document.getElementById('btn-add-club').style.display=tab==='clubs'?'':'none';
     if(tab==='players') renderPlayers();
     else renderClubs();
