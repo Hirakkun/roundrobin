@@ -337,7 +337,7 @@ window.switchTab=function(tab){
     document.getElementById('pane-clubs').style.display=tab==='clubs'?'block':'none';
     document.getElementById('tab-players').classList.toggle('active',tab==='players');
     document.getElementById('tab-clubs').classList.toggle('active',tab==='clubs');
-    document.getElementById('btn-add-club').style.display=tab==='clubs'?'':'none';
+    document.getElementById('btn-add-club').style.display=(tab==='clubs'&&!PARAM_CLUB)?'':'none';
     if(tab==='players') renderPlayers();
     else renderClubs();
 };
@@ -952,9 +952,10 @@ async function init(){
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         // 戻るリンクにパラメータ引き継ぎ
         _updateBackLink();
-        // CSVボタン非表示
+        // CSVボタン・新規グループ登録ボタン非表示
         document.getElementById('player-csv-bar').style.display='none';
         document.getElementById('club-csv-bar').style.display='none';
+        document.getElementById('btn-add-club').style.display='none';
     } else if(PARAM_NAME){
         _updateBackLink();
     }
