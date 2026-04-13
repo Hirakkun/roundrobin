@@ -2784,7 +2784,8 @@ function loadState() {
         try {
             const parsed = JSON.parse(saved);
             // セッションIDが一致しなければ古いキャッシュを無視
-            if (parsed._sid && parsed._sid !== _sessionId) {
+            // （_sidがない古いキャッシュも別イベントとみなして破棄）
+            if ((parsed._sid || '') !== _sessionId) {
                 localStorage.removeItem('rr_state_v2');
                 return false;
             }
