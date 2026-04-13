@@ -363,15 +363,27 @@ window.submitNewEvent=async function(){
         const paramClubIds=_resolveClubIds(PARAM_CLUB);
         paramClubIds.forEach(cid=>usedClubs[cid]=true);
     }
+    const clubIds=Object.keys(usedClubs);
+    // 複数クラブ所属の選手がいる場合は選択画面を表示
+    if(clubIds.length>0){
+        const multi=findMultiClubPlayers(clubIds);
+        if(Object.keys(multi).length>0){
+            showClubChoose(multi, {}, (choice)=>{ _execSubmitNewEvent(name,date,eid,token,usedClubs,clubIds,choice); });
+            return;
+        }
+    }
+    await _execSubmitNewEvent(name,date,eid,token,usedClubs,clubIds,{});
+};
+async function _execSubmitNewEvent(name,date,eid,token,usedClubs,clubIds,playerClubChoice){
     const evData={name,date,adminToken:token,usedClubs,status:'準備中',createdAt:new Date().toISOString()};
     try{
         await fbSet('events/'+eid,evData);
+        const sid=name+date;
         localStorage.setItem('rr_admin:'+sid,token);
         allEvents[eid]=evData;
         // グループ指定時はroster付きセッション、なければ空セッション
-        const clubIds=Object.keys(usedClubs);
         if(clubIds.length>0){
-            const st=buildSessionState(clubIds, 2, date, {});
+            const st=buildSessionState(clubIds, 2, date, playerClubChoice);
             await fbSet('sessions/'+eid,st);
             showToast(`✅ イベントを作成しました（${clubIds.length}グループ・${st.roster.length}人）`);
         } else {
@@ -382,7 +394,7 @@ window.submitNewEvent=async function(){
         document.getElementById('ne-date').value=todayStr();
         showScreen('screen-events'); renderEvents();
     }catch(e){showToast('❌ '+e.message);}
-};
+}
 // グループ名からクラブIDを解決（カンマ区切り対応）
 function _resolveClubIds(clubNameParam){
     const names=clubNameParam.split(',').map(s=>s.trim()).filter(Boolean);
