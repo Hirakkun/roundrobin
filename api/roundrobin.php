@@ -2773,6 +2773,7 @@ window._fbApply = function(remoteState) {
 // 状態の保存・復元
 // =====================================================================
 function saveState() {
+    state._sid = _sessionId; // セッションID をキャッシュに含める
     localStorage.setItem('rr_state_v2', JSON.stringify(state));
     if (!isApplyingRemote && window._fbPush) window._fbPush(state);
 }
@@ -2782,6 +2783,11 @@ function loadState() {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
+            // セッションIDが一致しなければ古いキャッシュを無視
+            if (parsed._sid && parsed._sid !== _sessionId) {
+                localStorage.removeItem('rr_state_v2');
+                return false;
+            }
             // v2形式の確認: players配列とpairMatrixが存在すること
             if (Array.isArray(parsed.players) && parsed.players.length > 0 && parsed.pairMatrix) {
                 Object.assign(state, parsed);
