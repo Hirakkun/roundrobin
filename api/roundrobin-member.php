@@ -117,7 +117,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
                 <option value="">全グループ</option>
             </select>
         </div>
-        <div style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
+        <div id="player-csv-bar" style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
             <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="exportPlayers()">📤 書出（CSV）</button>
             <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="document.getElementById('import-players-input').click()">📥 読込（CSV）</button>
             <input type="file" id="import-players-input" accept=".csv" style="display:none;" onchange="importPlayers(this)">
@@ -130,7 +130,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <div class="search-bar">
             <input type="text" id="c-search" placeholder="🔍 グループ名" oninput="renderClubs()">
         </div>
-        <div style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
+        <div id="club-csv-bar" style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
             <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="exportClubs()">📤 書出（CSV）</button>
             <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="document.getElementById('import-clubs-input').click()">📥 読込（CSV）</button>
             <input type="file" id="import-clubs-input" accept=".csv" style="display:none;" onchange="importClubs(this)">
@@ -140,7 +140,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 
     <div class="bottom-bar" id="main-bottom-bar">
         <div style="display:flex;gap:8px;">
-            <button class="btn btn-purple" style="flex:1;display:none;" id="btn-add-player" onclick="openPlayerForm(null)">➕ 新規選手登録</button>
+            <!-- btn-add-player removed -->
             <button class="btn btn-dark" style="flex:1;" id="btn-add-club" onclick="openClubForm(null)">🏢 新規グループ登録</button>
         </div>
     </div>
@@ -212,7 +212,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div class="form-body">
         <div class="field"><label>グループ名 <span class="req">※</span></label><input type="text" id="cf-name" placeholder="例: らさんて"></div>
         <div class="field"><label>パスワード <span class="req">※</span></label><input type="password" id="cf-pw" placeholder="編集・削除時に使用"></div>
-        <button class="btn btn-purple" style="width:100%;padding:14px;" onclick="saveClub()">💾 保存</button>
+        <button class="btn btn-purple" style="width:100%;padding:14px;" id="cf-save-btn" onclick="saveClub()">💾 保存</button>
         <button class="btn btn-danger" style="width:100%;padding:12px;display:none;" id="cf-del-btn" onclick="confirmDeleteClub()">🗑 このグループを削除</button>
     </div>
 
@@ -669,17 +669,28 @@ window.openClubForm=function(cid){
     currentClubId=cid;
     currentClubIsNew=!cid;
     const isNew=currentClubIsNew;
+    const clubLocked=PARAM_CLUB&&!isNew;
     document.getElementById('cf-title').textContent=isNew?'グループ登録':'グループ編集';
-    document.getElementById('cf-del-btn').style.display=isNew?'none':'block';
+    document.getElementById('cf-del-btn').style.display=(isNew||clubLocked)?'none':'block';
+    document.getElementById('cf-save-btn').style.display=clubLocked?'none':'block';
     document.getElementById('cf-players-section').style.display=isNew?'none':'block';
-    document.getElementById('cf-name').disabled=!isNew;
+    const nameEl=document.getElementById('cf-name');
+    const pwEl=document.getElementById('cf-pw');
+    nameEl.disabled=!isNew;
+    if(clubLocked){
+        nameEl.readOnly=true; nameEl.style.background='#e9e9e9';
+        pwEl.readOnly=true; pwEl.style.background='#e9e9e9';
+    } else {
+        nameEl.readOnly=false; nameEl.style.background='';
+        pwEl.readOnly=false; pwEl.style.background='';
+    }
     if(isNew){
-        document.getElementById('cf-name').value='';
-        document.getElementById('cf-pw').value='';
+        nameEl.value='';
+        pwEl.value='';
     } else {
         const cl=allClubs[cid]||{};
-        document.getElementById('cf-name').value=cl.name||'';
-        document.getElementById('cf-pw').value=cl.password||'';
+        nameEl.value=cl.name||'';
+        pwEl.value=cl.password||'';
         renderClubMemberList();
     }
     showScreen('screen-club');
@@ -939,6 +950,9 @@ async function init(){
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         // 戻るリンクにパラメータ引き継ぎ
         _updateBackLink();
+        // CSVボタン非表示
+        document.getElementById('player-csv-bar').style.display='none';
+        document.getElementById('club-csv-bar').style.display='none';
     } else if(PARAM_NAME){
         _updateBackLink();
     }
