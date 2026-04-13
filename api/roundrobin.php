@@ -324,7 +324,7 @@ body.viewer-mode #initialSetup { display: none !important; }
             <tbody id="rankBody"></tbody>
         </table>
     </div>
-    <button class="report-btn" onclick="previewReport()">📋 結果を確認する</button>
+    <button class="report-btn" id="btn-preview-report" onclick="previewReport()" style="display:none;">📋 結果を確認する</button>
     <div id="reportPreview" style="display:none;margin-top:12px;">
         <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
         <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="downloadReport()">📥 結果をダウンロードする</button>
@@ -332,12 +332,12 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div id="reportStatus"></div>
 
     <!-- 期間集計パネル -->
-    <button class="report-btn" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;">📅 期間集計</button>
+    <button class="report-btn" id="btn-period-agg" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;display:none;">📅 期間集計</button>
     <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
         <div style="font-weight:bold;font-size:15px;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
         <div style="margin-bottom:8px;">
-            <div style="font-size:12px;color:#555;margin-bottom:4px;">IDプレフィックス（前方一致）</div>
-            <input id="periodPrefix" type="text" placeholder="例: ARCNET" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:15px;box-sizing:border-box;">
+            <div style="font-size:12px;color:#555;margin-bottom:4px;">イベント名（前方一致）</div>
+            <input id="periodPrefix" type="text" placeholder="例: らさんて" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:15px;box-sizing:border-box;">
         </div>
         <div style="display:flex;gap:8px;margin-bottom:6px;">
             <div style="flex:1;">
@@ -2294,7 +2294,25 @@ function downloadReport() {
 // =====================================================================
 function togglePeriodPanel() {
     const panel = document.getElementById('periodPanel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    const wasHidden = panel.style.display === 'none';
+    panel.style.display = wasHidden ? 'block' : 'none';
+    // 初回表示時にデフォルト値を設定
+    if (wasHidden) {
+        const prefixEl = document.getElementById('periodPrefix');
+        if (!prefixEl.value) {
+            // 現在のイベント名（日付なし）を初期値に
+            const bar = document.getElementById('eventInfoBar');
+            if (bar && bar.dataset.evName) prefixEl.value = bar.dataset.evName;
+        }
+        // 期間が未入力なら今年の1/1～12/31
+        const p1 = document.getElementById('period1');
+        const p2 = document.getElementById('period2');
+        if (!p1.value && !p2.value) {
+            const y = new Date().getFullYear();
+            p1.value = `${y}-01-01`;
+            p2.value = `${y}-12-31`;
+        }
+    }
 }
 
 function setPeriodYear() {
@@ -2324,7 +2342,7 @@ async function calcPeriodStats() {
     const status    = document.getElementById('periodStatus');
     const resultDiv = document.getElementById('periodResult');
 
-    if (!prefix) { alert('IDプレフィックスを入力してください'); return; }
+    if (!prefix) { alert('イベント名を入力してください'); return; }
     if (!window._fbQueryPrefix) { alert('Firebase が初期化されていません'); return; }
 
     status.textContent = '⏳ データを取得中...';
@@ -2613,6 +2631,11 @@ function updateEventInfo(ev) {
     bar.dataset.evStatus = status;
     currentEventStatus = status;
     if (typeof updateAdminUI === 'function') updateAdminUI();
+    // 終了時のみ「結果を確認する」「期間集計」ボタンを表示
+    const btnPreview = document.getElementById('btn-preview-report');
+    const btnPeriod  = document.getElementById('btn-period-agg');
+    if (btnPreview) btnPreview.style.display = status === '終了' ? '' : 'none';
+    if (btnPeriod)  btnPeriod.style.display  = status === '終了' ? '' : 'none';
 }
 window.updateEventInfo = updateEventInfo;
 
