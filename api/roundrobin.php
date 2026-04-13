@@ -926,8 +926,9 @@ function renderPlayerList() {
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
         let restBtnHtml;
         if (neverPlayed && isAdmin && !isEventLocked()) {
-            // まだ試合に出ていない選手は削除ボタン
-            restBtnHtml = `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
+            // まだ試合に出ていない選手は休憩/復帰＋削除ボタン
+            const toggleBtn = `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`;
+            restBtnHtml = toggleBtn + `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
         } else {
             restBtnHtml = isAdmin
                 ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
