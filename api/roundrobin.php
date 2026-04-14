@@ -89,6 +89,19 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .rest-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #f57c00; background: #fff3e0; color: #e65100; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
 .rest-btn.resting { background: #2e7d32; border-color: #1b5e20; color: #fff; }
 .rest-btn.delete-btn { background: #ffebee; border-color: #c62828; color: #c62828; }
+/* ペア固定 */
+.rest-btn.pair-btn { background: #e8eaf6; border-color: #3949ab; color: #3949ab; }
+.rest-btn.pair-btn.paired { background: #3949ab; border-color: #1a237e; color: #fff; }
+.pair-badge { display:inline-block; font-size:10px; font-weight:bold; padding:1px 6px; border-radius:8px; margin-left:4px; vertical-align:middle; }
+.pair-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000; align-items:center; justify-content:center; }
+.pair-modal-bg.show { display:flex; }
+.pair-modal { background:#fff; border-radius:14px; padding:20px; max-width:340px; width:90%; max-height:70vh; overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,.3); }
+.pair-modal h3 { margin:0 0 12px; font-size:16px; color:#1a237e; }
+.pair-modal .pm-item { display:flex; align-items:center; gap:8px; padding:10px 8px; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:8px; }
+.pair-modal .pm-item:hover { background:#e8eaf6; }
+.pair-modal .pm-item .pm-name { font-weight:bold; font-size:14px; }
+.pair-modal .pm-item .pm-club { font-size:11px; color:#666; }
+.pair-modal .pm-cancel { width:100%; padding:10px; margin-top:10px; background:#e0e0e0; border:none; border-radius:8px; font-size:14px; font-weight:bold; cursor:pointer; }
 .new-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #7b1fa2; background: #fff; color: #7b1fa2; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
 .player-add-btn { width: 100%; font-size: 17px; padding: 12px; background: #1565c0; color: #fff; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; }
 .court-change-row { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 10px; }
@@ -377,6 +390,7 @@ let state = {
     playerNames: {},
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
+    fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
     createdAt: '',          // 大会作成日時（ISO文字列）
 };
 
@@ -924,25 +938,39 @@ function renderPlayerList() {
 
         const restLabel = p.resting ? '復帰' : '休憩';
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
+        const hasPair = getFixedPartnerId(p.id) != null;
         let restBtnHtml;
         if (neverPlayed && isAdmin && !isEventLocked()) {
-            // まだ試合に出ていない選手は休憩/復帰＋削除ボタン
             const toggleBtn = `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`;
-            restBtnHtml = toggleBtn + `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
+            const delBtn = hasPair ? '' : `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
+            restBtnHtml = toggleBtn + delBtn;
         } else {
             restBtnHtml = isAdmin
                 ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
                 : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
         }
+        // ペア固定ボタン（管理者 & イベント未終了）
+        if (isAdmin && !isEventLocked()) {
+            if (hasPair) {
+                restBtnHtml = `<button class="rest-btn pair-btn paired" onclick="removePair(${p.id})">🤝解除</button>` + restBtnHtml;
+            } else {
+                restBtnHtml = `<button class="rest-btn pair-btn" onclick="openPairModal(${p.id})">🤝ペア</button>` + restBtnHtml;
+            }
+        }
 
         const curClubName = getPlayerClubName(p.id);
+        const pairColor = getPairColor(p.id);
+        const pairBadgeHtml = pairColor
+            ? `<span class="pair-badge" style="background:${pairColor};color:#fff;">🤝</span>`
+            : '';
         const hasName = !!state.playerNames[p.id];
         const labelHtml = hasName
-            ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}`
+            ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}${pairBadgeHtml}`
             : `選手${p.id}`;
         const labelClass = hasName ? 'playerSelectLabel' : 'playerSelectLabel placeholder';
+        const numStyle = pairColor ? `background:${pairColor}` : '';
         div.innerHTML = `
-            <span class="player-num">${p.id}</span>
+            <span class="player-num" style="${numStyle}">${p.id}</span>
             <div class="playerSelectWrap">
                 <select class="playerSelect" ${selectDisabled} onchange="setPlayerName(${p.id},this.value)">${opts}</select>
                 <div class="${labelClass}">${labelHtml}</div>
@@ -1001,6 +1029,7 @@ async function endEvent() {
 
 function removeUnplayedPlayer(id) {
     if (isEventLocked()) return;
+    if (getFixedPartnerId(id) != null) { showToast('ペア固定中は削除できません。先にペアを解除してください。'); return; }
     const p = state.players.find(p => p.id === id);
     if (!p) return;
     if (p.lastRound !== -1) { showToast('試合に出場済みの選手は削除できません'); return; }
@@ -1028,13 +1057,106 @@ function removeUnplayedPlayer(id) {
     saveState();
 }
 
+// =====================================================================
+// ペア固定
+// =====================================================================
+const PAIR_COLORS = ['#3949ab','#00897b','#d84315','#6a1b9a','#2e7d32','#c62828','#00695c','#4527a0','#ef6c00','#1565c0'];
+
+function getFixedPairs() {
+    if (!Array.isArray(state.fixedPairs)) state.fixedPairs = [];
+    return state.fixedPairs;
+}
+
+function getFixedPartnerId(id) {
+    for (const pair of getFixedPairs()) {
+        if (pair[0] === id) return pair[1];
+        if (pair[1] === id) return pair[0];
+    }
+    return null;
+}
+
+function getPairIndex(id) {
+    const pairs = getFixedPairs();
+    for (let i = 0; i < pairs.length; i++) {
+        if (pairs[i][0] === id || pairs[i][1] === id) return i;
+    }
+    return -1;
+}
+
+function getPairColor(id) {
+    const idx = getPairIndex(id);
+    return idx >= 0 ? PAIR_COLORS[idx % PAIR_COLORS.length] : null;
+}
+
+let _pairTargetId = null;
+
+function openPairModal(id) {
+    _pairTargetId = id;
+    const name = state.playerNames[id] || ('選手' + id);
+    document.getElementById('pairModalTitle').textContent = '🤝 ' + name + ' のペア相手を選択';
+    const list = document.getElementById('pairModalList');
+    // 候補：自分でない、まだペア固定されていない、参加中の選手
+    const candidates = state.players.filter(p =>
+        p.id !== id && getFixedPartnerId(p.id) == null
+    );
+    if (!candidates.length) {
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:#888;">ペア可能な選手がいません</div>';
+    } else {
+        list.innerHTML = candidates.map(p => {
+            const n = state.playerNames[p.id] || ('選手' + p.id);
+            const club = getPlayerClubName(p.id);
+            return `<div class="pm-item" onclick="confirmPair(${p.id})">
+                <div>
+                    <div class="pm-name">${_esc(n)}</div>
+                    ${club ? '<div class="pm-club">' + _esc(club) + '</div>' : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+    document.getElementById('pairModal').classList.add('show');
+}
+
+window.closePairModal = function() {
+    document.getElementById('pairModal').classList.remove('show');
+    _pairTargetId = null;
+};
+
+window.confirmPair = function(partnerId) {
+    if (_pairTargetId == null) return;
+    getFixedPairs().push([_pairTargetId, partnerId]);
+    closePairModal();
+    renderPlayerList();
+    saveState();
+    const n1 = state.playerNames[_pairTargetId] || ('選手' + _pairTargetId);
+    const n2 = state.playerNames[partnerId] || ('選手' + partnerId);
+    showToast('🤝 ' + n1 + ' と ' + n2 + ' をペア固定しました');
+};
+
+window.removePair = function(id) {
+    const partnerId = getFixedPartnerId(id);
+    if (partnerId == null) return;
+    const n1 = state.playerNames[id] || ('選手' + id);
+    const n2 = state.playerNames[partnerId] || ('選手' + partnerId);
+    if (!confirm(n1 + ' と ' + n2 + ' のペア固定を解除しますか？')) return;
+    state.fixedPairs = getFixedPairs().filter(pair =>
+        !(pair[0] === id || pair[1] === id)
+    );
+    renderPlayerList();
+    saveState();
+    showToast('ペア解除しました');
+};
+
 function toggleRest(id) {
     if (isEventLocked()) return;
     const p = state.players.find(p => p.id === id);
     if (!p) return;
-    // 復帰時: playerStates履歴に基づく playRatio で自動的に優先度が計算されるため
-    // playCount や restCount の手動操作は不要
     p.resting = !p.resting;
+    // ペア固定の相方も連動して休憩/復帰
+    const partnerId = getFixedPartnerId(id);
+    if (partnerId != null) {
+        const partner = state.players.find(pp => pp.id === partnerId);
+        if (partner) partner.resting = p.resting;
+    }
     renderPlayerList();
     saveState();
 }
@@ -1272,29 +1394,43 @@ function selectRoundPlayers() {
         return eligible === 0 ? 0 : p.playCount / eligible;
     };
 
-    const minRatio = Math.min(...active.map(p => playRatio(p)));
-    let tier1 = active.filter(p => playRatio(p) <= minRatio + eps);
+    // 出場率昇順 → lastRound昇順で全員をソート
+    const sorted = shuffle([...active]);
+    sorted.sort((a, b) => {
+        const dr = playRatio(a) - playRatio(b);
+        return Math.abs(dr) > eps ? dr : a.lastRound - b.lastRound;
+    });
 
-    if (tier1.length >= must) {
-        // lastRoundが小さい（長く休んでいる）人を優先しつつ、
-        // 同じlastRoundの中はシャッフルして固定化を防ぐ
-        shuffle(tier1);
-        tier1.sort((a, b) => a.lastRound - b.lastRound);
-        return tier1.slice(0, must).map(p => p.id);
+    const selected = new Set();
+    for (const p of sorted) {
+        if (selected.size >= must) break;
+        if (selected.has(p.id)) continue;
+        selected.add(p.id);
+        // ペア固定の相方も一緒に選出
+        const partnerId = getFixedPartnerId(p.id);
+        if (partnerId != null && !selected.has(partnerId)) {
+            const partner = active.find(pp => pp.id === partnerId);
+            if (partner) selected.add(partnerId);
+        }
     }
-
-    // tier1だけでは足りない: 出場率昇順 → lastRound昇順で補充
-    const selected = tier1.map(p => p.id);
-    const rest = active
-        .filter(p => playRatio(p) > minRatio + eps)
-        .sort((a, b) => {
-            const dr = playRatio(a) - playRatio(b);
-            return Math.abs(dr) > eps ? dr : a.lastRound - b.lastRound;
-        });
-    while (selected.length < must && rest.length > 0) {
-        selected.push(rest.shift().id);
+    // ペア連動で must を超えた場合、ペアでない末尾を削除して4の倍数に調整
+    let result = [...selected];
+    while (result.length > must) {
+        // 末尾からペアでない選手を除外
+        for (let i = result.length - 1; i >= 0; i--) {
+            if (getFixedPartnerId(result[i]) == null) {
+                result.splice(i, 1);
+                break;
+            }
+        }
+        if (result.length > must && result.length % 4 !== 0) {
+            result.pop(); // 安全弁
+        }
+        if (result.length <= must) break;
     }
-    return selected;
+    // 4の倍数に切り捨て
+    const final = Math.floor(result.length / 4) * 4;
+    return result.slice(0, final);
 }
 
 // =====================================================================
@@ -1341,8 +1477,16 @@ function findBestCourtGroups(ids, courtCount) {
     let best = null;
     let bestScore = Infinity;
 
+    // 固定ペアがidsに含まれるものを取得
+    const activeFP = getFixedPairs().filter(fp => ids.includes(fp[0]) && ids.includes(fp[1]));
+
     function bt(remaining, groups) {
         if (remaining.length === 0) {
+            // 固定ペアが同じグループに入っているか検証
+            for (const fp of activeFP) {
+                const inSame = groups.some(g => g.includes(fp[0]) && g.includes(fp[1]));
+                if (!inSame) return; // 違反 → この解を棄却
+            }
             const muScore = groups.reduce((s, g) => {
                 const mus = g.map(i => state.tsMap[i]?.mu || 25);
                 return s + (Math.max(...mus) - Math.min(...mus)) / totalMuRange;
@@ -1369,7 +1513,19 @@ function findBestCourtGroups(ids, courtCount) {
 
         const first = remaining[0];
         const rest = remaining.slice(1);
-        const combos = getCombinations(rest, 3);
+
+        // firstが固定ペアの一方なら、相方を必ずtrioに含める
+        const fpPartner = activeFP.find(fp => fp[0] === first || fp[1] === first);
+        const mustInclude = fpPartner ? (fpPartner[0] === first ? fpPartner[1] : fpPartner[0]) : null;
+
+        let combos;
+        if (mustInclude != null && rest.includes(mustInclude)) {
+            // mustInclude を必ず含む3人の組み合わせを生成
+            const others = rest.filter(x => x !== mustInclude);
+            combos = getCombinations(others, 2).map(c => [mustInclude, ...c]);
+        } else {
+            combos = getCombinations(rest, 3);
+        }
 
         combos.sort((a, b) => {
             const ra = (Math.max(...a.map(i=>state.tsMap[i]?.mu||25), state.tsMap[first]?.mu||25)
@@ -1405,24 +1561,39 @@ function getCombinations(arr, k) {
 }
 
 function makeBestPairInGroup(group) {
-    // 4人から3通りのペア分けを全て試す
     const [a, b, c, d] = group;
-    const options = [
-        [[a,b],[c,d]],
-        [[a,c],[b,d]],
-        [[a,d],[b,c]],
-    ];
+
+    // 固定ペアが含まれるか確認
+    const fixedInGroup = [];
+    for (const pair of getFixedPairs()) {
+        const inGroup = group.includes(pair[0]) && group.includes(pair[1]);
+        if (inGroup) fixedInGroup.push(pair);
+    }
+
+    let options;
+    if (fixedInGroup.length > 0) {
+        // 固定ペアを含む組み合わせのみ許可
+        const allOpts = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
+        options = allOpts.filter(([t1, t2]) => {
+            return fixedInGroup.every(fp => {
+                const [p1, p2] = fp;
+                return (t1.includes(p1) && t1.includes(p2)) || (t2.includes(p1) && t2.includes(p2));
+            });
+        });
+        if (options.length === 0) options = allOpts; // fallback
+    } else {
+        options = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
+    }
 
     let best = null, bestScore = Infinity;
     for (const [t1, t2] of options) {
         const muDiff = Math.abs(tsTeamMu(t1) - tsTeamMu(t2));
         const pairDup = (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0);
         const oppDup  = t1.reduce((s,a) => s + t2.reduce((ss,b) => ss + (state.oppMatrix[a]?.[b]||0), 0), 0);
-        // ③チーム均衡 >> ④ペア重複 >> ④対戦重複
         const score = muDiff * 10000 + pairDup * 100 + oppDup;
         if (score < bestScore) { bestScore = score; best = [t1, t2]; }
     }
-    return best; // [team1, team2]
+    return best;
 }
 
 // =====================================================================
@@ -1430,9 +1601,24 @@ function makeBestPairInGroup(group) {
 // 優先: ペア重複なし > 対戦相手重複なし > 出場間隔均等
 // =====================================================================
 function makePairsRandom(ids, attempts = 200) {
+    // 固定ペアを先に抽出
+    const fixedResult = [];
+    const remaining = [];
+    const usedInFixed = new Set();
+    for (const pair of getFixedPairs()) {
+        if (ids.includes(pair[0]) && ids.includes(pair[1])) {
+            fixedResult.push([pair[0], pair[1]]);
+            usedInFixed.add(pair[0]);
+            usedInFixed.add(pair[1]);
+        }
+    }
+    ids.forEach(id => { if (!usedInFixed.has(id)) remaining.push(id); });
+
+    if (remaining.length === 0) return fixedResult;
+
     let best = null, bestScore = Infinity;
     for (let t = 0; t < attempts; t++) {
-        const shuffled = shuffle([...ids]);
+        const shuffled = shuffle([...remaining]);
         const pairs = btPairsRandom(shuffled);
         if (pairs) {
             const score = pairs.reduce((s, [a, b]) => s + (state.pairMatrix[a]?.[b] || 0), 0);
@@ -1440,12 +1626,11 @@ function makePairsRandom(ids, attempts = 200) {
             if (score === 0) break;
         }
     }
-    // 重複が残る場合は全探索でゼロ重複解を探す
     if (bestScore > 0) {
-        const exact = findZeroDupPairing(ids);
-        if (exact) return exact;
+        const exact = findZeroDupPairing(remaining);
+        if (exact) return [...fixedResult, ...exact];
     }
-    return best;
+    return best ? [...fixedResult, ...best] : fixedResult;
 }
 
 function findZeroDupPairing(ids) {
@@ -1536,6 +1721,7 @@ const BALANCE_WEIGHTS = {
     REST2:       100,  // 2連続休み
     REST3:       200,  // 3連続以上休み
     PLAY3:       20,   // 3連続以上出場
+    CPAIR_DIFF:  5,    // ペア内μ差のチーム間差ペナルティ
 };
 const BALANCE_ITERATIONS = 1500;
 
@@ -1583,18 +1769,24 @@ function evaluateBalanceScore(assignment, active, courtCount) {
     const Cplay = nextCounts.reduce((s, v) => s + (v - avg) * (v - avg), 0) * W.CPLAY * cplayMul * nextCounts.length;
 
     // ② ペア重複 / ③ 対戦重複 / 未対戦ボーナス（コート単位）
-    let Cpair = 0, Copp = 0;
+    // ⑤ ペア内μ差ペナルティ
+    let Cpair = 0, Copp = 0, CpairDiff = 0;
     assignment.courts.forEach(group => {
-        // コート内4人のペアバランス最良を仮選択（makeBestPairInGroup相当の簡易版）
         const [a, b, c, d] = group;
-        const options = [
-            [[a,b],[c,d]],
-            [[a,c],[b,d]],
-            [[a,d],[b,c]],
-        ];
+        // 固定ペアを含む組み合わせのみ許可
+        const fixedInGroup = getFixedPairs().filter(fp => group.includes(fp[0]) && group.includes(fp[1]));
+        let allOpts = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
+        if (fixedInGroup.length > 0) {
+            const filtered = allOpts.filter(([t1, t2]) =>
+                fixedInGroup.every(fp =>
+                    (t1.includes(fp[0]) && t1.includes(fp[1])) || (t2.includes(fp[0]) && t2.includes(fp[1]))
+                )
+            );
+            if (filtered.length > 0) allOpts = filtered;
+        }
         let bestPairDup = Infinity;
         let bestT1 = null, bestT2 = null;
-        for (const [t1, t2] of options) {
+        for (const [t1, t2] of allOpts) {
             const pd = (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0);
             if (pd < bestPairDup) { bestPairDup = pd; bestT1 = t1; bestT2 = t2; }
         }
@@ -1603,9 +1795,21 @@ function evaluateBalanceScore(assignment, active, courtCount) {
         bestT1.forEach(x => bestT2.forEach(y => {
             const c = state.oppMatrix[x]?.[y] || 0;
             Copp += c * W.COPP;
-            if (c === 0) Copp += W.COPP_NEW; // 未対戦ボーナス
+            if (c === 0) Copp += W.COPP_NEW;
         }));
+        // ⑤ ペア内μ差 → 対戦チーム間のペア内差が近い方が良い
+        const diff1 = Math.abs((state.tsMap[bestT1[0]]?.mu||25) - (state.tsMap[bestT1[1]]?.mu||25));
+        const diff2 = Math.abs((state.tsMap[bestT2[0]]?.mu||25) - (state.tsMap[bestT2[1]]?.mu||25));
+        CpairDiff += Math.abs(diff1 - diff2) * (W.CPAIR_DIFF || 5);
     });
+
+    // ⑥ 固定ペアが同じコートに入っていない場合の大きなペナルティ
+    let CfixedViolation = 0;
+    for (const fp of getFixedPairs()) {
+        if (!playingIds.includes(fp[0]) || !playingIds.includes(fp[1])) continue;
+        const sameGroup = assignment.courts.some(g => g.includes(fp[0]) && g.includes(fp[1]));
+        if (!sameGroup) CfixedViolation += 100000; // 違反ペナルティ
+    }
 
     // ④ 休み・連投ペナルティ（benchに入ると休み扱い）
     let Crest = 0;
@@ -1619,19 +1823,36 @@ function evaluateBalanceScore(assignment, active, courtCount) {
         if (ps >= 2) Crest += W.PLAY3;
     });
 
-    return Cplay + Cpair + Copp + Crest;
+    return Cplay + Cpair + Copp + Crest + CpairDiff + CfixedViolation;
 }
 
 // 初期配置を生成
 function makeInitialBalanceAssignment(active, courtCount) {
-    const shuffled = shuffle(active.map(p => p.id));
+    const ids = shuffle(active.map(p => p.id));
     const need = courtCount * 4;
-    const playing = shuffled.slice(0, need);
-    const bench = shuffled.slice(need);
-    const courts = [];
-    for (let i = 0; i < courtCount; i++) {
-        courts.push(playing.slice(i * 4, i * 4 + 4));
+
+    // 固定ペアを先にコートに配置
+    const used = new Set();
+    const courts = Array.from({ length: courtCount }, () => []);
+    let ci = 0;
+    for (const fp of getFixedPairs()) {
+        if (!ids.includes(fp[0]) || !ids.includes(fp[1])) continue;
+        if (used.has(fp[0]) || used.has(fp[1])) continue;
+        if (ci >= courtCount) break;
+        courts[ci].push(fp[0], fp[1]);
+        used.add(fp[0]); used.add(fp[1]);
+        if (courts[ci].length >= 4) ci++;
     }
+    // 残りの選手を埋める
+    const remaining = ids.filter(id => !used.has(id));
+    let ri = 0;
+    for (let c = 0; c < courtCount && ri < remaining.length; c++) {
+        while (courts[c].length < 4 && ri < remaining.length) {
+            courts[c].push(remaining[ri++]);
+        }
+    }
+    const playing = courts.flat();
+    const bench = remaining.slice(ri);
     return { courts, bench };
 }
 
@@ -1641,26 +1862,66 @@ function cloneAssignment(a) {
 }
 
 // ランダムに2人をswap（コート間・コート↔bench）
+// 固定ペアは一緒に移動する
 function swapInAssignment(a) {
-    const allSlots = []; // [{type:'court', idx, i}, {type:'bench', idx}]
+    const allSlots = [];
     a.courts.forEach((c, ci) => c.forEach((_, i) => allSlots.push({ type: 'court', ci, i })));
     a.bench.forEach((_, i) => allSlots.push({ type: 'bench', i }));
     if (allSlots.length < 2) return a;
-
-    const s1 = allSlots[Math.floor(Math.random() * allSlots.length)];
-    let s2;
-    do {
-        s2 = allSlots[Math.floor(Math.random() * allSlots.length)];
-    } while (s1 === s2 || (s1.type === 'court' && s2.type === 'court' && s1.ci === s2.ci));
 
     const getId = s => s.type === 'court' ? a.courts[s.ci][s.i] : a.bench[s.i];
     const setId = (s, id) => {
         if (s.type === 'court') a.courts[s.ci][s.i] = id;
         else a.bench[s.i] = id;
     };
-    const id1 = getId(s1), id2 = getId(s2);
-    setId(s1, id2);
-    setId(s2, id1);
+    const findSlot = (id) => allSlots.find(s => getId(s) === id);
+
+    const s1 = allSlots[Math.floor(Math.random() * allSlots.length)];
+    const id1 = getId(s1);
+    const partner1 = getFixedPartnerId(id1);
+
+    // s2: 別のコート or ベンチからランダム選択
+    let s2;
+    let attempts = 0;
+    do {
+        s2 = allSlots[Math.floor(Math.random() * allSlots.length)];
+        attempts++;
+    } while (attempts < 50 && (s1 === s2 || (s1.type === 'court' && s2.type === 'court' && s1.ci === s2.ci)));
+    if (s1 === s2) return a;
+
+    const id2 = getId(s2);
+    const partner2 = getFixedPartnerId(id2);
+
+    // 固定ペア同士のswapが複雑になる場合はスキップ
+    if (partner1 != null && partner2 != null) return a;
+
+    if (partner1 != null) {
+        // id1は固定ペア → partner1も一緒に移動
+        const sp1 = findSlot(partner1);
+        if (!sp1) { setId(s1, id2); setId(s2, id1); return a; }
+        // s2側にもう1人のswap先が必要（s2と同じコート/ベンチから）
+        const s2group = s2.type === 'court' ? allSlots.filter(s => s.type === 'court' && s.ci === s2.ci && s !== s2) : allSlots.filter(s => s.type === 'bench' && s !== s2);
+        const s3cands = s2group.filter(s => s !== s1 && s !== sp1 && getFixedPartnerId(getId(s)) == null);
+        if (s3cands.length === 0) { setId(s1, id2); setId(s2, id1); return a; } // fallback: 単純swap
+        const s3 = s3cands[Math.floor(Math.random() * s3cands.length)];
+        const id3 = getId(s3);
+        // id1↔id2, partner1↔id3
+        setId(s1, id2); setId(s2, id1);
+        setId(sp1, id3); setId(s3, partner1);
+    } else if (partner2 != null) {
+        const sp2 = findSlot(partner2);
+        if (!sp2) { setId(s1, id2); setId(s2, id1); return a; }
+        const s1group = s1.type === 'court' ? allSlots.filter(s => s.type === 'court' && s.ci === s1.ci && s !== s1) : allSlots.filter(s => s.type === 'bench' && s !== s1);
+        const s3cands = s1group.filter(s => s !== s2 && s !== sp2 && getFixedPartnerId(getId(s)) == null);
+        if (s3cands.length === 0) { setId(s1, id2); setId(s2, id1); return a; }
+        const s3 = s3cands[Math.floor(Math.random() * s3cands.length)];
+        const id3 = getId(s3);
+        setId(s1, id2); setId(s2, id1);
+        setId(sp2, id3); setId(s3, partner2);
+    } else {
+        // どちらもペアなし → 通常swap
+        setId(s1, id2); setId(s2, id1);
+    }
     return a;
 }
 
@@ -2668,6 +2929,7 @@ window._fbApply = function(remoteState) {
         if (!Array.isArray(remoteState.players))    remoteState.players    = [];
         if (!Array.isArray(remoteState.roster))     remoteState.roster     = [];
         if (!Array.isArray(remoteState.schedule))   remoteState.schedule   = [];
+        if (!Array.isArray(remoteState.fixedPairs)) remoteState.fixedPairs = [];
         if (!remoteState.pairMatrix  || typeof remoteState.pairMatrix  !== 'object') remoteState.pairMatrix  = {};
         if (!remoteState.oppMatrix   || typeof remoteState.oppMatrix   !== 'object') remoteState.oppMatrix   = {};
         if (!remoteState.tsMap       || typeof remoteState.tsMap       !== 'object') remoteState.tsMap       = {};
@@ -2877,6 +3139,15 @@ window.onload = function () {
     });
 };
 </script>
+
+<!-- ペア選択モーダル -->
+<div class="pair-modal-bg" id="pairModal">
+    <div class="pair-modal">
+        <h3 id="pairModalTitle">🤝 ペア相手を選択</h3>
+        <div id="pairModalList"></div>
+        <button class="pm-cancel" onclick="closePairModal()">キャンセル</button>
+    </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
