@@ -1433,13 +1433,15 @@ function selectRoundPlayers() {
     return result.slice(0, final);
 }
 
-// ランダムマッチ専用の選出関数（同コート頻度を考慮）
-function selectRoundPlayersRandom() {
+// =====================================================================
+// ランダムマッチ統合最適化
+// 選出・ペア・コート割当を一括生成し、総合スコアで最良を選ぶ
+// =====================================================================
+function generateRoundRandom() {
     const active = state.players.filter(p => !p.resting);
     const maxMust = Math.min(active.length, state.courts * 4);
     const must = Math.floor(maxMust / 4) * 4;
-    if (must < 4) return [];
-    if (active.length <= must) return active.map(p => p.id);
+    if (must < 4) return null;
 
     const eps = 1e-9;
     const playRatio = p => {
@@ -1447,92 +1449,161 @@ function selectRoundPlayersRandom() {
         return eligible === 0 ? 0 : p.playCount / eligible;
     };
 
-    // 同コート回数（pairMatrix + oppMatrix）
-    function coOccurrence(idA, idB) {
-        return (state.pairMatrix[idA]?.[idB] || 0) + (state.oppMatrix[idA]?.[idB] || 0);
-    }
+    // --- 選出候補を生成する関数 ---
+    function generateSelection() {
+        if (active.length <= must) return active.map(p => p.id);
 
-    // 選出メンバー間の同コート頻度合計スコア（低いほど良い）
-    function coScore(ids) {
-        let s = 0;
-        for (let i = 0; i < ids.length; i++)
-            for (let j = i + 1; j < ids.length; j++)
-                s += coOccurrence(ids[i], ids[j]);
-        return s;
-    }
+        // playRatioでソート → 同率グループを抽出
+        const shuffled = shuffle([...active]);
+        shuffled.sort((a, b) => playRatio(a) - playRatio(b));
 
-    // 出場率でソート（playRatioのみ。lastRoundはグループ分けに使わない）
-    const shuffled = shuffle([...active]);
-    shuffled.sort((a, b) => playRatio(a) - playRatio(b));
-
-    // playRatioのみで同率グループを抽出
-    const groups = [];
-    let gi = 0;
-    while (gi < shuffled.length) {
-        const rr = playRatio(shuffled[gi]);
-        let gj = gi + 1;
-        while (gj < shuffled.length && Math.abs(playRatio(shuffled[gj]) - rr) <= eps) gj++;
-        groups.push(shuffled.slice(gi, gj));
-        gi = gj;
-    }
-
-    // 確定枠と選択枠に分離
-    // 出場率が低いグループから順にmust人まで確定、must人を跨ぐグループが選択対象
-    const locked = [];   // 確定選出（出場率が低い上位グループ全員）
-    let choiceGroup = []; // must人を跨ぐグループ（この中からk人選ぶ）
-    let need = must;
-
-    for (const grp of groups) {
-        if (need <= 0) break;
-        // 固定ペアの相方がグループ外にいる場合を含めた実効人数
-        const grpIds = grp.map(p => p.id);
-        if (grpIds.length <= need) {
-            locked.push(...grpIds);
-            need -= grpIds.length;
-        } else {
-            choiceGroup = grp;
-            break;
+        const groups = [];
+        let gi = 0;
+        while (gi < shuffled.length) {
+            const rr = playRatio(shuffled[gi]);
+            let gj = gi + 1;
+            while (gj < shuffled.length && Math.abs(playRatio(shuffled[gj]) - rr) <= eps) gj++;
+            groups.push(shuffled.slice(gi, gj));
+            gi = gj;
         }
-    }
 
-    // 選択不要（確定枠でちょうどmust人）
-    if (need <= 0) {
-        return adjustForPairsAndSize(locked, active, must);
-    }
+        // 確定枠と選択枠に分離
+        const locked = [];
+        let choiceGroup = [];
+        let need = must;
+        for (const grp of groups) {
+            if (need <= 0) break;
+            const grpIds = grp.map(p => p.id);
+            if (grpIds.length <= need) {
+                locked.push(...grpIds);
+                need -= grpIds.length;
+            } else {
+                choiceGroup = grp;
+                break;
+            }
+        }
+        if (need <= 0) return adjustForPairsRandom(locked, active, must);
 
-    // choiceGroupからneed人を選ぶ：サンプリング法で同コート頻度最小を探す
-    const choiceIds = choiceGroup.map(p => p.id);
-    const ATTEMPTS = Math.min(300, need <= 2 ? 50 : 300);
-    let bestPick = null, bestScore = Infinity;
-
-    for (let t = 0; t < ATTEMPTS; t++) {
-        const shuffledChoice = shuffle([...choiceIds]);
+        // 選択枠からシャッフルでneed人をピック
+        const choiceIds = shuffle(choiceGroup.map(p => p.id));
         const pick = [];
         const pickSet = new Set(locked);
-        for (const id of shuffledChoice) {
+        for (const id of choiceIds) {
             if (pick.length >= need) break;
             if (pickSet.has(id)) continue;
             pick.push(id);
             pickSet.add(id);
-            // 固定ペアの相方も一緒に選出
             const partnerId = getFixedPartnerId(id);
             if (partnerId != null && !pickSet.has(partnerId)) {
                 const partner = active.find(pp => pp.id === partnerId);
                 if (partner) { pick.push(partnerId); pickSet.add(partnerId); }
             }
         }
-        const candidate = [...locked, ...pick];
-        const sc = coScore(candidate);
-        if (sc < bestScore) { bestScore = sc; bestPick = candidate; }
+        return adjustForPairsRandom([...locked, ...pick], active, must);
+    }
+
+    // --- 1ラウンド案の総合スコア計算 ---
+    // courts = [[[id,id],[id,id]], ...], selectedIds = [id,...]
+    function scoreRound(courts, selectedIds) {
+        let score = 0;
+
+        // ① 出場回数均等（次ラウンド後の出場率分散）
+        const nextRatios = active.map(p => {
+            const willPlay = selectedIds.includes(p.id) ? 1 : 0;
+            const elig = getEligibleRounds(p.id) + 1;
+            return (p.playCount + willPlay) / elig;
+        });
+        const avg = nextRatios.reduce((s, v) => s + v, 0) / nextRatios.length;
+        const playVar = nextRatios.reduce((s, v) => s + (v - avg) * (v - avg), 0);
+        score += playVar * 500;
+
+        // ② ペア重複
+        let pairDup = 0;
+        courts.forEach(([t1, t2]) => {
+            pairDup += (state.pairMatrix[t1[0]]?.[t1[1]] || 0);
+            pairDup += (state.pairMatrix[t2[0]]?.[t2[1]] || 0);
+        });
+        score += pairDup * 100;
+
+        // ③ 対戦相手重複
+        let oppDup = 0;
+        courts.forEach(([t1, t2]) => {
+            t1.forEach(a => t2.forEach(b => {
+                oppDup += (state.oppMatrix[a]?.[b] || 0);
+            }));
+        });
+        score += oppDup * 30;
+
+        // ④ 同コート頻度の偏り（max - min ペナルティ）
+        const coOccCounts = {};
+        selectedIds.forEach(id => { coOccCounts[id] = 0; });
+        courts.forEach(([t1, t2]) => {
+            const group = [...t1, ...t2];
+            for (let i = 0; i < group.length; i++)
+                for (let j = i + 1; j < group.length; j++) {
+                    const co = (state.pairMatrix[group[i]]?.[group[j]] || 0)
+                             + (state.oppMatrix[group[i]]?.[group[j]] || 0);
+                    coOccCounts[group[i]] = (coOccCounts[group[i]] || 0) + co;
+                    coOccCounts[group[j]] = (coOccCounts[group[j]] || 0) + co;
+                }
+        });
+        const coVals = Object.values(coOccCounts);
+        if (coVals.length > 0) {
+            const coMax = Math.max(...coVals);
+            const coMin = Math.min(...coVals);
+            score += (coMax - coMin) * 20;
+        }
+
+        // ⑤ 連続休みペナルティ
+        const bench = active.filter(p => !selectedIds.includes(p.id));
+        bench.forEach(p => {
+            const rs = getRestStreak(p.id);
+            if (rs >= 2) score += 200;
+            else if (rs === 1) score += 100;
+        });
+
+        // ⑥ 固定ペア違反
+        for (const fp of getFixedPairs()) {
+            if (!selectedIds.includes(fp[0]) || !selectedIds.includes(fp[1])) continue;
+            const sameGroup = courts.some(([t1, t2]) => {
+                const g = [...t1, ...t2];
+                return g.includes(fp[0]) && g.includes(fp[1]);
+            });
+            if (!sameGroup) score += 100000;
+        }
+
+        return score;
+    }
+
+    // --- メイン：複数ラウンド案を生成し最良を選ぶ ---
+    const ATTEMPTS = 200;
+    let bestCourts = null, bestIds = null, bestScore = Infinity;
+
+    for (let t = 0; t < ATTEMPTS; t++) {
+        const ids = generateSelection();
+        if (!ids || ids.length < 4) continue;
+
+        const pairs = makePairsRandom(ids);
+        if (!pairs) continue;
+
+        const courts = assignCourtsRandom(pairs);
+        if (!courts) continue;
+
+        const sc = scoreRound(courts, ids);
+        if (sc < bestScore) {
+            bestScore = sc;
+            bestCourts = courts;
+            bestIds = ids;
+        }
         if (sc === 0) break;
     }
 
-    return adjustForPairsAndSize(bestPick || [...locked, ...choiceIds.slice(0, need)], active, must);
+    if (!bestCourts) return null;
+    return { courts: bestCourts, selectedIds: bestIds };
 }
 
-// ペア連動調整＆4の倍数化（selectRoundPlayersRandomの補助）
-function adjustForPairsAndSize(ids, active, must) {
-    // 固定ペアの相方を追加
+// ペア連動調整＆4の倍数化
+function adjustForPairsRandom(ids, active, must) {
     const result = new Set(ids);
     for (const id of ids) {
         const partnerId = getFixedPartnerId(id);
@@ -1542,7 +1613,6 @@ function adjustForPairsAndSize(ids, active, must) {
         }
     }
     let arr = [...result];
-    // mustを超えた場合、ペアでない末尾を除外
     while (arr.length > must) {
         let removed = false;
         for (let i = arr.length - 1; i >= 0; i--) {
@@ -2127,12 +2197,11 @@ function generateNextRound() {
         ids = result.selectedIds;
         courts = result.courts;
     } else {
-        // ランダムマッチ: 試合数均等>同コート分散>ペア重複なし>対戦相手重複なし
-        ids = selectRoundPlayersRandom();
-        const pairs = makePairsRandom(ids);
-        if (!pairs) { alert('ペア生成に失敗しました'); return; }
-        courts = assignCourtsRandom(pairs);
-        if (!courts) { alert('コート割り当てに失敗しました'); return; }
+        // ランダムマッチ: 選出・ペア・対戦を統合最適化
+        const result = generateRoundRandom();
+        if (!result) { alert('ランダムマッチの組合せ生成に失敗しました'); return; }
+        ids = result.selectedIds;
+        courts = result.courts;
     }
 
     // scheduleに {team1, team2} 形式で保存
