@@ -1433,6 +1433,91 @@ function selectRoundPlayers() {
     return result.slice(0, final);
 }
 
+// ランダムマッチ専用の選出関数（同コート頻度を考慮）
+function selectRoundPlayersRandom() {
+    const active = state.players.filter(p => !p.resting);
+    const maxMust = Math.min(active.length, state.courts * 4);
+    const must = Math.floor(maxMust / 4) * 4;
+    if (must < 4) return [];
+    if (active.length <= must) return active.map(p => p.id);
+
+    const eps = 1e-9;
+    const playRatio = p => {
+        const eligible = getEligibleRounds(p.id);
+        return eligible === 0 ? 0 : p.playCount / eligible;
+    };
+
+    // 同コート回数マトリクス（pairMatrix + oppMatrix）
+    function coOccurrence(idA, idB) {
+        return (state.pairMatrix[idA]?.[idB] || 0) + (state.oppMatrix[idA]?.[idB] || 0);
+    }
+
+    // 出場率でグループ分け（同率グループ内で同コート頻度を考慮）
+    const shuffled = shuffle([...active]);
+    shuffled.sort((a, b) => {
+        const dr = playRatio(a) - playRatio(b);
+        return Math.abs(dr) > eps ? dr : a.lastRound - b.lastRound;
+    });
+
+    // 同率グループを抽出
+    const groups = [];
+    let gi = 0;
+    while (gi < shuffled.length) {
+        const rr = playRatio(shuffled[gi]);
+        const lr = shuffled[gi].lastRound;
+        let gj = gi + 1;
+        while (gj < shuffled.length) {
+            const dr2 = Math.abs(playRatio(shuffled[gj]) - rr);
+            if (dr2 > eps || shuffled[gj].lastRound !== lr) break;
+            gj++;
+        }
+        groups.push(shuffled.slice(gi, gj));
+        gi = gj;
+    }
+
+    // 貪欲法で選出（同率グループ内は同コート頻度が低い選手を優先）
+    const selected = new Set();
+    for (const grp of groups) {
+        if (selected.size >= must) break;
+        // グループ内を「選出済みメンバーとの同コート回数合計」昇順でソート
+        const scored = grp.map(p => {
+            let coSum = 0;
+            for (const sid of selected) coSum += coOccurrence(p.id, sid);
+            return { p, coSum };
+        });
+        scored.sort((a, b) => a.coSum - b.coSum || Math.random() - 0.5);
+
+        for (const { p } of scored) {
+            if (selected.size >= must) break;
+            if (selected.has(p.id)) continue;
+            selected.add(p.id);
+            // 固定ペアの相方も一緒に選出
+            const partnerId = getFixedPartnerId(p.id);
+            if (partnerId != null && !selected.has(partnerId)) {
+                const partner = active.find(pp => pp.id === partnerId);
+                if (partner) selected.add(partnerId);
+            }
+        }
+    }
+
+    // ペア連動で must を超えた場合の調整
+    let result = [...selected];
+    while (result.length > must) {
+        for (let i = result.length - 1; i >= 0; i--) {
+            if (getFixedPartnerId(result[i]) == null) {
+                result.splice(i, 1);
+                break;
+            }
+        }
+        if (result.length > must && result.length % 4 !== 0) {
+            result.pop();
+        }
+        if (result.length <= must) break;
+    }
+    const final = Math.floor(result.length / 4) * 4;
+    return result.slice(0, final);
+}
+
 // =====================================================================
 // レーティングマッチ用ロジック
 // 優先順位: ①出場回数均等 ②μ近い4人を1コートに ③その中でチーム均衡ペア ④対戦履歴回避
@@ -2001,8 +2086,8 @@ function generateNextRound() {
         ids = result.selectedIds;
         courts = result.courts;
     } else {
-        // ランダムマッチ: 試合数均等>ペア重複なし>対戦相手重複なし>間隔均等
-        ids = selectRoundPlayers();
+        // ランダムマッチ: 試合数均等>同コート分散>ペア重複なし>対戦相手重複なし
+        ids = selectRoundPlayersRandom();
         const pairs = makePairsRandom(ids);
         if (!pairs) { alert('ペア生成に失敗しました'); return; }
         courts = assignCourtsRandom(pairs);
