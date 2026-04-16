@@ -1507,7 +1507,7 @@ function generateRoundRandom() {
     function scoreRound(courts, selectedIds) {
         let score = 0;
 
-        // ① 出場回数均等（次ラウンド後の出場率分散）
+        // ① 出場回数均等（次ラウンド後の出場率分散）×800
         const nextRatios = active.map(p => {
             const willPlay = selectedIds.includes(p.id) ? 1 : 0;
             const elig = getEligibleRounds(p.id) + 1;
@@ -1515,9 +1515,9 @@ function generateRoundRandom() {
         });
         const avg = nextRatios.reduce((s, v) => s + v, 0) / nextRatios.length;
         const playVar = nextRatios.reduce((s, v) => s + (v - avg) * (v - avg), 0);
-        score += playVar * 500;
+        score += playVar * 800;
 
-        // ② ペア重複
+        // ② ペア重複 ×100
         let pairDup = 0;
         courts.forEach(([t1, t2]) => {
             pairDup += (state.pairMatrix[t1[0]]?.[t1[1]] || 0);
@@ -1525,7 +1525,7 @@ function generateRoundRandom() {
         });
         score += pairDup * 100;
 
-        // ③ 対戦相手重複
+        // ③ 対戦相手重複 ×30
         let oppDup = 0;
         courts.forEach(([t1, t2]) => {
             t1.forEach(a => t2.forEach(b => {
@@ -1534,32 +1534,21 @@ function generateRoundRandom() {
         });
         score += oppDup * 30;
 
-        // ④ 同コート頻度の偏り（max - min ペナルティ）
-        const coOccCounts = {};
-        selectedIds.forEach(id => { coOccCounts[id] = 0; });
-        courts.forEach(([t1, t2]) => {
-            const group = [...t1, ...t2];
-            for (let i = 0; i < group.length; i++)
-                for (let j = i + 1; j < group.length; j++) {
-                    const co = (state.pairMatrix[group[i]]?.[group[j]] || 0)
-                             + (state.oppMatrix[group[i]]?.[group[j]] || 0);
-                    coOccCounts[group[i]] = (coOccCounts[group[i]] || 0) + co;
-                    coOccCounts[group[j]] = (coOccCounts[group[j]] || 0) + co;
-                }
-        });
-        const coVals = Object.values(coOccCounts);
-        if (coVals.length > 0) {
-            const coMax = Math.max(...coVals);
-            const coMin = Math.min(...coVals);
-            score += (coMax - coMin) * 20;
-        }
+        // ④ 同コート頻度の合計 ×80（選出メンバー間の過去同コート回数）
+        let coTotal = 0;
+        for (let i = 0; i < selectedIds.length; i++)
+            for (let j = i + 1; j < selectedIds.length; j++)
+                coTotal += (state.pairMatrix[selectedIds[i]]?.[selectedIds[j]] || 0)
+                         + (state.oppMatrix[selectedIds[i]]?.[selectedIds[j]] || 0);
+        score += coTotal * 80;
 
-        // ⑤ 連続休みペナルティ
+        // ⑤ 連続休みペナルティ（軽量化：streak1は軽く、streak3+のみ強い）
         const bench = active.filter(p => !selectedIds.includes(p.id));
         bench.forEach(p => {
             const rs = getRestStreak(p.id);
-            if (rs >= 2) score += 200;
-            else if (rs === 1) score += 100;
+            if (rs >= 3) score += 200;
+            else if (rs === 2) score += 80;
+            else if (rs === 1) score += 30;
         });
 
         // ⑥ 固定ペア違反
