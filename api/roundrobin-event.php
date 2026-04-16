@@ -314,6 +314,7 @@ function renderEvents(){
                 ${st==='開催中' ? `<button class="btn btn-dark"  style="flex:1;" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
                 ${st==='終了'   ? `<button class="btn btn-gray"  style="flex:1;" onclick="changeStatus('${esc(eid)}','準備中')">↩ 準備中に戻す</button>` : ''}
             </div>
+            <button class="btn btn-purple" style="width:100%;text-align:left;" onclick="openAdminUrl('${esc(eid)}')">🚀 管理者画面を開く</button>
             <button class="btn btn-orange" style="width:100%;text-align:left;" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー（自分用に保存）</button>
             <button class="btn btn-dark" style="width:100%;text-align:left;" onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINEで送信）</button>`}
         </div>`;
@@ -335,6 +336,7 @@ window.changeStatus=async function(eid,newStatus){
 };
 window.toggleERow=function(eid){ const r=document.getElementById('erow-'+CSS.escape(eid)); if(r) r.classList.toggle('show'); };
 window.copyAdminUrl=function(eid){ const ev=allEvents[eid]||{}; const sid=decodeURIComponent(eid); const token=ev.adminToken||localStorage.getItem('rr_admin:'+sid)||''; if(!token){showToast('⚠️ トークンが見つかりません');return;} copyText(`${location.origin}/#${eid}:${token}`,'🔑 管理者URLをコピーしました。大切に保存してください。'); };
+window.openAdminUrl=function(eid){ const ev=allEvents[eid]||{}; const sid=decodeURIComponent(eid); const token=ev.adminToken||localStorage.getItem('rr_admin:'+sid)||''; if(!token){showToast('⚠️ トークンが見つかりません');return;} window.open(`${location.origin}/#${eid}:${token}`,'_blank'); };
 window.copyViewerUrl=function(eid){ copyText(`${location.origin}/#${eid}`,'👥 参加者URLをコピーしました。LINEで送信してください。'); };
 window.confirmDelEvent=function(eid){ const ev=allEvents[eid]||{}; showConfirm('⚠️ イベント削除',`「${ev.name} ${fmtDate(ev.date)}」を削除しますか？\n試合データも削除されます。`,()=>deleteEvent(eid)); };
 async function deleteEvent(eid){ try{ await fbRemove('events/'+eid); await fbRemove('sessions/'+eid); delete allEvents[eid]; renderEvents(); showToast('🗑 削除しました'); }catch(e){ showToast('❌ '+e.message); } }

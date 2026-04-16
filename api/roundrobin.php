@@ -2902,10 +2902,11 @@ function updateEventInfo(ev) {
     bar.dataset.evStatus = status;
     currentEventStatus = status;
     if (typeof updateAdminUI === 'function') updateAdminUI();
-    // 終了時のみ「結果を確認する」「期間集計」ボタンを表示
+    // 「結果を確認する」は管理者なら常時表示、終了時は閲覧者にも表示
+    // 「期間集計」は終了時のみ表示
     const btnPreview = document.getElementById('btn-preview-report');
     const btnPeriod  = document.getElementById('btn-period-agg');
-    if (btnPreview) btnPreview.style.display = status === '終了' ? '' : 'none';
+    if (btnPreview) btnPreview.style.display = (status === '終了' || isAdmin) ? '' : 'none';
     if (btnPeriod)  btnPeriod.style.display  = status === '終了' ? '' : 'none';
 }
 window.updateEventInfo = updateEventInfo;
