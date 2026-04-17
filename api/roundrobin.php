@@ -1536,16 +1536,20 @@ function generateRoundRandom() {
 
         // ④ 同コート頻度：2乗ペナルティ（繰り返しに指数的コスト）
         // + ⑦ 未遭遇ペアボーナス（初対面に報酬）
+        // ※ コート内ペアのみ評価（別コート同士は同コートにならないため除外）
         let coQuad = 0;
         let newPairs = 0;
-        for (let i = 0; i < selectedIds.length; i++) {
-            for (let j = i + 1; j < selectedIds.length; j++) {
-                const co = (state.pairMatrix[selectedIds[i]]?.[selectedIds[j]] || 0)
-                         + (state.oppMatrix[selectedIds[i]]?.[selectedIds[j]] || 0);
-                coQuad += co * co;       // 2乗ペナルティ
-                if (co === 0) newPairs++; // 初対面カウント
+        courts.forEach(([t1, t2]) => {
+            const group = [...t1, ...t2];
+            for (let i = 0; i < group.length; i++) {
+                for (let j = i + 1; j < group.length; j++) {
+                    const co = (state.pairMatrix[group[i]]?.[group[j]] || 0)
+                             + (state.oppMatrix[group[i]]?.[group[j]] || 0);
+                    coQuad += co * co;       // 2乗ペナルティ
+                    if (co === 0) newPairs++; // 初対面カウント
+                }
             }
-        }
+        });
         score += coQuad * 200;    // 2乗×200（1回:200, 2回:800, 3回:1800）
         score -= newPairs * 300;  // 初対面ボーナス（スコアを下げる）
 
