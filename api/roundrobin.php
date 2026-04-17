@@ -1534,13 +1534,20 @@ function generateRoundRandom() {
         });
         score += oppDup * 30;
 
-        // ④ 同コート頻度の合計 ×80（選出メンバー間の過去同コート回数）
-        let coTotal = 0;
-        for (let i = 0; i < selectedIds.length; i++)
-            for (let j = i + 1; j < selectedIds.length; j++)
-                coTotal += (state.pairMatrix[selectedIds[i]]?.[selectedIds[j]] || 0)
+        // ④ 同コート頻度：2乗ペナルティ（繰り返しに指数的コスト）
+        // + ⑦ 未遭遇ペアボーナス（初対面に報酬）
+        let coQuad = 0;
+        let newPairs = 0;
+        for (let i = 0; i < selectedIds.length; i++) {
+            for (let j = i + 1; j < selectedIds.length; j++) {
+                const co = (state.pairMatrix[selectedIds[i]]?.[selectedIds[j]] || 0)
                          + (state.oppMatrix[selectedIds[i]]?.[selectedIds[j]] || 0);
-        score += coTotal * 80;
+                coQuad += co * co;       // 2乗ペナルティ
+                if (co === 0) newPairs++; // 初対面カウント
+            }
+        }
+        score += coQuad * 200;    // 2乗×200（1回:200, 2回:800, 3回:1800）
+        score -= newPairs * 300;  // 初対面ボーナス（スコアを下げる）
 
         // ⑤ 連続休みペナルティ（軽量化：streak1は軽く、streak3+のみ強い）
         const bench = active.filter(p => !selectedIds.includes(p.id));
