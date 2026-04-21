@@ -2681,26 +2681,38 @@ function assignNextPoolMatch() {
     if (state.matchPool.length === 0) return;
 
     const nextMatch = state.matchPool.shift();
-    const roundNum = state.roundCount + 1;
-
-    // playerStates を構築
     const playIds = [...nextMatch.team1, ...nextMatch.team2];
-    const playerStates = {};
-    state.players.forEach(p => {
-        if (playIds.includes(p.id))  playerStates[p.id] = 'play';
-        else if (p.resting)          playerStates[p.id] = 'rest';
-        else                         playerStates[p.id] = 'bench';
-    });
 
-    // lastRound 更新・isOnCourt 設定（playCountはgeneratePoolBatch時に更新済み）
-    playIds.forEach(id => {
-        const p = state.players.find(pp => pp.id === id);
-        if (p) { p.lastRound = roundNum; p.isOnCourt = true; }
-    });
+    // 最新ラウンドがまだコート数に満ちていなければ、そこに追加する
+    // （例: 2コート設定でコートAのみ入った第2試合にコートBを追加）
+    const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
+    const canAddToLast = lastRd && lastRd.courts.length < state.courts;
 
-    const courtsFormatted = [{ team1: nextMatch.team1, team2: nextMatch.team2 }];
-    state.schedule.push({ round: roundNum, courts: courtsFormatted, playerStates });
-    state.roundCount = roundNum;
+    if (canAddToLast) {
+        // 既存ラウンドに追加
+        lastRd.courts.push({ team1: nextMatch.team1, team2: nextMatch.team2 });
+        if (!lastRd.playerStates) lastRd.playerStates = {};
+        playIds.forEach(id => { lastRd.playerStates[id] = 'play'; });
+        playIds.forEach(id => {
+            const p = state.players.find(pp => pp.id === id);
+            if (p) { p.lastRound = lastRd.round; p.isOnCourt = true; }
+        });
+    } else {
+        // 新ラウンドを作成
+        const roundNum = state.roundCount + 1;
+        const playerStates = {};
+        state.players.forEach(p => {
+            if (playIds.includes(p.id))  playerStates[p.id] = 'play';
+            else if (p.resting)          playerStates[p.id] = 'rest';
+            else                         playerStates[p.id] = 'bench';
+        });
+        playIds.forEach(id => {
+            const p = state.players.find(pp => pp.id === id);
+            if (p) { p.lastRound = roundNum; p.isOnCourt = true; }
+        });
+        state.schedule.push({ round: roundNum, courts: [{ team1: nextMatch.team1, team2: nextMatch.team2 }], playerStates });
+        state.roundCount = roundNum;
+    }
 
     // プールが空になったら次バッチを非同期で補充
     if (state.matchPool.length === 0) {
