@@ -146,6 +146,10 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .round-done-btn:active { background:#0d47a1; }
 .court-done-badge { text-align:center; color:#2e7d32; font-size:13px; font-weight:bold; padding:6px 0 2px; }
 .round-done-badge { font-size:13px; font-weight:bold; color:#2e7d32; padding:4px 8px; }
+.match-card-done { background:#f5f5f5; border-radius:10px; margin-bottom:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:14px; }
+.match-card-done .done-court-name { font-weight:bold; color:#555; }
+.match-card-done .done-names { font-size:13px; flex:1; margin:0 10px; }
+.match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -2787,11 +2791,23 @@ function renderMatchContainer() {
                     const courtDone = !!state.scores[mid]?.done;
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
-                    // 自動ONなら順次/一括問わずコート毎に終了ボタンを表示
+
+                    // 自動ON かつ終了済みコート → コンパクト表示（折り畳み）
+                    if (state.autoMatch && courtDone) {
+                        return `
+                        <div class="match-card-done">
+                            <span class="done-court-name">${getCourtName(ci)}</span>
+                            <span class="done-names">${n1} vs ${n2}</span>
+                            <span class="done-score">${sc.s1}-${sc.s2}</span>
+                            <span style="color:#2e7d32;font-weight:bold;margin-left:8px;">✓</span>
+                        </div>`;
+                    }
+
+                    // 通常表示（未終了コート）
                     const showCourtDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && !courtDone;
                     const courtDoneArea = showCourtDoneBtn
                         ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${ci})">✓ このコートの試合終了</button>`
-                        : (courtDone && state.autoMatch ? `<div class="court-done-badge">✓ 終了済</div>` : '');
+                        : '';
                     return `
                     <div class="match-card">
                         <div class="match-header">${getCourtName(ci)}</div>
