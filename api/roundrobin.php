@@ -2751,19 +2751,25 @@ function renderMatchContainer() {
         block.className = 'round-block';
         block.dataset.round = rd.round;
 
-        // 自動展開の判定
-        // 管理者：末尾（最新）のみ展開
-        // 閲覧者：先頭から2試合分（最新・直前）だけ展開
-        const isLast = isAdmin
-            ? ri === state.schedule.length - 1
-            : ri <= 1;
         // ラウンド全コートの終了状態
         const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
         const roundDoneBadge = (isRoundDone && state.autoMatch)
             ? `<span class="round-done-badge">✓ 全終了</span>` : '';
 
+        // 自動展開の判定
+        // 自動ONの場合: 終了していないラウンドをすべて展開（終了済みは折り畳み）
+        // 自動OFFの場合: 管理者→最新のみ、閲覧者→最新2件
+        let isOpen;
+        if (state.autoMatch) {
+            isOpen = !isRoundDone;
+        } else if (isAdmin) {
+            isOpen = ri === state.schedule.length - 1;
+        } else {
+            isOpen = ri <= 1;
+        }
+
         block.innerHTML = `
-            <div class="round-toggle${isLast ? ' open' : ''}" onclick="toggleRound(this)">
+            <div class="round-toggle${isOpen ? ' open' : ''}" onclick="toggleRound(this)">
                 <span class="round-label">
                     第 ${rd.round} 試合
                     <span class="round-badge">${rd.courts.length}コート</span>
@@ -2774,7 +2780,7 @@ function renderMatchContainer() {
                     <span class="arrow">▼</span>
                 </span>
             </div>
-            <div class="round-body${isLast ? ' open' : ''}">
+            <div class="round-body${isOpen ? ' open' : ''}">
                 ${rd.courts.map((ct, ci) => {
                     const mid = `r${rd.round}c${ci}`;
                     const sc = state.scores[mid] || {s1: 0, s2: 0};
