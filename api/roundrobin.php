@@ -2390,9 +2390,11 @@ function generateNextRound() {
 
 // 「次の試合を作る」ボタンのハンドラ（モード対応）
 function onNextRoundBtn() {
-    if (state.autoMatch && state.seqMatch) {
+    if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
+        // 順次モード・2試合目以降 → プールから1コートずつ投入
         assignNextPoolMatch();
     } else {
+        // 初回 or 一括モード → 全コートまとめて生成
         generateNextRound();
     }
 }
