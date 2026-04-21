@@ -140,6 +140,12 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .pool-status-bar { display:none; margin-top:8px; padding:8px 12px; background:#e8f5e9; border-radius:8px; border-left:4px solid #2e7d32; font-size:13px; color:#2e7d32; font-weight:bold; }
 .seq-toggle-wrap { opacity:0.4; pointer-events:none; transition:opacity .2s; }
 .seq-toggle-wrap.enabled { opacity:1; pointer-events:auto; }
+.court-done-btn { width:100%; margin-top:8px; padding:10px; font-size:15px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:8px; cursor:pointer; }
+.court-done-btn:active { background:#0d47a1; }
+.round-done-btn { font-size:13px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
+.round-done-btn:active { background:#0d47a1; }
+.court-done-badge { text-align:center; color:#2e7d32; font-size:13px; font-weight:bold; padding:6px 0 2px; }
+.round-done-badge { font-size:13px; font-weight:bold; color:#2e7d32; padding:4px 8px; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -2464,7 +2470,60 @@ function updatePoolStatus() {
     }
 }
 
-// スコアが入ったコートを検出して自動で次を投入
+// コート終了ボタン（順次モード）
+function markCourtDone(roundNum, courtIndex) {
+    if (isEventLocked()) return;
+    const mid = `r${roundNum}c${courtIndex}`;
+    if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
+    state.scores[mid].done = true;
+
+    // isOnCourt を解放
+    const rd = state.schedule.find(r => r.round === roundNum);
+    if (rd) {
+        const ct = rd.courts[courtIndex];
+        if (ct) {
+            [...ct.team1, ...ct.team2].forEach(id => {
+                const p = state.players.find(pp => pp.id === id);
+                if (p) p.isOnCourt = false;
+            });
+        }
+    }
+
+    saveState();
+    renderMatchContainer();
+    // プールから次を投入
+    assignNextPoolMatch();
+}
+
+// ラウンド終了ボタン（一括モード）
+function markRoundDone(e, roundNum) {
+    e.stopPropagation();
+    if (isEventLocked()) return;
+    const rd = state.schedule.find(r => r.round === roundNum);
+    if (!rd) return;
+
+    // 全コートをdone
+    rd.courts.forEach((ct, ci) => {
+        const mid = `r${roundNum}c${ci}`;
+        if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
+        state.scores[mid].done = true;
+    });
+
+    // isOnCourt 解放
+    rd.courts.forEach(ct => {
+        [...ct.team1, ...ct.team2].forEach(id => {
+            const p = state.players.find(pp => pp.id === id);
+            if (p) p.isOnCourt = false;
+        });
+    });
+
+    saveState();
+    renderMatchContainer();
+    // 次のラウンドを自動生成
+    generateNextRound();
+}
+
+// スコアが入ったコートを検出して自動で次を投入（現在は明示ボタン方式のため予備）
 function checkAutoAdvance() {
     if (!state.autoMatch) return;
 
@@ -2675,6 +2734,13 @@ function renderMatchContainer() {
         const isLast = isAdmin
             ? ri === state.schedule.length - 1
             : ri <= 1;
+        // ラウンド終了ボタン（自動ON・順次OFF の時のみ）
+        const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
+        const showRoundDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && !state.seqMatch && !isRoundDone;
+        const roundDoneArea = showRoundDoneBtn
+            ? `<button class="round-done-btn" onclick="markRoundDone(event,${rd.round})">✓ ラウンド終了</button>`
+            : (isRoundDone && state.autoMatch && !state.seqMatch ? `<span class="round-done-badge">✓ 終了済</span>` : '');
+
         block.innerHTML = `
             <div class="round-toggle${isLast ? ' open' : ''}" onclick="toggleRound(this)">
                 <span class="round-label">
@@ -2682,6 +2748,7 @@ function renderMatchContainer() {
                     <span class="round-badge">${rd.courts.length}コート</span>
                 </span>
                 <span style="display:flex;align-items:center;gap:8px;">
+                    ${roundDoneArea}
                     ${isAdmin ? `<button class="round-del-btn" onclick="deleteRound(event,${rd.round})">🗑</button>` : ''}
                     <span class="arrow">▼</span>
                 </span>
@@ -2690,8 +2757,14 @@ function renderMatchContainer() {
                 ${rd.courts.map((ct, ci) => {
                     const mid = `r${rd.round}c${ci}`;
                     const sc = state.scores[mid] || {s1: 0, s2: 0};
+                    const courtDone = !!state.scores[mid]?.done;
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
+                    // コート終了ボタン（自動ON・順次ON の時のみ）
+                    const showCourtDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && state.seqMatch && !courtDone;
+                    const courtDoneArea = showCourtDoneBtn
+                        ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${ci})">✓ このコートの試合終了</button>`
+                        : (courtDone && state.autoMatch && state.seqMatch ? `<div class="court-done-badge">✓ 終了済</div>` : '');
                     return `
                     <div class="match-card">
                         <div class="match-header">${getCourtName(ci)}</div>
@@ -2705,6 +2778,7 @@ function renderMatchContainer() {
                             <div class="team right-side" data-p="${ct.team2.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>
+                        ${courtDoneArea}
                     </div>`;
                 }).join('')}
             </div>
@@ -2845,8 +2919,6 @@ function saveScores() {
     });
     recalcAllTrueSkill();
     saveState();
-    // 自動組合せ: スコア変更のたびに完了チェック
-    if (state.autoMatch) checkAutoAdvance();
 }
 
 function recalcAllTrueSkill() {
