@@ -2472,7 +2472,7 @@ function updatePoolStatus() {
     }
 }
 
-// コート終了ボタン（順次モード）
+// コート終了ボタン（自動ON共通）
 function markCourtDone(roundNum, courtIndex) {
     if (isEventLocked()) return;
     const mid = `r${roundNum}c${courtIndex}`;
@@ -2493,8 +2493,17 @@ function markCourtDone(roundNum, courtIndex) {
 
     saveState();
     renderMatchContainer();
-    // プールから次を投入
-    assignNextPoolMatch();
+
+    if (state.seqMatch) {
+        // 順次モード: このコートの次の試合をプールから即投入
+        assignNextPoolMatch();
+    } else {
+        // 一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
+        if (rd) {
+            const allDone = rd.courts.every((ct, ci) => state.scores[`r${roundNum}c${ci}`]?.done);
+            if (allDone) generateNextRound();
+        }
+    }
 }
 
 // ラウンド終了ボタン（一括モード）
@@ -2736,12 +2745,10 @@ function renderMatchContainer() {
         const isLast = isAdmin
             ? ri === state.schedule.length - 1
             : ri <= 1;
-        // ラウンド終了ボタン（自動ON・順次OFF の時のみ）
+        // ラウンド全コートの終了状態
         const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
-        const showRoundDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && !state.seqMatch && !isRoundDone;
-        const roundDoneArea = showRoundDoneBtn
-            ? `<button class="round-done-btn" onclick="markRoundDone(event,${rd.round})">✓ ラウンド終了</button>`
-            : (isRoundDone && state.autoMatch && !state.seqMatch ? `<span class="round-done-badge">✓ 終了済</span>` : '');
+        const roundDoneBadge = (isRoundDone && state.autoMatch)
+            ? `<span class="round-done-badge">✓ 全終了</span>` : '';
 
         block.innerHTML = `
             <div class="round-toggle${isLast ? ' open' : ''}" onclick="toggleRound(this)">
@@ -2750,7 +2757,7 @@ function renderMatchContainer() {
                     <span class="round-badge">${rd.courts.length}コート</span>
                 </span>
                 <span style="display:flex;align-items:center;gap:8px;">
-                    ${roundDoneArea}
+                    ${roundDoneBadge}
                     ${isAdmin ? `<button class="round-del-btn" onclick="deleteRound(event,${rd.round})">🗑</button>` : ''}
                     <span class="arrow">▼</span>
                 </span>
@@ -2762,11 +2769,11 @@ function renderMatchContainer() {
                     const courtDone = !!state.scores[mid]?.done;
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
-                    // コート終了ボタン（自動ON・順次ON の時のみ）
-                    const showCourtDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && state.seqMatch && !courtDone;
+                    // 自動ONなら順次/一括問わずコート毎に終了ボタンを表示
+                    const showCourtDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && !courtDone;
                     const courtDoneArea = showCourtDoneBtn
                         ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${ci})">✓ このコートの試合終了</button>`
-                        : (courtDone && state.autoMatch && state.seqMatch ? `<div class="court-done-badge">✓ 終了済</div>` : '');
+                        : (courtDone && state.autoMatch ? `<div class="court-done-badge">✓ 終了済</div>` : '');
                     return `
                     <div class="match-card">
                         <div class="match-header">${getCourtName(ci)}</div>
