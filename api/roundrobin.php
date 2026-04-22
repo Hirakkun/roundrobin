@@ -288,6 +288,15 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
         </div>
         <div class="setup-card">
+            <div class="setup-label">🎾 ゲーム数（スコア入力）</div>
+            <div class="counter-row">
+                <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">－</button>
+                <div class="counter-val match-games-val">3</div>
+                <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
+            </div>
+            <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+        </div>
+        <div class="setup-card">
             <div class="setup-label">🎯 マッチングルール</div>
             <div class="match-rule-row">
                 <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
@@ -323,6 +332,15 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <div class="counter-val" id="disp-courts-live">2</div>
                 <button type="button" class="counter-btn admin-only" onclick="changeCourts(+1)">＋</button>
             </div>
+        </div>
+        <div class="court-change-row">
+            <div class="setup-label">🎾 ゲーム数（スコア入力）</div>
+            <div class="counter-row">
+                <button type="button" class="counter-btn admin-only" onclick="changeMatchGames(-2)">－</button>
+                <div class="counter-val match-games-val">3</div>
+                <button type="button" class="counter-btn admin-only" onclick="changeMatchGames(+2)">＋</button>
+            </div>
+            <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
         </div>
         <div id="playerList" class="player-list"></div>
         <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
@@ -443,9 +461,10 @@ let state = {
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
     fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
     createdAt: '',          // 大会作成日時（ISO文字列）
-    autoMatch: false,       // 自動組合せ ON/OFF
-    seqMatch:  false,       // 順次組合せ ON/OFF（プール方式）
-    matchPool: [],          // 順次プール [{team1:[...], team2:[...]}]
+    autoMatch:  false,      // 自動組合せ ON/OFF
+    seqMatch:   false,      // 順次組合せ ON/OFF（プール方式）
+    matchPool:  [],         // 順次プール [{team1:[...], team2:[...]}]
+    matchGames: 3,          // スコアページのゲーム数（奇数: 1,3,5,7）
 };
 
 // =====================================================================
@@ -2528,6 +2547,26 @@ function renderCourtQRCodes() {
     }
 }
 
+function changeMatchGames(delta) {
+    let cur = parseInt(state.matchGames) || 3;
+    cur = Math.max(1, Math.min(7, cur + delta));
+    if (cur % 2 === 0) cur += delta > 0 ? 1 : -1; // 奇数を維持
+    cur = Math.max(1, Math.min(7, cur));
+    state.matchGames = cur;
+    _setMatchGamesUI(cur);
+    saveState();
+}
+
+function updateMatchGamesUI() {
+    _setMatchGamesUI(state.matchGames || 3);
+}
+
+function _setMatchGamesUI(g) {
+    const desc = g + 'ゲームマッチ（' + Math.ceil(g / 2) + 'ゲーム先取）';
+    document.querySelectorAll('.match-games-val').forEach(el => { el.textContent = g; });
+    document.querySelectorAll('.match-games-desc-txt').forEach(el => { el.textContent = desc; });
+}
+
 function toggleQrPanel() {
     const body = document.getElementById('qrPanelBody');
     const btn  = document.getElementById('qrToggleBtn');
@@ -2535,7 +2574,10 @@ function toggleQrPanel() {
     const isOpen = body.style.display !== 'none';
     body.style.display = isOpen ? 'none' : '';
     btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
-    if (!isOpen) renderCourtQRCodes();
+    if (!isOpen) {
+        updateMatchGamesUI();
+        renderCourtQRCodes();
+    }
 }
 
 function updateAutoMatchUI() {
@@ -3851,6 +3893,7 @@ window._fbApply = function(remoteState) {
         const seqToggle = document.getElementById('seqMatchToggle');
         if (seqToggle) seqToggle.checked = !!state.seqMatch;
         updateAutoMatchUI();
+        updateMatchGamesUI();
         if (state.roundCount > 0) {
             // 試合進行中
             document.getElementById('btn-match').classList.remove('disabled');
