@@ -1702,9 +1702,11 @@ function generateRoundRandom() {
 
     // --- メイン：複数ラウンド案を生成し最良を選ぶ ---
     const ATTEMPTS = 200;
+    const _deadline = performance.now() + 80; // 80ms タイムボックス
     let bestCourts = null, bestIds = null, bestScore = Infinity;
 
     for (let t = 0; t < ATTEMPTS; t++) {
+        if (t % 20 === 0 && performance.now() > _deadline) break; // 時間超過で打ち切り
         const ids = generateSelection();
         if (!ids || ids.length < 4) continue;
 
@@ -2289,7 +2291,9 @@ function generateCourtsBalance(active, courtCount) {
     // 山登り + 簡易SA（悪化を一定確率で受容）
     // bench空 かつ 1コートの場合はSAをスキップ（コート内スワップはスコア不変のため無意味）
     const needSA = best.bench.length > 0 || maxCourts > 1;
+    const _balanceDeadline = performance.now() + 80; // 80ms タイムボックス
     for (let iter = 0; needSA && iter < BALANCE_ITERATIONS; iter++) {
+        if (iter % 100 === 0 && performance.now() > _balanceDeadline) break; // 時間超過で打ち切り
         const trial = cloneAssignment(current);
         swapInAssignment(trial);
         const trialScore = evaluateBalanceScore(trial, active, maxCourts);
@@ -3993,10 +3997,15 @@ window._fbApply = function(remoteState) {
 // =====================================================================
 // 状態の保存・復元
 // =====================================================================
+let _fbPushTimer = null;
 function saveState() {
     state._sid = _sessionId; // セッションID をキャッシュに含める
     localStorage.setItem('rr_state_v2', JSON.stringify(state));
-    if (!isApplyingRemote && window._fbPush) window._fbPush(state);
+    if (!isApplyingRemote && window._fbPush) {
+        // 短時間に連続呼び出しされても300ms後に1回だけ送信（デバウンス）
+        clearTimeout(_fbPushTimer);
+        _fbPushTimer = setTimeout(() => window._fbPush(state), 300);
+    }
 }
 
 function loadState() {
