@@ -430,6 +430,9 @@ function resetMatch() {
 
 // ── サーブ設定 ────────────────────────────────────────────────
 function showServeSetup() {
+    // オーバーレイを確実に非表示
+    hideOverlay('loading');
+    hideOverlay('waiting');
     document.getElementById('serve-setup').style.display = 'flex';
     document.getElementById('main-container').style.display = 'none';
 }
