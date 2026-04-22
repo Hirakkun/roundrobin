@@ -2808,20 +2808,21 @@ function generatePoolBatch() {
 function assignNextPoolMatch(fromPhysicalIndex) {
     if (isEventLocked()) return;
 
-    // physicalIndex が未指定の場合 → 現在進行中でない空き物理コートを探す
+    // physicalIndex が未指定の場合 → 直近ラウンドで未割り当ての物理コートを順番に選ぶ
     if (fromPhysicalIndex === undefined) {
-        const activePhy = new Set();
-        state.schedule.forEach(rd => {
-            rd.courts.forEach((ct, ci) => {
-                const mid = 'r' + rd.round + 'c' + ci;
-                if (!state.scores[mid]?.done) {
-                    activePhy.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
-                }
-            });
-        });
-        fromPhysicalIndex = 0;
-        for (let i = 0; i < (state.courts || 2); i++) {
-            if (!activePhy.has(i)) { fromPhysicalIndex = i; break; }
+        const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
+        const canAdd = lastRd && lastRd.courts.length < state.courts;
+        if (canAdd) {
+            // 既存ラウンドに追加 → そのラウンドで未使用の物理コートを先頭から選ぶ
+            const usedPhy = new Set(lastRd.courts.map((ct, ci) =>
+                ct.physicalIndex !== undefined ? ct.physicalIndex : ci));
+            fromPhysicalIndex = 0;
+            for (let i = 0; i < (state.courts || 2); i++) {
+                if (!usedPhy.has(i)) { fromPhysicalIndex = i; break; }
+            }
+        } else {
+            // 新しいラウンドを開始 → コート0（A）から
+            fromPhysicalIndex = 0;
         }
     }
 
