@@ -207,6 +207,7 @@ body.viewer-mode .team::before { display: none; }
 body.viewer-mode .team::after  { display: none; }
 body.viewer-mode #initialSetup { display: none !important; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -240,6 +241,18 @@ body.viewer-mode #initialSetup { display: none !important; }
             <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
         </div>
         <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:13px;line-height:1.6;"></div>
+    </div>
+
+    <!-- コートQRコードカード（管理者・セッション接続後） -->
+    <div id="courtQrCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="setup-label" style="margin:0;">📱 コートスコア入力QR</div>
+            <button onclick="toggleQrPanel()" id="qrToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#555;">▼ 開く</button>
+        </div>
+        <div id="qrPanelBody" style="display:none;">
+            <div style="font-size:12px;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
+            <div id="qrCodesWrap" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;"></div>
+        </div>
     </div>
 
     <!-- 初期設定エリア -->
@@ -2461,6 +2474,70 @@ function _recalcIsOnCourt() {
 }
 
 // 自動組合せUIの状態更新
+// =====================================================================
+// コートQRコード
+// =====================================================================
+function renderCourtQRCodes() {
+    if (!_sessionId || !isAdmin) return;
+    const card = document.getElementById('courtQrCard');
+    if (!card) return;
+    card.style.display = '';
+
+    const wrap = document.getElementById('qrCodesWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    const courtCount = state.courts || setupCourts || 2;
+    const ALPHA = ['A','B','C','D','E','F'];
+    const baseUrl = location.origin + '/score/court?session=' + encodeURIComponent(_sessionId) + '&court=';
+
+    for (let i = 0; i < courtCount; i++) {
+        const url = baseUrl + i;
+        const label = state.courtNameAlpha ? (ALPHA[i] || (i+1)) + 'コート' : '第' + (i+1) + 'コート';
+
+        const col = document.createElement('div');
+        col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
+
+        const qrDiv = document.createElement('div');
+        qrDiv.id = 'qr-court-' + i;
+        col.appendChild(qrDiv);
+
+        const lbl = document.createElement('div');
+        lbl.textContent = label;
+        lbl.style.cssText = 'font-size:13px;font-weight:bold;color:#333;';
+        col.appendChild(lbl);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.textContent = '開く';
+        link.style.cssText = 'font-size:11px;color:#1565c0;';
+        col.appendChild(link);
+
+        wrap.appendChild(col);
+
+        // QRコード生成
+        new QRCode(qrDiv, {
+            text: url,
+            width: 140,
+            height: 140,
+            colorDark: '#000',
+            colorLight: '#fff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+}
+
+function toggleQrPanel() {
+    const body = document.getElementById('qrPanelBody');
+    const btn  = document.getElementById('qrToggleBtn');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : '';
+    btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    if (!isOpen) renderCourtQRCodes();
+}
+
 function updateAutoMatchUI() {
     const seqWrap = document.getElementById('seqMatchWrap');
     // 順次ONは自動ON/OFFに関わらず常に操作可能
@@ -3544,6 +3621,11 @@ function selectHistoryId(sid, wasAdmin) {
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
     if (window._fbStart) window._fbStart(sid);
+    // QRカード表示（管理者のみ）
+    if (isAdmin) {
+        const qrCard = document.getElementById('courtQrCard');
+        if (qrCard) qrCard.style.display = '';
+    }
 }
 
 function clearSessionHistory() {
@@ -3706,8 +3788,52 @@ window._fbApply = function(remoteState) {
         if (!remoteState.tsMap       || typeof remoteState.tsMap       !== 'object') remoteState.tsMap       = {};
         if (!remoteState.scores      || typeof remoteState.scores      !== 'object') remoteState.scores      = {};
         if (!remoteState.playerNames || typeof remoteState.playerNames !== 'object') remoteState.playerNames = {};
-        Object.assign(state, remoteState);
-        localStorage.setItem('rr_state_v2', JSON.stringify(state));
+
+        // コートページから done=true が書き込まれた場合に側面処理を実行（管理者のみ）
+        if (isAdmin && (state.autoMatch || state.seqMatch)) {
+            const prevScores = state.scores || {};
+            const newScores  = remoteState.scores || {};
+            // 新たに done=true になったコートを検出
+            const newlyDone = [];
+            if (Array.isArray(remoteState.schedule)) {
+                remoteState.schedule.forEach(rd => {
+                    (rd.courts || []).forEach((ct, ci) => {
+                        const mid = 'r' + rd.round + 'c' + ci;
+                        if (newScores[mid]?.done && !prevScores[mid]?.done) {
+                            newlyDone.push({ rd, ct, ci, mid });
+                        }
+                    });
+                });
+            }
+            // 先に state を更新してから側面処理
+            Object.assign(state, remoteState);
+            localStorage.setItem('rr_state_v2', JSON.stringify(state));
+            newlyDone.forEach(({ rd, ct, ci }) => {
+                // isOnCourt を解放
+                [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
+                    const p = state.players.find(pp => pp.id === id);
+                    if (p) p.isOnCourt = false;
+                });
+                const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+                // 少し遅延してから次の組合せを投入（renderの後）
+                if (state.seqMatch) {
+                    setTimeout(() => assignNextPoolMatch(physIdx), 300);
+                } else if (state.autoMatch) {
+                    const allDone = (rd.courts || []).every((c, i) =>
+                        state.scores['r' + rd.round + 'c' + i]?.done);
+                    if (allDone) setTimeout(() => generateNextRound(), 300);
+                }
+            });
+        } else {
+            Object.assign(state, remoteState);
+            localStorage.setItem('rr_state_v2', JSON.stringify(state));
+        }
+
+        // QRカードをセッション接続後に表示
+        if (isAdmin && _sessionId) {
+            const qrCard = document.getElementById('courtQrCard');
+            if (qrCard) qrCard.style.display = '';
+        }
         // マッチングルールを同期
         matchingRule = state.matchingRule || 'random';
         selectRule(matchingRule);
