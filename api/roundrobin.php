@@ -150,6 +150,7 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .match-card-done .done-names { font-size:13px; flex:1; margin:0 10px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
 .match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:4px 8px 4px 12px; font-size:15px; font-weight:bold; }
+.match-header-done { background:#78909c; }
 .court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
@@ -2806,14 +2807,23 @@ function renderMatchContainer() {
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
 
-                    // 自動/順次ON かつ終了済みコート → コンパクト表示（折り畳み）
+                    // 自動/順次ON かつ終了済みコート → カード型（グレーアウト）
                     if (autoOrSeq && courtDone) {
                         return `
-                        <div class="match-card-done">
-                            <span class="done-court-name">${getCourtName(physIdx)}</span>
-                            <span class="done-names">${n1} vs ${n2}</span>
-                            <span class="done-score">${sc.s1}-${sc.s2}</span>
-                            <span style="color:#2e7d32;font-weight:bold;margin-left:8px;">✓</span>
+                        <div class="match-card match-card-done-wrap">
+                            <div class="match-header-row match-header-done">
+                                <span>${getCourtName(physIdx)}</span>
+                                <span style="font-size:12px;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
+                            </div>
+                            <div class="match-content" style="opacity:0.5;">
+                                <div class="team left-side" style="pointer-events:none;">
+                                    <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span>
+                                </div>
+                                <div class="score-area"><span>${sc.s1}</span><small>-</small><span>${sc.s2}</span></div>
+                                <div class="team right-side" style="pointer-events:none;">
+                                    <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span>
+                                </div>
+                            </div>
                         </div>`;
                     }
 
