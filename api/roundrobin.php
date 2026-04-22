@@ -343,15 +343,6 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <button type="button" class="counter-btn admin-only" onclick="changeCourts(+1)">＋</button>
             </div>
         </div>
-        <div class="court-change-row">
-            <div class="setup-label">🎾 ゲーム数（スコア入力）</div>
-            <div class="counter-row">
-                <button type="button" class="counter-btn admin-only" onclick="changeMatchGames(-2)">－</button>
-                <div class="counter-val match-games-val">3</div>
-                <button type="button" class="counter-btn admin-only" onclick="changeMatchGames(+2)">＋</button>
-            </div>
-            <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
-        </div>
         <div id="playerList" class="player-list"></div>
         <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
         <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:15px;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">🏁 イベントを終了</button>
