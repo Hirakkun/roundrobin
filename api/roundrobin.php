@@ -149,7 +149,10 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .match-card-done .done-court-name { font-weight:bold; color:#555; }
 .match-card-done .done-names { font-size:13px; flex:1; margin:0 10px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
-.match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:4px 8px 4px 12px; font-size:15px; font-weight:bold; }
+.match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:2px 8px 2px 8px; font-size:15px; font-weight:bold; }
+.court-label { display:flex; align-items:baseline; gap:2px; line-height:1; }
+.court-label-big { font-size:2em; font-weight:900; line-height:1; letter-spacing:-1px; }
+.court-label-small { font-size:0.72em; font-weight:bold; opacity:0.85; }
 .match-header-done { background:#78909c; }
 @media (max-aspect-ratio: 1/1) {
     .match-card-done-wrap .match-content { display:none; }
@@ -1436,6 +1439,17 @@ function getCourtName(ci) {
     const useAlpha = document.getElementById('courtNameToggle')?.checked;
     return useAlpha ? (COURT_ALPHA[ci] || (ci+1)) + ' コート'
                     : '第 ' + (ci+1) + ' コート';
+}
+// コート名HTML（大文字＋小文字に分けて目立たせる）
+function getCourtNameHTML(ci) {
+    const useAlpha = document.getElementById('courtNameToggle')?.checked;
+    if (useAlpha) {
+        const letter = COURT_ALPHA[ci] || (ci + 1);
+        return `<span class="court-label"><span class="court-label-big">${letter}</span><span class="court-label-small">コート</span></span>`;
+    } else {
+        const num = ci + 1;
+        return `<span class="court-label"><span class="court-label-small">第</span><span class="court-label-big">${num}</span><span class="court-label-small">コート</span></span>`;
+    }
 }
 function updateCourtNames() {
     const checked = document.getElementById('courtNameToggle')?.checked;
@@ -2955,7 +2969,7 @@ function renderMatchContainer() {
                         return `
                         <div class="match-card match-card-done-wrap">
                             <div class="match-header-row match-header-done" onclick="this.closest('.match-card-done-wrap').classList.toggle('expanded')">
-                                <span>${getCourtName(physIdx)}</span>
+                                ${getCourtNameHTML(physIdx)}
                                 <span style="display:flex;align-items:center;gap:6px;">
                                     <span style="font-size:12px;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
                                     <span class="done-arrow" style="font-size:11px;color:#cfd8dc;">▼</span>
@@ -2981,7 +2995,7 @@ function renderMatchContainer() {
                     return `
                     <div class="match-card">
                         <div class="match-header-row">
-                            <span>${getCourtName(physIdx)}</span>
+                            ${getCourtNameHTML(physIdx)}
                             ${courtDoneBtn}
                         </div>
                         <div class="match-content match-row"
