@@ -101,28 +101,28 @@ header('Content-Type: text/html; charset=UTF-8');
             font-weight: bold; font-size: 1.1em; background: #f0f0f0;
         }
         .role-button {
-            flex: 1; text-align: center; padding: 8px 4px;
-            cursor: pointer; border: none; background: transparent;
-            font-size: 1em; font-weight: bold;
+            flex: 1; text-align: center; padding: 10px 4px;
+            cursor: default; border: none; background: transparent;
+            font-size: 1.1em; font-weight: bold;
         }
         .role-button.is-serving { color: #1565c0; background: #cce5ff; }
-        .role-button.undo { background: #f8d7da; color: #721c24; }
+        .role-button.undo { background: #f8d7da; color: #721c24; cursor: pointer; }
 
         /* チーム名 */
-        .team-name-row { display: flex; align-items: stretch; min-height: 56px; }
+        .team-name-row { display: flex; align-items: stretch; min-height: 70px; }
         .team-name-block {
             flex: 1; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 8px 6px; font-size: 17px;
-            font-weight: bold; text-align: center; line-height: 1.5;
+            justify-content: center; padding: 10px 8px; font-size: 20px;
+            font-weight: bold; text-align: center; line-height: 1.6;
         }
         .team-name-block.t1 { background: #e3f2fd; color: #0d47a1; }
         .team-name-block.t2 { background: #e8f5e9; color: #1b5e20; }
         .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 5px; }
         .num-badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 24px; height: 24px; border-radius: 50%;
+            width: 28px; height: 28px; border-radius: 50%;
             background: #1565c0; color: #fff;
-            font-size: 12px; font-weight: bold; flex-shrink: 0;
+            font-size: 13px; font-weight: bold; flex-shrink: 0;
         }
         .team-name-block.t2 .num-badge { background: #2e7d32; }
 
@@ -258,10 +258,10 @@ header('Content-Type: text/html; charset=UTF-8');
     </div>
 
     <div class="header-row">
-        <button class="role-button" id="role-left"  onclick="onRoleClick()">サーブ</button>
+        <button class="role-button" id="role-left">サーブ</button>
         <button class="role-button" id="btn-swap"   onclick="onSwapClick()">⇔</button>
         <button class="role-button undo" id="btn-undo" style="display:none;" onclick="undoLastPoint()">取消</button>
-        <button class="role-button" id="role-right" onclick="onRoleClick()">レシーブ</button>
+        <button class="role-button" id="role-right">レシーブ</button>
     </div>
 
     <div class="team-name-row">
