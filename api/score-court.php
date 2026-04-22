@@ -401,8 +401,22 @@ function onStateUpdate(state) {
         if (found) break;
     }
 
-    // 完了画面表示中はそのまま
-    if (document.getElementById('done-screen').style.display === 'flex') return;
+    // 完了画面表示中 → 新しい試合が来たら移行、なければそのまま
+    if (document.getElementById('done-screen').style.display === 'flex') {
+        if (found && found.mid !== currentMid) {
+            // 新しい試合が割り当てられた → 完了画面を閉じてリセット
+            document.getElementById('done-screen').style.display = 'none';
+            currentMid = found.mid;
+            MATCH_GAMES = newMatchGames;
+            WIN_GAMES   = Math.ceil(MATCH_GAMES / 2);
+            document.getElementById('hd-games').textContent = MATCH_GAMES + 'ゲームマッチ';
+            team1Names = found.ct.team1.map(id => buildName(id, pnames, showPlayerNum));
+            team2Names = found.ct.team2.map(id => buildName(id, pnames, showPlayerNum));
+            document.getElementById('hd-round').textContent = '第' + found.rd.round + '試合';
+            resetMatch();
+        }
+        return;
+    }
 
     if (!found) {
         showWaiting('このコートの試合は\nまだ組まれていません\n\nしばらくお待ちください');
