@@ -2483,24 +2483,25 @@ function markCourtDone(roundNum, courtIndex) {
     if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
     state.scores[mid].done = true;
 
-    // isOnCourt を解放
+    // 物理コートindexを取得（physicalIndex がなければ配列indexをそのまま使用）
     const rd = state.schedule.find(r => r.round === roundNum);
-    if (rd) {
-        const ct = rd.courts[courtIndex];
-        if (ct) {
-            [...ct.team1, ...ct.team2].forEach(id => {
-                const p = state.players.find(pp => pp.id === id);
-                if (p) p.isOnCourt = false;
-            });
-        }
+    const ct = rd ? rd.courts[courtIndex] : null;
+    const physicalIndex = ct ? (ct.physicalIndex ?? courtIndex) : courtIndex;
+
+    // isOnCourt を解放
+    if (ct) {
+        [...ct.team1, ...ct.team2].forEach(id => {
+            const p = state.players.find(pp => pp.id === id);
+            if (p) p.isOnCourt = false;
+        });
     }
 
     saveState();
     renderMatchContainer();
 
     if (state.seqMatch) {
-        // 順次モード: このコートの次の試合をプールから即投入
-        assignNextPoolMatch();
+        // 順次モード: 物理コートindexを渡してプールから次を投入
+        assignNextPoolMatch(physicalIndex);
     } else {
         // 一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
         if (rd) {
@@ -2672,8 +2673,13 @@ function generatePoolBatch() {
 }
 
 // プールから次の1試合を取り出してスケジュールに追加
-function assignNextPoolMatch() {
+function assignNextPoolMatch(fromPhysicalIndex) {
     if (isEventLocked()) return;
+
+    // physicalIndex が未指定の場合は次の空きスロットを自動決定
+    if (fromPhysicalIndex === undefined) {
+        fromPhysicalIndex = 0;
+    }
 
     // プールが空なら補充
     if (state.matchPool.length === 0) {
@@ -2688,13 +2694,14 @@ function assignNextPoolMatch() {
     const playIds = [...nextMatch.team1, ...nextMatch.team2];
 
     // 最新ラウンドがまだコート数に満ちていなければ、そこに追加する
-    // （例: 2コート設定でコートAのみ入った第2試合にコートBを追加）
+    // ただし同じ物理コートスロットが既に使われていたら新ラウンドを作る
     const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
-    const canAddToLast = lastRd && lastRd.courts.length < state.courts;
+    const physicalSlotTaken = lastRd && lastRd.courts.some((c, idx) => (c.physicalIndex ?? idx) === fromPhysicalIndex);
+    const canAddToLast = lastRd && lastRd.courts.length < state.courts && !physicalSlotTaken;
 
     if (canAddToLast) {
         // 既存ラウンドに追加
-        lastRd.courts.push({ team1: nextMatch.team1, team2: nextMatch.team2 });
+        lastRd.courts.push({ team1: nextMatch.team1, team2: nextMatch.team2, physicalIndex: fromPhysicalIndex });
         if (!lastRd.playerStates) lastRd.playerStates = {};
         playIds.forEach(id => { lastRd.playerStates[id] = 'play'; });
         playIds.forEach(id => {
@@ -2714,7 +2721,7 @@ function assignNextPoolMatch() {
             const p = state.players.find(pp => pp.id === id);
             if (p) { p.lastRound = roundNum; p.isOnCourt = true; }
         });
-        state.schedule.push({ round: roundNum, courts: [{ team1: nextMatch.team1, team2: nextMatch.team2 }], playerStates });
+        state.schedule.push({ round: roundNum, courts: [{ team1: nextMatch.team1, team2: nextMatch.team2, physicalIndex: fromPhysicalIndex }], playerStates });
         state.roundCount = roundNum;
     }
 
@@ -2785,8 +2792,14 @@ function renderMatchContainer() {
                 </span>
             </div>
             <div class="round-body${isOpen ? ' open' : ''}">
-                ${rd.courts.map((ct, ci) => {
-                    const mid = `r${rd.round}c${ci}`;
+                ${(() => {
+                    // physicalIndex でソートして表示（コートA→B→C の順を維持）
+                    const displayCourts = rd.courts
+                        .map((ct, arrayIdx) => ({ ct, arrayIdx, physIdx: ct.physicalIndex ?? arrayIdx }))
+                        .sort((a, b) => a.physIdx - b.physIdx);
+
+                    return displayCourts.map(({ ct, arrayIdx, physIdx }) => {
+                    const mid = `r${rd.round}c${arrayIdx}`;
                     const sc = state.scores[mid] || {s1: 0, s2: 0};
                     const courtDone = !!state.scores[mid]?.done;
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
@@ -2796,7 +2809,7 @@ function renderMatchContainer() {
                     if (state.autoMatch && courtDone) {
                         return `
                         <div class="match-card-done">
-                            <span class="done-court-name">${getCourtName(ci)}</span>
+                            <span class="done-court-name">${getCourtName(physIdx)}</span>
                             <span class="done-names">${n1} vs ${n2}</span>
                             <span class="done-score">${sc.s1}-${sc.s2}</span>
                             <span style="color:#2e7d32;font-weight:bold;margin-left:8px;">✓</span>
@@ -2806,11 +2819,11 @@ function renderMatchContainer() {
                     // 通常表示（未終了コート）
                     const showCourtDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && !courtDone;
                     const courtDoneArea = showCourtDoneBtn
-                        ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${ci})">✓ このコートの試合終了</button>`
+                        ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ このコートの試合終了</button>`
                         : '';
                     return `
                     <div class="match-card">
-                        <div class="match-header">${getCourtName(ci)}</div>
+                        <div class="match-header">${getCourtName(physIdx)}</div>
                         <div class="match-content match-row"
                              data-match-id="${mid}"
                              data-t1="${ct.team1.join(',')}"
@@ -2823,7 +2836,8 @@ function renderMatchContainer() {
                         </div>
                         ${courtDoneArea}
                     </div>`;
-                }).join('')}
+                    }).join('');
+                })()}
             </div>
         `;
         container.appendChild(block);
