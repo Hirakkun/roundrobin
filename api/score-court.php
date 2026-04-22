@@ -73,7 +73,9 @@ header('Content-Type: text/html; charset=UTF-8');
             align-items: center; justify-content: center;
         }
         .court-preview .net-label { writing-mode: vertical-rl; font-size: 11px; color: #ccc; letter-spacing: 2px; }
-        /* コートプレビュー内のバッジは白背景にして青/緑背景と区別 */
+        /* セットアップ画面・コートプレビュー内のバッジは白背景にして背景色と区別 */
+        .setup-btn .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
+        .setup-btn.t2 .num-badge { color: #2e7d32; }
         .court-preview .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
         .court-preview .side.right .num-badge { color: #2e7d32; }
 
@@ -474,15 +476,17 @@ function showServeSetup() {
     document.getElementById('serve-setup').style.display = 'flex';
 }
 
+function teamNamesToHTML(names) {
+    return names.map(renderName).join(' / ');
+}
+
 function updateServeSetupButtons() {
-    const t1text = teamNamesToText(team1Names);
-    const t2text = teamNamesToText(team2Names);
     const sub = document.getElementById('serve-sub');
-    if (sub) sub.textContent = t1text + '\nvs\n' + t2text;
+    if (sub) sub.textContent = teamNamesToText(team1Names) + '\nvs\n' + teamNamesToText(team2Names);
     const b1 = document.getElementById('serve-btn-t1');
     const b2 = document.getElementById('serve-btn-t2');
-    if (b1) b1.textContent = '🎾 ' + t1text + ' がサーブ';
-    if (b2) b2.textContent = '🎾 ' + t2text + ' がサーブ';
+    if (b1) b1.innerHTML = '🎾 ' + teamNamesToHTML(team1Names) + ' がサーブ';
+    if (b2) b2.innerHTML = '🎾 ' + teamNamesToHTML(team2Names) + ' がサーブ';
 }
 
 window.onServeSelect = function(team) {
