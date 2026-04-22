@@ -40,39 +40,39 @@ header('Content-Type: text/html; charset=UTF-8');
         .setup-screen {
             position: fixed; inset: 0; z-index: 40; background: #283593;
             display: none; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 16px; padding: 24px;
+            align-items: stretch; justify-content: center;
+            gap: 16px; padding: 20px;
         }
-        .setup-screen h2 { color: #fff; font-size: 20px; text-align: center; }
-        .setup-screen .sub { color: #9fa8da; font-size: 13px; text-align: center; line-height: 1.6; }
+        .setup-screen h2 { color: #fff; font-size: 26px; text-align: center; font-weight: bold; }
+        .setup-screen .sub { color: #9fa8da; font-size: 16px; text-align: center; line-height: 1.7; }
         .setup-btn {
-            width: 100%; max-width: 340px; padding: 16px 12px;
-            border: none; border-radius: 12px;
-            font-size: 15px; font-weight: bold; cursor: pointer;
+            width: 100%; padding: 22px 16px;
+            border: none; border-radius: 14px;
+            font-size: 20px; font-weight: bold; cursor: pointer;
             line-height: 1.5; text-align: center;
         }
         .setup-btn:active { opacity: .8; }
         .setup-btn.t1 { background: #1565c0; color: #fff; }
         .setup-btn.t2 { background: #2e7d32; color: #fff; }
-        .setup-btn.neutral { background: #fff; color: #283593; }
+        .setup-btn.neutral { background: #fff; color: #283593; font-size: 18px; }
 
         /* コート選択：左右表示 */
         .court-preview {
-            display: flex; width: 100%; max-width: 340px;
-            border-radius: 12px; overflow: hidden; border: 2px solid #fff;
+            display: flex; width: 100%;
+            border-radius: 14px; overflow: hidden; border: 2px solid #fff;
         }
         .court-preview .side {
-            flex: 1; padding: 14px 8px; text-align: center;
-            font-size: 14px; font-weight: bold; line-height: 1.5;
+            flex: 1; padding: 18px 10px; text-align: center;
+            font-size: 18px; font-weight: bold; line-height: 1.6;
         }
         .court-preview .side.left  { background: #1565c0; color: #fff; }
         .court-preview .side.right { background: #2e7d32; color: #fff; }
-        .court-preview .side-label { font-size: 11px; opacity: .7; margin-bottom: 4px; }
+        .court-preview .side-label { font-size: 13px; opacity: .7; margin-bottom: 6px; }
         .court-preview .divider {
-            width: 3px; background: #fff; flex-shrink: 0; display: flex;
+            width: 4px; background: #fff; flex-shrink: 0; display: flex;
             align-items: center; justify-content: center;
         }
-        .court-preview .net-label { writing-mode: vertical-rl; font-size: 10px; color: #ccc; letter-spacing: 2px; }
+        .court-preview .net-label { writing-mode: vertical-rl; font-size: 11px; color: #ccc; letter-spacing: 2px; }
         /* コートプレビュー内のバッジは白背景にして青/緑背景と区別 */
         .court-preview .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
         .court-preview .side.right .num-badge { color: #2e7d32; }
