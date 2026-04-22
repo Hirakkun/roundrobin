@@ -161,6 +161,9 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
     .match-card-done-wrap.expanded .done-arrow { transform:rotate(180deg); display:inline-block; }
 }
 .court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
+.announce-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#f57f17; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
+.announce-btn:active { background:#e65100; }
+.announce-btn:disabled { background:#b0bec5; cursor:not-allowed; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -264,6 +267,14 @@ body.viewer-mode #initialSetup { display: none !important; }
                     <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
                 </div>
                 <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+            </div>
+            <!-- Gemini APIキー設定 -->
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
+                <div style="font-size:13px;font-weight:bold;color:#333;margin-bottom:6px;">🔊 アナウンス（Gemini APIキー）</div>
+                <input type="password" id="gemini-api-key-input" placeholder="AIza..."
+                    style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:monospace;box-sizing:border-box;"
+                    oninput="saveGeminiKey(this.value)">
+                <div style="font-size:11px;color:#888;margin-top:4px;">Google AI Studio で取得したAPIキー</div>
             </div>
         </div>
     </div>
@@ -461,6 +472,8 @@ let state = {
     schedule: [],
     scores: {},
     playerNames: {},
+    playerKana:  {},        // {id: フリガナ}
+    geminiApiKey: '',       // Gemini TTS APIキー
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
     fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
@@ -578,6 +591,7 @@ function initTournament() {
         state.schedule     = [];
         state.scores       = {};
         state.playerNames  = {};
+        state.playerKana   = {};
         state.createdAt    = new Date().toISOString();
         for (let i = 1; i <= setupPlayers; i++) { addPlayerToState(i, false); }
     }
@@ -697,6 +711,7 @@ function _saveEntryToState() {
     }
     state.players = [];
     state.playerNames = {};
+    state.playerKana  = {};
     state.playerClubs = {};
     state.tsMap = {};
     state.pairMatrix = {};
@@ -706,6 +721,7 @@ function _saveEntryToState() {
         const resting = entryRestingPids.has(p.pid);
         state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 });
         state.playerNames[id] = p.name;
+        state.playerKana[id]  = p.kana || p.name || '';
         if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
     });
@@ -2586,6 +2602,90 @@ function _setMatchGamesUI(g) {
     document.querySelectorAll('.match-games-desc-txt').forEach(el => { el.textContent = desc; });
 }
 
+// ─────────────────────────────────────────────────────────
+// Gemini TTS アナウンス
+// ─────────────────────────────────────────────────────────
+function saveGeminiKey(val) {
+    state.geminiApiKey = val.trim();
+    saveState();
+}
+
+function updateGeminiKeyUI() {
+    const inp = document.getElementById('gemini-api-key-input');
+    if (inp) inp.value = state.geminiApiKey || '';
+}
+
+async function announceMatch(roundNum, courtIdx, physIdx, btn) {
+    const apiKey = state.geminiApiKey;
+    if (!apiKey) { alert('APIキーが設定されていません。QRパネルで入力してください。'); return; }
+
+    const rd = state.schedule.find(r => r.round === roundNum);
+    if (!rd) return;
+    const ct = rd.courts[courtIdx];
+    if (!ct) return;
+
+    const ALPHA = ['A','B','C','D','E','F','G','H'];
+    const useAlpha = !!state.courtNameAlpha;
+    const courtName = useAlpha
+        ? (ALPHA[physIdx] || (physIdx + 1)) + 'コート'
+        : '第' + (physIdx + 1) + 'コート';
+
+    function playerText(id) {
+        const kana = state.playerKana[id] || state.playerNames[id] || ('選手' + id);
+        return id + '番、' + kana;
+    }
+
+    const t1 = ct.team1.map(playerText).join('、');
+    const t2 = ct.team2.map(playerText).join('、');
+    const text = `${courtName}、第${roundNum}試合。${t1}、ペア、対、${t2}、ペア、となっております。${courtName}へお集まりください。`;
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text }] }],
+                    generationConfig: {
+                        responseModalities: ['AUDIO'],
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } }
+                    }
+                })
+            }
+        );
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error((err.error?.message) || ('HTTP ' + res.status));
+        }
+        const data = await res.json();
+        const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!b64) throw new Error('音声データが取得できませんでした');
+
+        // base64 PCM (LINEAR16, 24kHz) → Web Audio
+        const raw   = atob(b64);
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        const pcm   = new Int16Array(bytes.buffer);
+        const f32   = new Float32Array(pcm.length);
+        for (let i = 0; i < pcm.length; i++) f32[i] = pcm[i] / 32768.0;
+
+        const ctx    = new (window.AudioContext || window.webkitAudioContext)();
+        const buf    = ctx.createBuffer(1, f32.length, 24000);
+        buf.copyToChannel(f32, 0);
+        const src    = ctx.createBufferSource();
+        src.buffer   = buf;
+        src.connect(ctx.destination);
+        src.start();
+    } catch(e) {
+        console.error('announceMatch error:', e);
+        alert('アナウンス失敗: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '📢 アナウンス'; }
+    }
+}
+
 function toggleQrPanel() {
     const body = document.getElementById('qrPanelBody');
     const btn  = document.getElementById('qrToggleBtn');
@@ -2595,6 +2695,7 @@ function toggleQrPanel() {
     btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
     if (!isOpen) {
         updateMatchGamesUI();
+        updateGeminiKeyUI();
         renderCourtQRCodes();
     }
 }
@@ -2992,11 +3093,17 @@ function renderMatchContainer() {
                     const courtDoneBtn = showCourtDoneBtn
                         ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ 試合終了</button>`
                         : '';
+                    const announceBtn = isAdmin && state.geminiApiKey
+                        ? `<button class="announce-btn" onclick="announceMatch(${rd.round},${arrayIdx},${physIdx},this)">📢 アナウンス</button>`
+                        : '';
                     return `
                     <div class="match-card">
                         <div class="match-header-row">
                             ${getCourtNameHTML(physIdx)}
-                            ${courtDoneBtn}
+                            <div style="display:flex;gap:4px;align-items:center;">
+                                ${announceBtn}
+                                ${courtDoneBtn}
+                            </div>
                         </div>
                         <div class="match-content match-row"
                              data-match-id="${mid}"
@@ -3926,6 +4033,7 @@ window._fbApply = function(remoteState) {
         if (seqToggle) seqToggle.checked = !!state.seqMatch;
         updateAutoMatchUI();
         updateMatchGamesUI();
+        updateGeminiKeyUI();
         if (state.roundCount > 0) {
             // 試合進行中
             document.getElementById('btn-match').classList.remove('disabled');
