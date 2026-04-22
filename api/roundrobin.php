@@ -140,16 +140,17 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .pool-status-bar { display:none; margin-top:8px; padding:8px 12px; background:#e8f5e9; border-radius:8px; border-left:4px solid #2e7d32; font-size:13px; color:#2e7d32; font-weight:bold; }
 .seq-toggle-wrap { opacity:0.4; pointer-events:none; transition:opacity .2s; }
 .seq-toggle-wrap.enabled { opacity:1; pointer-events:auto; }
-.court-done-btn { width:100%; margin-top:8px; padding:10px; font-size:15px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:8px; cursor:pointer; }
 .court-done-btn:active { background:#0d47a1; }
 .round-done-btn { font-size:13px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
 .round-done-btn:active { background:#0d47a1; }
 .court-done-badge { text-align:center; color:#2e7d32; font-size:13px; font-weight:bold; padding:6px 0 2px; }
 .round-done-badge { font-size:13px; font-weight:bold; color:#2e7d32; padding:4px 8px; }
-.match-card-done { background:#f5f5f5; border-radius:10px; margin-bottom:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:14px; }
-.match-card-done .done-court-name { font-weight:bold; color:#555; }
-.match-card-done .done-names { font-size:13px; flex:1; margin:0 10px; }
-.match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
+.match-card-done { background:#f5f5f5; border-radius:10px; margin-bottom:10px; padding:6px 12px; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:12px; }
+.match-card-done .done-court-name { font-weight:bold; color:#555; font-size:12px; white-space:nowrap; }
+.match-card-done .done-names { font-size:11px; flex:1; margin:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; font-size:12px; }
+.match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:4px 8px 4px 12px; font-size:15px; font-weight:bold; }
+.court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -2818,12 +2819,15 @@ function renderMatchContainer() {
 
                     // 通常表示（未終了コート）
                     const showCourtDoneBtn = isAdmin && !isEventLocked() && autoOrSeq && !courtDone;
-                    const courtDoneArea = showCourtDoneBtn
-                        ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ このコートの試合終了</button>`
+                    const courtDoneBtn = showCourtDoneBtn
+                        ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ 試合終了</button>`
                         : '';
                     return `
                     <div class="match-card">
-                        <div class="match-header">${getCourtName(physIdx)}</div>
+                        <div class="match-header-row">
+                            <span>${getCourtName(physIdx)}</span>
+                            ${courtDoneBtn}
+                        </div>
                         <div class="match-content match-row"
                              data-match-id="${mid}"
                              data-t1="${ct.team1.join(',')}"
@@ -2834,7 +2838,6 @@ function renderMatchContainer() {
                             <div class="team right-side" data-p="${ct.team2.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>
-                        ${courtDoneArea}
                     </div>`;
                     }).join('');
                 })()}
