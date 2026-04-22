@@ -151,7 +151,12 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
 .match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:4px 8px 4px 12px; font-size:15px; font-weight:bold; }
 .match-header-done { background:#78909c; }
-@media (max-aspect-ratio: 1/1) { .match-card-done-wrap .match-content { display:none; } }
+@media (max-aspect-ratio: 1/1) {
+    .match-card-done-wrap .match-content { display:none; }
+    .match-card-done-wrap.expanded .match-content { display:flex; }
+    .match-header-done { cursor:pointer; }
+    .match-card-done-wrap.expanded .done-arrow { transform:rotate(180deg); display:inline-block; }
+}
 .court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
@@ -2812,9 +2817,12 @@ function renderMatchContainer() {
                     if (autoOrSeq && courtDone) {
                         return `
                         <div class="match-card match-card-done-wrap">
-                            <div class="match-header-row match-header-done">
+                            <div class="match-header-row match-header-done" onclick="this.closest('.match-card-done-wrap').classList.toggle('expanded')">
                                 <span>${getCourtName(physIdx)}</span>
-                                <span style="font-size:12px;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
+                                <span style="display:flex;align-items:center;gap:6px;">
+                                    <span style="font-size:12px;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
+                                    <span class="done-arrow" style="font-size:11px;color:#cfd8dc;">▼</span>
+                                </span>
                             </div>
                             <div class="match-content" style="opacity:0.5;">
                                 <div class="team left-side" style="pointer-events:none;">
