@@ -151,6 +151,7 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
 .match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:4px 8px 4px 12px; font-size:15px; font-weight:bold; }
 .match-header-done { background:#78909c; }
+@media (max-aspect-ratio: 1/1) { .match-card-done-wrap .match-content { display:none; } }
 .court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
