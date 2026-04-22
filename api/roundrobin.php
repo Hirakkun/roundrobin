@@ -2374,7 +2374,7 @@ function generateNextRound() {
     renderMatchContainer();
 
     // 順次モード: 初回生成後にプールを事前生成
-    if (state.autoMatch && state.seqMatch && state.matchPool.length === 0) {
+    if (state.seqMatch && state.matchPool.length === 0) {
         setTimeout(() => generatePoolBatch(), 50);
     }
     // 最新ラウンドまでスクロール後に開く
@@ -2394,7 +2394,7 @@ function generateNextRound() {
 
 // 「次の試合を作る」ボタンのハンドラ（モード対応）
 function onNextRoundBtn() {
-    if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
+    if (state.seqMatch && state.schedule.length > 0) {
         // 順次モード・2試合目以降 → プールから1コートずつ投入
         assignNextPoolMatch();
     } else {
@@ -2406,16 +2406,15 @@ function onNextRoundBtn() {
 // 自動組合せ トグル変更
 function onAutoMatchChange() {
     state.autoMatch = document.getElementById('autoMatchToggle').checked;
-    if (!state.autoMatch) {
-        // 自動OFFにしたら順次も解除しプールをクリア
-        state.seqMatch = false;
-        const seqToggle = document.getElementById('seqMatchToggle');
-        if (seqToggle) seqToggle.checked = false;
-        state.matchPool = [];
-        state.players.forEach(p => { p.isOnCourt = false; });
-    } else {
-        // 自動ONにしたとき: 現在の最新ラウンドのまだ終わっていないコートのプレイヤーをisOnCourt設定
+    if (state.autoMatch) {
+        // 自動ONにしたとき: isOnCourt再計算
         _recalcIsOnCourt();
+    } else {
+        // 自動OFFにしても順次はそのまま維持。isOnCourtのみ再計算
+        if (!state.seqMatch) {
+            state.matchPool = [];
+            state.players.forEach(p => { p.isOnCourt = false; });
+        }
     }
     updateAutoMatchUI();
     saveState();
@@ -2455,9 +2454,9 @@ function _recalcIsOnCourt() {
 
 // 自動組合せUIの状態更新
 function updateAutoMatchUI() {
-    const autoOn = !!state.autoMatch;
     const seqWrap = document.getElementById('seqMatchWrap');
-    if (seqWrap) seqWrap.classList.toggle('enabled', autoOn);
+    // 順次ONは自動ON/OFFに関わらず常に操作可能
+    if (seqWrap) seqWrap.classList.add('enabled');
     updatePoolStatus();
 }
 
@@ -2465,7 +2464,7 @@ function updateAutoMatchUI() {
 function updatePoolStatus() {
     const bar = document.getElementById('poolStatusBar');
     if (!bar) return;
-    if (state.autoMatch && state.seqMatch) {
+    if (state.seqMatch) {
         bar.style.display = '';
         bar.textContent = `🗂 プール: ${state.matchPool.length} 試合待機中`;
     } else if (state.autoMatch) {
@@ -2502,13 +2501,14 @@ function markCourtDone(roundNum, courtIndex) {
     if (state.seqMatch) {
         // 順次モード: 物理コートindexを渡してプールから次を投入
         assignNextPoolMatch(physicalIndex);
-    } else {
-        // 一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
+    } else if (state.autoMatch) {
+        // 自動ON・一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
         if (rd) {
             const allDone = rd.courts.every((ct, ci) => state.scores[`r${roundNum}c${ci}`]?.done);
             if (allDone) generateNextRound();
         }
     }
+    // 自動OFF・順次OFFの場合は手動で「次の試合を作る」ボタンを押す
 }
 
 // ラウンド終了ボタン（一括モード）
@@ -2541,7 +2541,7 @@ function markRoundDone(e, roundNum) {
 
 // スコアが入ったコートを検出して自動で次を投入（現在は明示ボタン方式のため予備）
 function checkAutoAdvance() {
-    if (!state.autoMatch) return;
+    if (!state.autoMatch && !state.seqMatch) return;
 
     if (state.seqMatch) {
         // 順次モード: isOnCourtがtrueのコートのスコアが入ったら次を投入
@@ -2763,14 +2763,15 @@ function renderMatchContainer() {
 
         // ラウンド全コートの終了状態
         const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
-        const roundDoneBadge = (isRoundDone && state.autoMatch)
+        const autoOrSeq = state.autoMatch || state.seqMatch;
+        const roundDoneBadge = (isRoundDone && autoOrSeq)
             ? `<span class="round-done-badge">✓ 全終了</span>` : '';
 
         // 自動展開の判定
-        // 自動ONの場合: 終了していないラウンドをすべて展開（終了済みは折り畳み）
-        // 自動OFFの場合: 管理者→最新のみ、閲覧者→最新2件
+        // 自動/順次ONの場合: 終了していないラウンドをすべて展開（終了済みは折り畳み）
+        // 両方OFFの場合: 管理者→最新のみ、閲覧者→最新2件
         let isOpen;
-        if (state.autoMatch) {
+        if (autoOrSeq) {
             isOpen = !isRoundDone;
         } else if (isAdmin) {
             isOpen = ri === state.schedule.length - 1;
@@ -2804,8 +2805,8 @@ function renderMatchContainer() {
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
 
-                    // 自動ON かつ終了済みコート → コンパクト表示（折り畳み）
-                    if (state.autoMatch && courtDone) {
+                    // 自動/順次ON かつ終了済みコート → コンパクト表示（折り畳み）
+                    if (autoOrSeq && courtDone) {
                         return `
                         <div class="match-card-done">
                             <span class="done-court-name">${getCourtName(physIdx)}</span>
@@ -2816,7 +2817,7 @@ function renderMatchContainer() {
                     }
 
                     // 通常表示（未終了コート）
-                    const showCourtDoneBtn = isAdmin && !isEventLocked() && state.autoMatch && !courtDone;
+                    const showCourtDoneBtn = isAdmin && !isEventLocked() && autoOrSeq && !courtDone;
                     const courtDoneArea = showCourtDoneBtn
                         ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ このコートの試合終了</button>`
                         : '';
