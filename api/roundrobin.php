@@ -2631,13 +2631,17 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         : '第' + (physIdx + 1) + 'コート';
 
     function playerText(id) {
-        const kana = state.playerKana[id] || state.playerNames[id] || ('選手' + id);
-        return id + '番、' + kana;
+        // kana優先順: state.playerKana → entryPlayersのkana → 表示名（漢字）
+        const pl = state.players.find(p => p.id === id);
+        const ep = pl?.pid ? entryPlayers.find(e => e.pid === pl.pid) : null;
+        const kana = (state.playerKana?.[id]) || (ep?.kana) || state.playerNames[id] || ('選手' + id);
+        const numPart = state.showPlayerNum ? id + '番、' : '';
+        return numPart + kana;
     }
 
     const t1 = ct.team1.map(playerText).join('、');
     const t2 = ct.team2.map(playerText).join('、');
-    const text = `${courtName}、第${roundNum}試合。${t1}、ペア、対、${t2}、ペア、となっております。${courtName}へお集まりください。`;
+    const text = `${courtName}、第${roundNum}試合。${t1}、組、対、${t2}、組、となっております。${courtName}へお集まりください。`;
 
     if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
     try {
@@ -2647,10 +2651,13 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    system_instruction: {
+                        parts: [{ text: 'あなたはスポーツイベントの会場アナウンサーです。日本語で、はっきりと聞き取りやすいペースでアナウンスしてください。' }]
+                    },
                     contents: [{ parts: [{ text }] }],
                     generationConfig: {
                         responseModalities: ['AUDIO'],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } }
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
                     }
                 })
             }
