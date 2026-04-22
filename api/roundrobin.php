@@ -2694,10 +2694,9 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     const playIds = [...nextMatch.team1, ...nextMatch.team2];
 
     // 最新ラウンドがまだコート数に満ちていなければ、そこに追加する
-    // ただし同じ物理コートスロットが既に使われていたら新ラウンドを作る
+    // （physicalIndex は表示名のためだけに使用し、同一コートの再使用を妨げない）
     const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
-    const physicalSlotTaken = lastRd && lastRd.courts.some((c, idx) => (c.physicalIndex ?? idx) === fromPhysicalIndex);
-    const canAddToLast = lastRd && lastRd.courts.length < state.courts && !physicalSlotTaken;
+    const canAddToLast = lastRd && lastRd.courts.length < state.courts;
 
     if (canAddToLast) {
         // 既存ラウンドに追加
