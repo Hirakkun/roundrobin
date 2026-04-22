@@ -118,8 +118,8 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .round-toggle .arrow { font-size: 18px; transition: transform 0.2s; }
 .round-toggle.open .arrow { transform: rotate(180deg); }
 .round-body { display: none; padding-top: 8px; }
-.round-body.open { display: grid; grid-template-columns: 1fr; gap: 8px; }
-@media (min-aspect-ratio: 1/1) { .round-body.open { grid-template-columns: 1fr 1fr 1fr; } }
+.round-body.open { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
+@media (min-aspect-ratio: 1/1) { .round-body.open { grid-template-columns: repeat(3, minmax(0,1fr)); } }
 .match-card { border: 2px solid #ddd; margin-bottom: 10px; border-radius: 12px; background: #fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .match-header { background: #37474f; color: #fff; padding: 6px 12px; font-size: 15px; font-weight: bold; }
 .court-toggle-wrap { display:flex; align-items:center; gap:8px; font-size:13px; color:#555; }
@@ -145,10 +145,10 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .round-done-btn:active { background:#0d47a1; }
 .court-done-badge { text-align:center; color:#2e7d32; font-size:13px; font-weight:bold; padding:6px 0 2px; }
 .round-done-badge { font-size:13px; font-weight:bold; color:#2e7d32; padding:4px 8px; }
-.match-card-done { background:#f5f5f5; border-radius:10px; margin-bottom:10px; padding:6px 12px; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:12px; }
-.match-card-done .done-court-name { font-weight:bold; color:#555; font-size:12px; white-space:nowrap; }
-.match-card-done .done-names { font-size:11px; flex:1; margin:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; font-size:12px; }
+.match-card-done { background:#f5f5f5; border-radius:10px; margin-bottom:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:14px; }
+.match-card-done .done-court-name { font-weight:bold; color:#555; }
+.match-card-done .done-names { font-size:13px; flex:1; margin:0 10px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
 .match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:4px 8px 4px 12px; font-size:15px; font-weight:bold; }
 .court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
