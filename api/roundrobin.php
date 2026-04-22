@@ -3076,27 +3076,30 @@ function calcRank() {
         };
     });
 
-    document.querySelectorAll('.match-row').forEach(row => {
-        const s1 = parseInt(row.querySelector('.s1').innerText);
-        const s2 = parseInt(row.querySelector('.s2').innerText);
-        if (s1 === 0 && s2 === 0) return;
+    // state.schedule と state.scores から直接集計（DOM非依存）
+    // 自動/順次ON時は終了コートが .match-row として描画されないため DOM 読み取りは使わない
+    state.schedule.forEach(rd => {
+        rd.courts.forEach((ct, ci) => {
+            const mid = `r${rd.round}c${ci}`;
+            const sc = state.scores[mid];
+            const s1 = sc ? (sc.s1 || 0) : 0;
+            const s2 = sc ? (sc.s2 || 0) : 0;
+            if (s1 === 0 && s2 === 0) return;
 
-        const ids1 = row.dataset.t1 ? row.dataset.t1.split(',').map(Number) : [];
-        const ids2 = row.dataset.t2 ? row.dataset.t2.split(',').map(Number) : [];
-
-        ids1.forEach(id => {
-            if (!stats[id]) return;
-            stats[id].played++;
-            stats[id].diff += (s1 - s2);
-            if (s1 > s2) stats[id].wins++;
-            else if (s2 > s1) stats[id].losses++;
-        });
-        ids2.forEach(id => {
-            if (!stats[id]) return;
-            stats[id].played++;
-            stats[id].diff += (s2 - s1);
-            if (s2 > s1) stats[id].wins++;
-            else if (s1 > s2) stats[id].losses++;
+            ct.team1.forEach(id => {
+                if (!stats[id]) return;
+                stats[id].played++;
+                stats[id].diff += (s1 - s2);
+                if (s1 > s2) stats[id].wins++;
+                else if (s2 > s1) stats[id].losses++;
+            });
+            ct.team2.forEach(id => {
+                if (!stats[id]) return;
+                stats[id].played++;
+                stats[id].diff += (s2 - s1);
+                if (s2 > s1) stats[id].wins++;
+                else if (s1 > s2) stats[id].losses++;
+            });
         });
     });
 
@@ -3164,25 +3167,28 @@ function buildReportCSV() {
             age: ageMap[name] || 0, appearedCount, eligibleRounds };
     });
 
-    document.querySelectorAll('.match-row').forEach(row => {
-        const s1 = parseInt(row.querySelector('.s1').innerText);
-        const s2 = parseInt(row.querySelector('.s2').innerText);
-        if (s1 === 0 && s2 === 0) return;
-        const ids1 = row.dataset.t1 ? row.dataset.t1.split(',').map(Number) : [];
-        const ids2 = row.dataset.t2 ? row.dataset.t2.split(',').map(Number) : [];
-        ids1.forEach(id => {
-            if (!statsMap[id]) return;
-            statsMap[id].played++;
-            statsMap[id].diff += (s1 - s2);
-            if (s1 > s2) statsMap[id].wins++;
-            else if (s2 > s1) statsMap[id].losses++;
-        });
-        ids2.forEach(id => {
-            if (!statsMap[id]) return;
-            statsMap[id].played++;
-            statsMap[id].diff += (s2 - s1);
-            if (s2 > s1) statsMap[id].wins++;
-            else if (s1 > s2) statsMap[id].losses++;
+    // state.schedule と state.scores から直接集計（DOM非依存）
+    state.schedule.forEach(rd => {
+        rd.courts.forEach((ct, ci) => {
+            const mid = `r${rd.round}c${ci}`;
+            const sc = state.scores[mid];
+            const s1 = sc ? (sc.s1 || 0) : 0;
+            const s2 = sc ? (sc.s2 || 0) : 0;
+            if (s1 === 0 && s2 === 0) return;
+            ct.team1.forEach(id => {
+                if (!statsMap[id]) return;
+                statsMap[id].played++;
+                statsMap[id].diff += (s1 - s2);
+                if (s1 > s2) statsMap[id].wins++;
+                else if (s2 > s1) statsMap[id].losses++;
+            });
+            ct.team2.forEach(id => {
+                if (!statsMap[id]) return;
+                statsMap[id].played++;
+                statsMap[id].diff += (s2 - s1);
+                if (s2 > s1) statsMap[id].wins++;
+                else if (s1 > s2) statsMap[id].losses++;
+            });
         });
     });
 
