@@ -2651,9 +2651,6 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    system_instruction: {
-                        parts: [{ text: 'あなたはスポーツイベントの会場アナウンサーです。日本語で、はっきりと聞き取りやすいペースでアナウンスしてください。' }]
-                    },
                     contents: [{ parts: [{ text }] }],
                     generationConfig: {
                         responseModalities: ['AUDIO'],
@@ -2663,8 +2660,11 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
             }
         );
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error((err.error?.message) || ('HTTP ' + res.status));
+            const errBody = await res.text().catch(() => '');
+            console.error('Gemini TTS error response:', res.status, errBody);
+            let msg = 'HTTP ' + res.status;
+            try { msg = JSON.parse(errBody)?.error?.message || msg; } catch(e) {}
+            throw new Error(msg);
         }
         const data = await res.json();
         const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
