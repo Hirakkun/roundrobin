@@ -110,27 +110,29 @@ header('Content-Type: text/html; charset=UTF-8');
         .team-name-row { display: flex; align-items: stretch; min-height: 56px; }
         .team-name-block {
             flex: 1; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 8px; font-size: 15px;
-            font-weight: bold; text-align: center; line-height: 1.4;
+            justify-content: center; padding: 8px 6px; font-size: 17px;
+            font-weight: bold; text-align: center; line-height: 1.5;
         }
         .team-name-block.t1 { background: #e3f2fd; color: #0d47a1; }
         .team-name-block.t2 { background: #e8f5e9; color: #1b5e20; }
-        .team-name-block .pname { display: flex; align-items: center; gap: 4px; }
+        .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 5px; }
         .num-badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 22px; height: 22px; border-radius: 50%;
+            width: 24px; height: 24px; border-radius: 50%;
             background: #1565c0; color: #fff;
-            font-size: 11px; font-weight: bold; flex-shrink: 0;
+            font-size: 12px; font-weight: bold; flex-shrink: 0;
         }
         .team-name-block.t2 .num-badge { background: #2e7d32; }
-        .team-vs { display: flex; align-items: center; padding: 0 6px; color: #999; font-size: 12px; }
 
         /* ポイントボタン */
         .player-name-row { display: flex; }
         .score-button {
-            flex: 1; padding: 16px 8px; font-size: 1em;
+            flex: 1; padding: 14px 6px; font-size: 0.95em;
             border: none; cursor: pointer; font-weight: bold;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
         }
+        .score-button .btn-team-name { font-size: 0.9em; opacity: 0.9; line-height: 1.3; }
+        .score-button .btn-point-label { font-size: 1.6em; font-weight: bold; line-height: 1; }
         .score-button.p1 { background: #1565c0; color: #fff; }
         .score-button.p2 { background: #2e7d32; color: #fff; }
         .score-button:disabled { background: #ccc; cursor: not-allowed; }
@@ -262,7 +264,6 @@ header('Content-Type: text/html; charset=UTF-8');
 
     <div class="team-name-row">
         <div class="team-name-block t1" id="name-left"></div>
-        <div class="team-vs">VS</div>
         <div class="team-name-block t2" id="name-right"></div>
     </div>
 
@@ -671,7 +672,14 @@ window.handleMatchEnd = async function() {
 
 // ── 取消 ──────────────────────────────────────────────────────
 window.undoLastPoint = function() {
-    if (historyStack.length === 0) return;
+    if (historyStack.length === 0) {
+        // 0-0 の状態 → サーブ選択画面に戻る
+        matchStarted = false;
+        game_score_t1 = 0; game_score_t2 = 0;
+        current_server = 1;
+        showServeSetup();
+        return;
+    }
     if (game_is_over) {
         game_is_over = false;
         togglePointButtons(false);
@@ -713,9 +721,13 @@ function updateDisplay() {
     if (nameLeftEl)  nameLeftEl.innerHTML  = leftNames.map(renderName).join('<br>');
     if (nameRightEl) nameRightEl.innerHTML = rightNames.map(renderName).join('<br>');
 
-    // ポイントボタンのラベル
-    document.getElementById('btn-left').textContent  = teamNamesToText(leftNames)  + ' ポイント';
-    document.getElementById('btn-right').textContent = teamNamesToText(rightNames) + ' ポイント';
+    // ポイントボタンのラベル（名前 + 大きい「ポイント」）
+    document.getElementById('btn-left').innerHTML  =
+        '<span class="btn-team-name">' + teamNamesToText(leftNames)  + '</span>' +
+        '<span class="btn-point-label">ポイント</span>';
+    document.getElementById('btn-right').innerHTML =
+        '<span class="btn-team-name">' + teamNamesToText(rightNames) + '</span>' +
+        '<span class="btn-point-label">ポイント</span>';
 
     // ポイント大表示（左右の表示）
     const leftPt  = leftTeam === 1 ? game_score_t1 : game_score_t2;
