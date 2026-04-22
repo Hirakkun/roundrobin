@@ -252,6 +252,16 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div id="qrPanelBody" style="display:none;">
             <div style="font-size:12px;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
             <div id="qrCodesWrap" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;"></div>
+            <!-- ゲーム数設定 -->
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
+                <div style="font-size:13px;font-weight:bold;color:#333;margin-bottom:8px;">🎾 ゲーム数（スコア入力）</div>
+                <div class="counter-row">
+                    <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">－</button>
+                    <div class="counter-val match-games-val">3</div>
+                    <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
+                </div>
+                <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+            </div>
         </div>
     </div>
 
