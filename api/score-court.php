@@ -73,6 +73,9 @@ header('Content-Type: text/html; charset=UTF-8');
             align-items: center; justify-content: center;
         }
         .court-preview .net-label { writing-mode: vertical-rl; font-size: 10px; color: #ccc; letter-spacing: 2px; }
+        /* コートプレビュー内のバッジは白背景にして青/緑背景と区別 */
+        .court-preview .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
+        .court-preview .side.right .num-badge { color: #2e7d32; }
 
         /* ===== コート情報バー ===== */
         .court-info-bar {
