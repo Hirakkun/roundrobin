@@ -294,6 +294,25 @@ body.viewer-mode #initialSetup { display: none !important; }
         </div>
     </div>
 
+    <!-- 試合案内パネルカード（管理者・セッション接続後） -->
+    <div id="displayPanelCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="setup-label" style="margin:0;">📺 試合案内パネル</div>
+            <button onclick="toggleDisplayPanel()" id="displayPanelToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#555;">▼ 開く</button>
+        </div>
+        <div id="displayPanelBody" style="display:none;">
+            <div style="font-size:12px;color:#777;margin-bottom:10px;">プロジェクター等で試合状況をリアルタイム表示します</div>
+            <div id="displayPanelQrWrap" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                <div id="qr-display-panel"></div>
+                <div id="display-panel-url" style="font-size:11px;color:#555;word-break:break-all;text-align:center;"></div>
+                <a id="display-panel-link" href="#" target="_blank"
+                    style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:13px;text-decoration:none;font-weight:bold;">
+                    🔗 パネルを開く
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- 初期設定エリア -->
     <div id="initialSetup">
         <!-- 参加者登録（名簿あり・管理者のみ） -->
@@ -490,6 +509,7 @@ let state = {
     playerKana:  {},        // {id: フリガナ}
     geminiApiKey: '',       // Gemini TTS APIキー
     ttsVoiceGender: 'female', // TTS音声性別 'female'=Aoede / 'male'=Puck
+    announcedCourts: {},    // {r${round}c${idx}: timestamp} アナウンス済みコート
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
     fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
@@ -2740,7 +2760,10 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         src.buffer   = buf;
         src.connect(ctx.destination);
         src.start();
-        // 再生成功 → ボタンを「アナウンス済み」に
+        // 再生成功 → ボタンを「アナウンス済み」に、announcedCourtsに記録
+        if (!state.announcedCourts) state.announcedCourts = {};
+        state.announcedCourts[`r${roundNum}c${courtIdx}`] = Date.now();
+        saveState();
         if (btn) {
             btn.disabled = false;
             btn.textContent = '✅ アナウンス済み';
@@ -2764,6 +2787,31 @@ function toggleQrPanel() {
         updateMatchGamesUI();
         updateGeminiKeyUI();
         renderCourtQRCodes();
+    }
+}
+
+function toggleDisplayPanel() {
+    const body = document.getElementById('displayPanelBody');
+    const btn  = document.getElementById('displayPanelToggleBtn');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : '';
+    btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    if (!isOpen) renderDisplayPanelQR();
+}
+
+function renderDisplayPanelQR() {
+    if (!_sessionId) return;
+    const card = document.getElementById('displayPanelCard');
+    if (card) card.style.display = '';
+    const url = location.origin + '/display?sid=' + encodeURIComponent(_sessionId);
+    const urlEl = document.getElementById('display-panel-url');
+    if (urlEl) urlEl.textContent = url;
+    const link = document.getElementById('display-panel-link');
+    if (link) link.href = url;
+    const qrDiv = document.getElementById('qr-display-panel');
+    if (qrDiv && !qrDiv.querySelector('canvas,img')) {
+        new QRCode(qrDiv, { text: url, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
     }
 }
 
@@ -4036,7 +4084,8 @@ window._fbApply = function(remoteState) {
         if (!remoteState.tsMap       || typeof remoteState.tsMap       !== 'object') remoteState.tsMap       = {};
         if (!remoteState.scores      || typeof remoteState.scores      !== 'object') remoteState.scores      = {};
         if (!remoteState.playerNames || typeof remoteState.playerNames !== 'object') remoteState.playerNames = {};
-        if (!remoteState.playerKana  || typeof remoteState.playerKana  !== 'object') remoteState.playerKana  = {};
+        if (!remoteState.playerKana      || typeof remoteState.playerKana      !== 'object') remoteState.playerKana      = {};
+        if (!remoteState.announcedCourts || typeof remoteState.announcedCourts !== 'object') remoteState.announcedCourts = {};
 
         // コートページから done=true が書き込まれた場合に側面処理を実行（管理者のみ）
         if (isAdmin && (state.autoMatch || state.seqMatch)) {
@@ -4077,11 +4126,25 @@ window._fbApply = function(remoteState) {
             Object.assign(state, remoteState);
             localStorage.setItem('rr_state_v2', JSON.stringify(state));
         }
+        // スコアが動いたコート（試合開始）のannouncedCourtsを自動クリア
+        if (state.announcedCourts) {
+            let changed = false;
+            Object.keys(state.announcedCourts).forEach(key => {
+                const sc = state.scores?.[key];
+                if (sc && (sc.s1 > 0 || sc.s2 > 0 || sc.done)) {
+                    delete state.announcedCourts[key];
+                    changed = true;
+                }
+            });
+            if (changed) saveState();
+        }
 
         // QRカードをセッション接続後に表示
         if (isAdmin && _sessionId) {
             const qrCard = document.getElementById('courtQrCard');
             if (qrCard) qrCard.style.display = '';
+            const dpCard = document.getElementById('displayPanelCard');
+            if (dpCard) dpCard.style.display = '';
         }
         // マッチングルールを同期
         matchingRule = state.matchingRule || 'random';
