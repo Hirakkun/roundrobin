@@ -2670,7 +2670,7 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
                     contents: [{ parts: [{ text }] }],
                     generationConfig: {
                         responseModalities: ['AUDIO'],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoife' } } }
                     }
                 })
             }
