@@ -271,7 +271,21 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
             <!-- Gemini APIキー設定 -->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
-                <div style="font-size:13px;font-weight:bold;color:#333;margin-bottom:6px;">🔊 アナウンス（Gemini APIキー）</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <div style="font-size:13px;font-weight:bold;color:#333;">🔊 アナウンス（Gemini APIキー）</div>
+                    <div style="display:flex;align-items:center;gap:4px;font-size:13px;">
+                        <span id="tts-gender-female-label" style="color:#c2185b;font-weight:bold;">♀</span>
+                        <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;">
+                            <input type="checkbox" id="tts-gender-toggle" style="opacity:0;width:0;height:0;"
+                                onchange="saveTtsGender(this.checked)">
+                            <span style="position:absolute;inset:0;background:#c2185b;border-radius:22px;transition:.3s;"
+                                id="tts-gender-track"></span>
+                            <span style="position:absolute;left:2px;top:2px;width:18px;height:18px;background:white;border-radius:50%;transition:.3s;"
+                                id="tts-gender-thumb"></span>
+                        </label>
+                        <span id="tts-gender-male-label" style="color:#888;font-weight:bold;">♂</span>
+                    </div>
+                </div>
                 <input type="password" id="gemini-api-key-input" placeholder="AIza..."
                     style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:monospace;box-sizing:border-box;"
                     oninput="saveGeminiKey(this.value)">
@@ -475,6 +489,7 @@ let state = {
     playerNames: {},
     playerKana:  {},        // {id: フリガナ}
     geminiApiKey: '',       // Gemini TTS APIキー
+    ttsVoiceGender: 'female', // TTS音声性別 'female'=Aoede / 'male'=Puck
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
     fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
@@ -2614,9 +2629,31 @@ function saveGeminiKey(val) {
     saveState();
 }
 
+function saveTtsGender(isMale) {
+    state.ttsVoiceGender = isMale ? 'male' : 'female';
+    saveState();
+    updateTtsGenderUI();
+}
+
+function updateTtsGenderUI() {
+    const toggle = document.getElementById('tts-gender-toggle');
+    const track  = document.getElementById('tts-gender-track');
+    const thumb  = document.getElementById('tts-gender-thumb');
+    const fLabel = document.getElementById('tts-gender-female-label');
+    const mLabel = document.getElementById('tts-gender-male-label');
+    if (!toggle) return;
+    const isMale = state.ttsVoiceGender === 'male';
+    toggle.checked = isMale;
+    if (track) track.style.background = isMale ? '#1565c0' : '#c2185b';
+    if (thumb) thumb.style.left = isMale ? '20px' : '2px';
+    if (fLabel) fLabel.style.color = isMale ? '#888' : '#c2185b';
+    if (mLabel) mLabel.style.color = isMale ? '#1565c0' : '#888';
+}
+
 function updateGeminiKeyUI() {
     const inp = document.getElementById('gemini-api-key-input');
     if (inp) inp.value = state.geminiApiKey || '';
+    updateTtsGenderUI();
 }
 
 async function announceMatch(roundNum, courtIdx, physIdx, btn) {
@@ -2670,7 +2707,9 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
                     contents: [{ parts: [{ text }] }],
                     generationConfig: {
                         responseModalities: ['AUDIO'],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } } }
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: {
+                            voiceName: state.ttsVoiceGender === 'male' ? 'Puck' : 'Aoede'
+                        } } }
                     }
                 })
             }
