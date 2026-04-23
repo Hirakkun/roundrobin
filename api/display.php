@@ -12,9 +12,10 @@ header('Content-Type: text/html; charset=UTF-8');
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ベースフォントサイズ = 画面の短辺の2.8% → 全要素がemで自動追従 */
+/* ベースフォントサイズ = 画面幅の1.8% → 全要素がemで自動追従
+   横長プロジェクター(16:9)で最適。縦長画面ではvhが効く。 */
 html {
-    font-size: 2.8vmin;
+    font-size: min(1.8vw, 3.2vh);
 }
 body {
     height: 100vh; width: 100%;
