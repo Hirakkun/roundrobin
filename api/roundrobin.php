@@ -2636,11 +2636,15 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
 
     function playerText(id) {
         // kana優先順: state.playerKana → roster直引き(pid経由) → 表示名（漢字）
+        // state.playerKanaは旧イベントでは空のため、rosterのkanaをpid経由で直接参照する
         let kana = state.playerKana?.[id];
-        const pl = state.players.find(p => p.id === id);
-        const rp = pl?.pid ? (state.roster || []).find(r => r.pid === pl.pid) : null;
-        console.log(`[D] id=${id} playerKana="${kana}" pid=${pl?.pid} rp.kana="${rp?.kana}" rp.name="${rp?.name}" name="${state.playerNames[id]}"`);
-        if (!kana && rp?.kana) kana = rp.kana;
+        if (!kana) {
+            const pl = state.players.find(p => p.id === id);
+            if (pl?.pid) {
+                const rp = (state.roster || []).find(r => r.pid === pl.pid);
+                if (rp?.kana) kana = rp.kana;
+            }
+        }
         if (!kana) kana = state.playerNames[id] || ('選手' + id);
         const numPart = state.showPlayerNum ? id + '番、' : '';
         return numPart + kana;
