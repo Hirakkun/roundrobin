@@ -164,6 +164,7 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
 .announce-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#f57f17; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .announce-btn:active { background:#e65100; }
 .announce-btn:disabled { background:#b0bec5; cursor:not-allowed; }
+.announce-btn.announced { background:#78909c; color:#eceff1; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -2639,9 +2640,14 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         return numPart + kana;
     }
 
-    const t1 = ct.team1.map(playerText).join('、');
-    const t2 = ct.team2.map(playerText).join('、');
-    const text = `${courtName}、第${roundNum}試合。${t1}、組、対、${t2}、組、となっております。${courtName}へお集まりください。`;
+    const t1 = ct.team1.map(playerText).join('　');
+    const t2 = ct.team2.map(playerText).join('　');
+
+    // コートが1面のみの場合はコート名を省略
+    const totalCourts = state.courts || 1;
+    const text = totalCourts <= 1
+        ? `次の試合のご案内です。${t1}、対、${t2}、の試合を開始します。`
+        : `次の試合のご案内です。${courtName}にて、${t1}、対、${t2}、の試合を開始します。選手の方は${courtName}へお集まりください。`;
 
     if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
     try {
@@ -2685,10 +2691,15 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         src.buffer   = buf;
         src.connect(ctx.destination);
         src.start();
+        // 再生成功 → ボタンを「アナウンス済み」に
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✅ アナウンス済み';
+            btn.classList.add('announced');
+        }
     } catch(e) {
         console.error('announceMatch error:', e);
         alert('アナウンス失敗: ' + e.message);
-    } finally {
         if (btn) { btn.disabled = false; btn.textContent = '📢 アナウンス'; }
     }
 }
