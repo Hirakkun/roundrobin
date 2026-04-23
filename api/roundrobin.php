@@ -2635,9 +2635,13 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         : '第' + (physIdx + 1) + 'コート';
 
     function playerText(id) {
-        // kana優先順: state.playerKana → entryPlayersのkana → 表示名（漢字）
-        // ※_rebuildEntryPlayers()でstate.playerKanaにrosterのkanaを補完済み
-        const kana = state.playerKana?.[id] || state.playerNames[id] || ('選手' + id);
+        // kana優先順: state.playerKana → roster直引き(pid経由) → 表示名（漢字）
+        let kana = state.playerKana?.[id];
+        const pl = state.players.find(p => p.id === id);
+        const rp = pl?.pid ? (state.roster || []).find(r => r.pid === pl.pid) : null;
+        console.log(`[D] id=${id} playerKana="${kana}" pid=${pl?.pid} rp.kana="${rp?.kana}" rp.name="${rp?.name}" name="${state.playerNames[id]}"`);
+        if (!kana && rp?.kana) kana = rp.kana;
+        if (!kana) kana = state.playerNames[id] || ('選手' + id);
         const numPart = state.showPlayerNum ? id + '番、' : '';
         return numPart + kana;
     }
@@ -3989,6 +3993,7 @@ window._fbApply = function(remoteState) {
         if (!remoteState.tsMap       || typeof remoteState.tsMap       !== 'object') remoteState.tsMap       = {};
         if (!remoteState.scores      || typeof remoteState.scores      !== 'object') remoteState.scores      = {};
         if (!remoteState.playerNames || typeof remoteState.playerNames !== 'object') remoteState.playerNames = {};
+        if (!remoteState.playerKana  || typeof remoteState.playerKana  !== 'object') remoteState.playerKana  = {};
 
         // コートページから done=true が書き込まれた場合に側面処理を実行（管理者のみ）
         if (isAdmin && (state.autoMatch || state.seqMatch)) {
