@@ -743,6 +743,7 @@ function _rebuildEntryPlayers() {
     const players = state.players || [];
     // playerNames の順序（id順）でrosterから一致するものを探す
     const maxId = players.length ? Math.max(0, ...players.map(p => p.id)) : 0;
+    if (!state.playerKana) state.playerKana = {};
     for (let id = 1; id <= maxId; id++) {
         const name = playerNames[id];
         if (!name) continue;
@@ -752,6 +753,8 @@ function _rebuildEntryPlayers() {
             // 休憩状態を復元
             const sp = players.find(p => p.id === id);
             if (sp && sp.resting && rp.pid) entryRestingPids.add(rp.pid);
+            // 旧イベント（kana未保存）のマイグレーション: rosterのkanaで補完
+            if (!state.playerKana[id] && rp.kana) state.playerKana[id] = rp.kana;
         }
     }
 }
@@ -2633,9 +2636,8 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
 
     function playerText(id) {
         // kana優先順: state.playerKana → entryPlayersのkana → 表示名（漢字）
-        const pl = state.players.find(p => p.id === id);
-        const ep = pl?.pid ? entryPlayers.find(e => e.pid === pl.pid) : null;
-        const kana = (state.playerKana?.[id]) || (ep?.kana) || state.playerNames[id] || ('選手' + id);
+        // ※_rebuildEntryPlayers()でstate.playerKanaにrosterのkanaを補完済み
+        const kana = state.playerKana?.[id] || state.playerNames[id] || ('選手' + id);
         const numPart = state.showPlayerNum ? id + '番、' : '';
         return numPart + kana;
     }
