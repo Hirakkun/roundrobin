@@ -2669,9 +2669,9 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
                 body: JSON.stringify({
                     contents: [{ parts: [{ text }] }],
                     generationConfig: {
-                        responseModalities: ['AUDIO'],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoife' } } }
-                    }
+                        responseModalities: ['AUDIO']
+                    },
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoife' } } }
                 })
             }
         );
