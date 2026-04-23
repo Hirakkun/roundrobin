@@ -12,10 +12,10 @@ header('Content-Type: text/html; charset=UTF-8');
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ベースフォントサイズ = 画面幅の1.8% → 全要素がemで自動追従
-   横長プロジェクター(16:9)で最適。縦長画面ではvhが効く。 */
+/* ベースフォントサイズ = 画面幅の2.8% → プロジェクター120インチ対応
+   1920x1080で約54px基準。全要素がemで自動追従。 */
 html {
-    font-size: min(1.8vw, 3.2vh);
+    font-size: min(2.8vw, 5vh);
 }
 body {
     height: 100vh; width: 100%;
@@ -101,13 +101,13 @@ body {
     flex-shrink: 0;
 }
 .court-label-wrap { display: flex; align-items: baseline; gap: 0.1em; }
-.court-label-big  { font-size: 2.2em; font-weight: 900; line-height: 1; }
-.court-label-small{ font-size: 0.7em; font-weight: bold; }
+.court-label-big  { font-size: 2.6em; font-weight: 900; line-height: 1; }
+.court-label-small{ font-size: 0.75em; font-weight: bold; }
 
 .status-badge {
-    font-size: 0.65em;
+    font-size: 0.72em;
     font-weight: bold;
-    padding: 0.2em 0.7em;
+    padding: 0.2em 0.8em;
     border-radius: 2em;
     white-space: nowrap;
 }
@@ -135,14 +135,14 @@ body {
     min-width: 0;
 }
 .player-name {
-    font-size: 1.05em;
+    font-size: 1.25em;
     font-weight: bold;
     text-align: center;
-    line-height: 1.3;
+    line-height: 1.35;
     word-break: break-all;
 }
 .vs-label {
-    font-size: 0.85em;
+    font-size: 1em;
     font-weight: 900;
     color: #888;
     flex-shrink: 0;
@@ -157,7 +157,7 @@ body {
     flex-shrink: 0;
 }
 .score-val {
-    font-size: 3.2em;
+    font-size: 4em;
     font-weight: 900;
     line-height: 1;
     min-width: 1em;
@@ -165,12 +165,12 @@ body {
 }
 .score-val.t1 { color: #90caf9; }
 .score-val.t2 { color: #a5d6a7; }
-.score-hyphen { font-size: 2em; color: #555; font-weight: bold; }
+.score-hyphen { font-size: 2.5em; color: #555; font-weight: bold; }
 
 /* サブメッセージ */
 .sub-msg {
     text-align: center;
-    font-size: 0.75em;
+    font-size: 0.9em;
     font-weight: bold;
     flex-shrink: 0;
     padding-bottom: 0.3em;
@@ -188,13 +188,13 @@ body {
 }
 #resting-section.visible { display: block; }
 #resting-label {
-    font-size: 0.65em;
+    font-size: 0.75em;
     color: #90caf9;
     font-weight: bold;
     margin-bottom: 0.2em;
 }
 #resting-list {
-    font-size: 0.75em;
+    font-size: 0.85em;
     color: #ccc;
     display: flex;
     flex-wrap: wrap;
