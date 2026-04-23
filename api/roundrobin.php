@@ -2656,13 +2656,13 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
     // コートが1面のみの場合はコート名を省略
     const totalCourts = state.courts || 1;
     const text = totalCourts <= 1
-        ? `次の試合のご案内です！${t1}、対、${t2}、の試合を開始します！`
-        : `次の試合のご案内です！${courtName}にて、${t1}、対、${t2}、の試合を開始します！選手の方は${courtName}へお集まりください！`;
+        ? `次の試合のご案内です！${t1}！対！${t2}！の試合を開始します！`
+        : `次の試合のご案内です！${courtName}にて、${t1}！対！${t2}！の試合を開始します！選手の方は${courtName}へお集まりください！`;
 
     if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
     try {
         const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-tts:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
