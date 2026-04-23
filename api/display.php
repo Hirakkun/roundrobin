@@ -11,8 +11,13 @@ header('Content-Type: text/html; charset=UTF-8');
 <title>試合案内パネル</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body {
-    height: 100%; width: 100%;
+
+/* ベースフォントサイズ = 画面の短辺の2.8% → 全要素がemで自動追従 */
+html {
+    font-size: 2.8vmin;
+}
+body {
+    height: 100vh; width: 100%;
     font-family: 'Arial', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
     background: #0d1b2a;
     color: #fff;
@@ -24,8 +29,8 @@ html, body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    padding: 12px;
-    gap: 10px;
+    padding: 0.5em;
+    gap: 0.4em;
 }
 
 /* ── ヘッダー ── */
@@ -34,18 +39,18 @@ html, body {
     align-items: center;
     justify-content: space-between;
     background: #1b2a3b;
-    border-radius: 10px;
-    padding: 10px 20px;
+    border-radius: 0.4em;
+    padding: 0.3em 0.8em;
     flex-shrink: 0;
 }
 #event-name {
-    font-size: clamp(18px, 3vw, 30px);
+    font-size: 1.2em;
     font-weight: bold;
     color: #fff;
-    letter-spacing: 1px;
+    letter-spacing: 0.04em;
 }
 #current-time {
-    font-size: clamp(18px, 2.5vw, 26px);
+    font-size: 1.2em;
     font-weight: bold;
     color: #90caf9;
     font-variant-numeric: tabular-nums;
@@ -54,69 +59,68 @@ html, body {
 /* ── コートグリッド ── */
 #courts-grid {
     display: grid;
-    gap: 10px;
+    gap: 0.4em;
     flex: 1;
     min-height: 0;
 }
-/* コート数によるグリッド列数 */
 #courts-grid.cols-1 { grid-template-columns: 1fr; }
 #courts-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 #courts-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-#courts-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+#courts-grid.cols-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 #courts-grid.cols-5 { grid-template-columns: 1fr 1fr 1fr; }
-#courts-grid.cols-6 { grid-template-columns: 1fr 1fr 1fr; }
+#courts-grid.cols-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
 /* ── コートカード ── */
 .court-card {
-    border-radius: 12px;
-    padding: 12px 16px;
+    border-radius: 0.5em;
+    padding: 0.4em 0.7em;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.2em;
     min-height: 0;
     overflow: hidden;
-    transition: all 0.4s ease;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
-.court-card.status-next    { background: #1a3a5c; border: 2px solid #1565c0; }
-.court-card.status-calling { background: #3a2a00; border: 3px solid #f9a825; animation: pulse-border 1.5s infinite; }
-.court-card.status-playing { background: #1a3a1a; border: 2px solid #2e7d32; }
-.court-card.status-done    { background: #1e1e1e; border: 2px solid #444; opacity: 0.5; }
-.court-card.status-empty   { background: #111; border: 2px dashed #333; opacity: 0.3; }
+.court-card.status-next    { background: #1a3a5c; border: 0.12em solid #1565c0; }
+.court-card.status-calling { background: #3a2a00; border: 0.18em solid #f9a825; animation: pulse-border 1.5s infinite; }
+.court-card.status-playing { background: #1a3a1a; border: 0.12em solid #2e7d32; }
+.court-card.status-done    { background: #1e1e1e; border: 0.12em solid #444; opacity: 0.5; }
+.court-card.status-empty   { background: #111; border: 0.12em dashed #333; opacity: 0.3; }
 
 @keyframes pulse-border {
     0%, 100% { border-color: #f9a825; box-shadow: 0 0 0 0 rgba(249,168,37,0); }
-    50%       { border-color: #ffcc02; box-shadow: 0 0 12px 4px rgba(249,168,37,0.4); }
+    50%       { border-color: #ffcc02; box-shadow: 0 0 0.5em 0.15em rgba(249,168,37,0.4); }
 }
 
-/* カードヘッダー（コート名＋ステータス） */
+/* カードヘッダー */
 .card-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
 }
-.court-label-big   { font-size: clamp(28px, 5vw, 52px); font-weight: 900; line-height: 1; }
-.court-label-small { font-size: clamp(11px, 1.5vw, 18px); font-weight: bold; }
-.court-label-wrap  { display: flex; align-items: baseline; gap: 2px; }
+.court-label-wrap { display: flex; align-items: baseline; gap: 0.1em; }
+.court-label-big  { font-size: 2.2em; font-weight: 900; line-height: 1; }
+.court-label-small{ font-size: 0.7em; font-weight: bold; }
 
 .status-badge {
-    font-size: clamp(11px, 1.5vw, 16px);
+    font-size: 0.65em;
     font-weight: bold;
-    padding: 3px 10px;
-    border-radius: 20px;
+    padding: 0.2em 0.7em;
+    border-radius: 2em;
     white-space: nowrap;
 }
 .status-badge.next    { background: #1565c0; color: #fff; }
 .status-badge.calling { background: #f9a825; color: #111; }
 .status-badge.playing { background: #2e7d32; color: #fff; }
-.status-badge.done    { background: #444; color: #aaa; }
+.status-badge.done    { background: #444;    color: #aaa; }
 
 /* チーム表示 */
 .match-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(6px, 1.5vw, 16px);
+    gap: 0.5em;
     flex: 1;
     min-height: 0;
 }
@@ -124,21 +128,22 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    justify-content: center;
+    gap: 0.15em;
     flex: 1;
     min-width: 0;
 }
 .player-name {
-    font-size: clamp(14px, 2.2vw, 26px);
+    font-size: 1.05em;
     font-weight: bold;
     text-align: center;
     line-height: 1.3;
     word-break: break-all;
 }
 .vs-label {
-    font-size: clamp(14px, 2vw, 22px);
+    font-size: 0.85em;
     font-weight: 900;
-    color: #aaa;
+    color: #888;
     flex-shrink: 0;
 }
 
@@ -147,26 +152,27 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(8px, 2vw, 20px);
+    gap: 0.4em;
     flex-shrink: 0;
 }
 .score-val {
-    font-size: clamp(30px, 6vw, 72px);
+    font-size: 3.2em;
     font-weight: 900;
     line-height: 1;
-    min-width: 1.2em;
+    min-width: 1em;
     text-align: center;
 }
 .score-val.t1 { color: #90caf9; }
 .score-val.t2 { color: #a5d6a7; }
-.score-hyphen { font-size: clamp(24px, 4vw, 50px); color: #555; font-weight: bold; }
+.score-hyphen { font-size: 2em; color: #555; font-weight: bold; }
 
-/* サブメッセージ（呼び出し中・次試合） */
+/* サブメッセージ */
 .sub-msg {
     text-align: center;
-    font-size: clamp(11px, 1.6vw, 18px);
+    font-size: 0.75em;
     font-weight: bold;
     flex-shrink: 0;
+    padding-bottom: 0.3em;
 }
 .sub-msg.calling { color: #f9a825; }
 .sub-msg.next    { color: #90caf9; }
@@ -174,47 +180,44 @@ html, body {
 /* ── 休憩中エリア ── */
 #resting-section {
     background: #1b2a3b;
-    border-radius: 10px;
-    padding: 8px 16px;
+    border-radius: 0.4em;
+    padding: 0.3em 0.8em;
     flex-shrink: 0;
     display: none;
 }
 #resting-section.visible { display: block; }
 #resting-label {
-    font-size: clamp(11px, 1.4vw, 15px);
+    font-size: 0.65em;
     color: #90caf9;
     font-weight: bold;
-    margin-bottom: 4px;
+    margin-bottom: 0.2em;
 }
 #resting-list {
-    font-size: clamp(12px, 1.6vw, 17px);
+    font-size: 0.75em;
     color: #ccc;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 20px;
-}
-.resting-player {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    gap: 0.2em 1em;
 }
 
-/* ── エラー・待機画面 ── */
+/* ── 待機画面 ── */
 #waiting {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     background: #0d1b2a;
-    font-size: 20px; color: #90caf9;
-    gap: 16px; z-index: 10;
+    color: #90caf9;
+    gap: 0.8em; z-index: 10;
+    font-size: 1.2em;
 }
+#waiting .icon { font-size: 3em; }
 #waiting.hidden { display: none; }
 </style>
 </head>
 <body>
 
 <div id="waiting">
-    <div style="font-size:48px;">📺</div>
+    <div class="icon">📺</div>
     <div id="waiting-msg">接続中...</div>
 </div>
 
