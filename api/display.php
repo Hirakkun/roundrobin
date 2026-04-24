@@ -10,7 +10,7 @@ header('Content-Type: text/html; charset=UTF-8');
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>試合案内パネル</title>
 <style>
-/* ── CSS変数（ダーク/ライト共通構造） ── */
+/* ── CSS変数 ── */
 :root {
     --bg-main:    #0d1b2a;
     --bg-header:  #1b2a3b;
@@ -26,14 +26,10 @@ header('Content-Type: text/html; charset=UTF-8');
     --text-clock: #90caf9;
     --score-t1:   #90caf9;
     --score-t2:   #a5d6a7;
-    --badge-calling-bg: #f9a825; --badge-calling-fg: #111;
-    --badge-playing-bg: #2e7d32; --badge-playing-fg: #fff;
-    --badge-done-bg:    #555;    --badge-done-fg:    #aaa;
     --sub-calling: #f9a825;
     --num-bg:     #1565c0;
     --num-fg:     #fff;
-    --resting-bg: #1b2a3b;
-    --resting-fg: #90caf9;
+    --ticker-fg:  #90caf9;
 }
 body.light {
     --bg-main:    #f0f4f8;
@@ -50,22 +46,15 @@ body.light {
     --text-clock: #1565c0;
     --score-t1:   #1565c0;
     --score-t2:   #2e7d32;
-    --badge-calling-bg: #f59f00; --badge-calling-fg: #fff;
-    --badge-playing-bg: #2e7d32; --badge-playing-fg: #fff;
-    --badge-done-bg:    #bbb;    --badge-done-fg:    #555;
     --sub-calling: #e67700;
     --num-bg:     #1565c0;
     --num-fg:     #fff;
-    --resting-bg: #dce8f5;
-    --resting-fg: #1565c0;
+    --ticker-fg:  #1565c0;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html {
-    /* ベースフォント: 画面幅・高さ両方に追従 */
-    font-size: min(2.8vw, 5vh);
-}
+html { font-size: min(2.8vw, 5vh); }
 body {
     height: 100vh; width: 100%;
     font-family: 'Arial', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
@@ -88,30 +77,54 @@ body {
 #header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     background: var(--bg-header);
     border-radius: 0.3em;
     padding: 0.12em 0.5em;
     flex-shrink: 0;
     gap: 0.5em;
+    overflow: hidden;
 }
 #event-name {
     font-size: 0.85em;
     font-weight: bold;
     color: var(--text-main);
     letter-spacing: 0.03em;
-    flex: 1;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex-shrink: 0;
 }
+
+/* ── テロップ ── */
+#ticker-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    height: 1.4em;
+    display: flex;
+    align-items: center;
+}
+#ticker-inner {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    font-size: 0.72em;
+    font-weight: bold;
+    color: var(--ticker-fg);
+    animation: ticker-scroll linear infinite;
+    will-change: transform;
+}
+#ticker-inner.paused { animation-play-state: paused; }
+@keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* ── ヘッダー右 ── */
 #header-right {
     display: flex;
     align-items: center;
     gap: 0.5em;
     flex-shrink: 0;
 }
-/* テーマトグル */
 #theme-toggle {
     display: flex;
     align-items: center;
@@ -125,8 +138,7 @@ body {
 #theme-track {
     position: relative;
     display: inline-block;
-    width: 2.2em;
-    height: 1.2em;
+    width: 2.2em; height: 1.2em;
     background: #555;
     border-radius: 1em;
     transition: background 0.3s;
@@ -134,10 +146,8 @@ body {
 body.light #theme-track { background: #90caf9; }
 #theme-thumb {
     position: absolute;
-    left: 0.15em;
-    top: 0.15em;
-    width: 0.9em;
-    height: 0.9em;
+    left: 0.15em; top: 0.15em;
+    width: 0.9em; height: 0.9em;
     background: #fff;
     border-radius: 50%;
     transition: left 0.3s;
@@ -167,22 +177,21 @@ body.light #theme-thumb { left: 1.15em; }
 /* ── コートカード ── */
 .court-card {
     border-radius: 0.4em;
-    padding: 0.2em 0.45em;
+    padding: 0.2em 0.45em 0.3em;
     display: flex;
     flex-direction: column;
     gap: 0;
     min-height: 0;
     overflow: hidden;
-    transition: border-color 0.4s, background 0.3s, box-shadow 0.4s;
 }
 .court-card.status-calling {
     background: var(--bg-calling);
     border: 0.15em solid var(--bd-calling);
-    animation: pulse-border 1.5s infinite;
+    animation: pulse-card 1.2s ease-in-out infinite;
 }
 .court-card.status-playing {
     background: var(--bg-playing);
-    border: 0.1em solid var(--bd-playing);
+    border: 0.12em solid var(--bd-playing);
 }
 .court-card.status-done {
     background: var(--bg-done);
@@ -195,22 +204,34 @@ body.light #theme-thumb { left: 1.15em; }
     opacity: 0.25;
 }
 
-@keyframes pulse-border {
-    0%,100% { border-color: var(--bd-calling); box-shadow: none; }
-    50%      { border-color: #ffcc02; box-shadow: 0 0 0.4em 0.1em rgba(249,168,37,0.35); }
+/* 呼び出し中：カード全体が明滅 */
+@keyframes pulse-card {
+    0%, 100% {
+        border-color: var(--bd-calling);
+        box-shadow: none;
+    }
+    50% {
+        border-color: #ffe066;
+        box-shadow: 0 0 0.7em 0.2em rgba(249,168,37,0.45);
+    }
+}
+/* 呼び出し中：ヘッダー帯も明滅 */
+@keyframes pulse-head-calling {
+    0%, 100% { background: #f59f00; }
+    50%       { background: #ffd54f; }
 }
 
 /* ── カードヘッダーバー（全幅色帯） ── */
 .card-head {
     display: flex;
     align-items: stretch;
-    margin: -0.2em -0.45em 0.15em;   /* カードのpaddingを打ち消して端まで伸ばす */
+    margin: -0.2em -0.45em 0.18em;
     border-radius: 0.35em 0.35em 0 0;
     overflow: hidden;
     flex-shrink: 0;
-    min-height: 1.9em;
+    min-height: 2em;
 }
-.status-calling .card-head { background: #f59f00; }
+.status-calling .card-head { background: #f59f00; animation: pulse-head-calling 1.2s ease-in-out infinite; }
 .status-playing .card-head { background: #388e3c; }
 .status-done    .card-head { background: #666; }
 .status-empty   .card-head { background: #444; }
@@ -222,8 +243,8 @@ body.light #theme-thumb { left: 1.15em; }
     align-items: center;
     justify-content: center;
     background: rgba(0,0,0,0.28);
-    padding: 0.08em 0.45em;
-    min-width: 2.4em;
+    padding: 0.08em 0.5em;
+    min-width: 2.5em;
     flex-shrink: 0;
     gap: 0;
 }
@@ -240,17 +261,17 @@ body.light #theme-thumb { left: 1.15em; }
     line-height: 1.2;
 }
 
-/* ステータスラベル（中央） */
+/* ステータスラベル（中央）：大きめに */
 .card-head-center {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.72em;
+    font-size: 1em;
     font-weight: 900;
     color: #fff;
-    letter-spacing: 0.05em;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    letter-spacing: 0.06em;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.35);
 }
 
 /* アイコン（右） */
@@ -258,10 +279,10 @@ body.light #theme-thumb { left: 1.15em; }
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 0.4em;
-    font-size: 0.85em;
+    padding: 0 0.45em;
     flex-shrink: 0;
 }
+.card-head-icon svg { width: 1.15em; height: 1.15em; }
 
 /* ── チーム表示 ── */
 .match-row {
@@ -276,41 +297,43 @@ body.light #theme-thumb { left: 1.15em; }
 .team-block {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;   /* 左詰め */
     justify-content: center;
-    gap: 0;
+    gap: 0.05em;
     flex: 1;
     min-width: 0;
     overflow: hidden;
+    padding: 0 0.2em;
 }
 .player-name {
     font-size: 1.15em;
     font-weight: bold;
-    text-align: center;
-    line-height: 1.12;
+    text-align: left;
+    line-height: 1.15;
     white-space: nowrap;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.2em;
+    justify-content: flex-start;   /* 左詰め */
+    gap: 0.25em;
     max-width: 100%;
 }
 
-/* 選手番号バッジ（氏名と同じサイズ、丸バッジ） */
+/* 選手番号バッジ：○（1・2桁とも同じサイズの円） */
 .player-num {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: var(--num-bg);
     color: var(--num-fg);
-    border-radius: 0.3em;
-    font-size: 0.82em;
+    border-radius: 50%;
+    width: 1.55em;
+    height: 1.55em;
+    font-size: 0.68em;   /* player-name の 0.68倍 → 2桁でも収まる */
     font-weight: 900;
-    min-width: 1.4em;
-    height: 1.4em;
-    padding: 0 0.2em;
     flex-shrink: 0;
     line-height: 1;
+    overflow: hidden;
+    letter-spacing: -0.03em;
 }
 
 .vs-label {
@@ -320,13 +343,10 @@ body.light #theme-thumb { left: 1.15em; }
     flex-shrink: 0;
 }
 
-/* ── 呼び出し中：選手名を大きく ── */
-.court-card.status-calling .player-name {
-    font-size: 1.85em;
-    line-height: 1.1;
-}
-.court-card.status-calling .vs-label { font-size: 1.1em; }
-.court-card.status-calling .sub-msg  { font-size: 0.8em; }
+/* 呼び出し中：選手名を大きく */
+.court-card.status-calling .player-name { font-size: 1.8em; line-height: 1.1; }
+.court-card.status-calling .vs-label    { font-size: 1.05em; }
+.court-card.status-calling .sub-msg     { font-size: 0.78em; }
 
 /* ── スコア ── */
 .score-row {
@@ -358,29 +378,6 @@ body.light #theme-thumb { left: 1.15em; }
     color: var(--sub-calling);
 }
 
-/* ── 休憩中エリア ── */
-#resting-section {
-    background: var(--resting-bg);
-    border-radius: 0.3em;
-    padding: 0.2em 0.6em;
-    flex-shrink: 0;
-    display: none;
-}
-#resting-section.visible { display: block; }
-#resting-label {
-    font-size: 0.65em;
-    color: var(--resting-fg);
-    font-weight: bold;
-    margin-bottom: 0.1em;
-}
-#resting-list {
-    font-size: 0.75em;
-    color: var(--text-main);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.15em 1em;
-}
-
 /* ── 待機画面 ── */
 #waiting {
     position: fixed; inset: 0;
@@ -405,21 +402,20 @@ body.light #theme-thumb { left: 1.15em; }
 <div id="app" style="display:none;">
     <div id="header">
         <div id="event-name">試合案内パネル</div>
+        <!-- スクロールテロップ -->
+        <div id="ticker-wrap">
+            <div id="ticker-inner"></div>
+        </div>
         <div id="header-right">
-            <!-- テーマトグル -->
             <div id="theme-toggle" onclick="toggleTheme()">
-                <span class="theme-icon" id="theme-icon">🌙</span>
+                <span class="theme-icon">🌙</span>
                 <div id="theme-track"><div id="theme-thumb"></div></div>
-                <span class="theme-icon" id="theme-icon2">☀️</span>
+                <span class="theme-icon">☀️</span>
             </div>
             <div id="current-time">--:--</div>
         </div>
     </div>
     <div id="courts-grid"></div>
-    <div id="resting-section">
-        <div id="resting-label">🛌 休憩中</div>
-        <div id="resting-list"></div>
-    </div>
 </div>
 
 <script type="module">
@@ -438,6 +434,22 @@ const firebaseConfig = {
 
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 
+// ── アイコンSVG（絵文字に依存しないSVG） ──
+const ICON_PLAYING = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+  <ellipse cx="9" cy="9" rx="7" ry="7"/>
+  <line x1="5" y1="9" x2="13" y2="9"/>
+  <line x1="9" y1="5" x2="9" y2="13"/>
+  <line x1="14.5" y1="14.5" x2="21" y2="21" stroke-width="3"/>
+</svg>`;
+const ICON_CALLING = `<svg viewBox="0 0 24 24" fill="white">
+  <path d="M3 9v6h4l5 5V4L7 9H3z"/>
+  <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" fill="white"/>
+  <path d="M19.5 12c0 3.04-1.73 5.68-4.25 7.0l.75 1.3C19.33 18.62 21.5 15.56 21.5 12s-2.17-6.62-5.5-8.3l-.75 1.3C17.77 6.32 19.5 8.96 19.5 12z" fill="white"/>
+</svg>`;
+const ICON_DONE = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="20 6 9 17 4 12"/>
+</svg>`;
+
 // ── URLパラメータ ──
 const params = new URLSearchParams(location.search);
 const sid    = params.get('sid');
@@ -449,7 +461,6 @@ if (!sid) {
 // ── テーマ ──
 const savedTheme = localStorage.getItem('display_theme') || 'dark';
 if (savedTheme === 'light') document.body.classList.add('light');
-
 window.toggleTheme = function() {
     const isLight = document.body.classList.toggle('light');
     localStorage.setItem('display_theme', isLight ? 'light' : 'dark');
@@ -487,11 +498,11 @@ onValue(ref(db, 'sessions/' + encodeURIComponent(sid)), snap => {
     const raw = snap.val();
     state = {
         courts:          raw.courts || 1,
-        schedule:        Array.isArray(raw.schedule)  ? raw.schedule  : [],
-        scores:          raw.scores          || {},
-        players:         Array.isArray(raw.players)   ? raw.players   : [],
-        playerNames:     raw.playerNames     || {},
-        roster:          Array.isArray(raw.roster)    ? raw.roster    : [],
+        schedule:        Array.isArray(raw.schedule) ? raw.schedule : [],
+        scores:          raw.scores         || {},
+        players:         Array.isArray(raw.players)  ? raw.players  : [],
+        playerNames:     raw.playerNames    || {},
+        roster:          Array.isArray(raw.roster)   ? raw.roster   : [],
         courtNameAlpha:  !!raw.courtNameAlpha,
         showPlayerNum:   !!raw.showPlayerNum,
         announcedCourts: raw.announcedCourts || {},
@@ -515,17 +526,17 @@ function getPlayerName(id) {
 // ── コートラベル ──
 function getCourtLabel(physIdx) {
     if (state.courtNameAlpha) {
-        return { big: COURT_ALPHA[physIdx] || (physIdx + 1), small: 'コート' };
+        return { big: COURT_ALPHA[physIdx] || (physIdx + 1) };
     }
-    return { big: physIdx + 1, small: 'コート', prefix: '第' };
+    return { big: physIdx + 1 };
 }
 
-// ── ステータス判定（next廃止：未開始=calling） ──
+// ── ステータス判定 ──
 function getCourtStatus(mid) {
     const sc = state.scores?.[mid];
     if (sc?.done) return 'done';
     if (sc && (sc.s1 > 0 || sc.s2 > 0)) return 'playing';
-    return 'calling'; // announced/unannounced どちらも calling
+    return 'calling';
 }
 
 function _esc(s) {
@@ -543,14 +554,14 @@ function teamHTML(ids) {
     }).join('');
 }
 
-// ── テキスト自動縮小（あふれたら縮める） ──
+// ── テキスト自動縮小 ──
 function fitPlayerNames() {
     requestAnimationFrame(() => {
         document.querySelectorAll('.player-name').forEach(el => {
-            el.style.fontSize = ''; // CSSのサイズにリセット
+            el.style.fontSize = '';
             const parent = el.closest('.team-block');
             if (!parent) return;
-            const maxW = parent.clientWidth - 4;
+            const maxW = parent.clientWidth - 8;
             if (el.scrollWidth <= maxW) return;
             let size = parseFloat(getComputedStyle(el).fontSize);
             while (el.scrollWidth > maxW && size > 8) {
@@ -558,15 +569,77 @@ function fitPlayerNames() {
                 el.style.fontSize = size + 'px';
             }
         });
+        normalizeBadgeSizes();
     });
 }
 window.addEventListener('resize', fitPlayerNames);
+
+// ── ペア内の○バッジサイズを統一（小さい方に合わせる） ──
+function normalizeBadgeSizes() {
+    document.querySelectorAll('.team-block').forEach(block => {
+        const badges = Array.from(block.querySelectorAll('.player-num'));
+        if (badges.length < 2) return;
+        // リセット
+        badges.forEach(b => { b.style.width = ''; b.style.height = ''; });
+        // 最小px幅を取得して揃える
+        const sizes = badges.map(b => b.getBoundingClientRect().width);
+        const minSz = Math.min(...sizes);
+        if (minSz > 0) {
+            badges.forEach(b => {
+                b.style.width  = minSz + 'px';
+                b.style.height = minSz + 'px';
+            });
+        }
+    });
+}
+
+// ── テロップ更新 ──
+function updateTicker() {
+    const ticker = document.getElementById('ticker-inner');
+    if (!ticker || !state) return;
+
+    const items = [];
+
+    // 休憩中選手
+    const resting = (state.players || []).filter(p => p.resting);
+    if (resting.length) {
+        const names = resting.map(p => getPlayerName(p.id)).join('、');
+        items.push('🛌 待機中：' + names);
+    }
+
+    // ペア情報（同一試合の同一チームを「・」で結合して表示）
+    if (state.schedule?.length) {
+        const lastRound = state.schedule[state.schedule.length - 1];
+        if (lastRound?.courts) {
+            lastRound.courts.forEach(ct => {
+                const t1 = (ct.team1 || []).map(id => getPlayerName(id)).join(' ・ ');
+                const t2 = (ct.team2 || []).map(id => getPlayerName(id)).join(' ・ ');
+                if (t1 && t2) items.push(`${t1}　vs　${t2}`);
+            });
+        }
+    }
+
+    if (!items.length) {
+        ticker.style.display = 'none';
+        return;
+    }
+    ticker.style.display = '';
+
+    // コンテンツを2倍にしてシームレスループ
+    const text = items.join('　　　◆　　　');
+    const full  = text + '　　　　　　' + text;
+    ticker.textContent = full;
+
+    // 速度：文字数に応じた秒数（1文字あたり約0.22秒）
+    const duration = Math.max(10, text.length * 0.22);
+    ticker.style.animationDuration = duration + 's';
+}
 
 // ── 描画 ──
 function render() {
     if (!state) return;
     renderCourts();
-    renderResting();
+    updateTicker();
     fitPlayerNames();
 }
 
@@ -575,7 +648,6 @@ function renderCourts() {
     const numCourts = state.courts || 1;
     grid.className = 'cols-' + Math.min(numCourts, 6);
 
-    // 各物理コートの最新未完了試合を取得
     const courtCards = [];
     for (let physIdx = 0; physIdx < numCourts; physIdx++) {
         let found = null;
@@ -622,7 +694,7 @@ function renderCourts() {
         const lbl = getCourtLabel(pi);
 
         const statusTextMap = { calling: '呼び出し中', playing: '試合中', done: '終了' };
-        const iconMap        = { calling: '📢', playing: '🏸', done: '✅' };
+        const iconMap        = { calling: ICON_CALLING, playing: ICON_PLAYING, done: ICON_DONE };
 
         const sc = state.scores?.[mid] || {};
         const s1 = sc.s1 ?? 0;
@@ -642,7 +714,6 @@ function renderCourts() {
                     <div class="score-val t2">${s2}</div>
                 </div>`;
         } else {
-            // calling
             bodyHtml = `
                 <div class="match-row">
                     <div class="team-block">${teamHTML(ct.team1 || [])}</div>
@@ -665,18 +736,6 @@ function renderCourts() {
 
         grid.appendChild(card);
     });
-}
-
-function renderResting() {
-    const restingPlayers = (state.players || []).filter(p => p.resting);
-    const sec  = document.getElementById('resting-section');
-    const list = document.getElementById('resting-list');
-    if (!restingPlayers.length) { sec.classList.remove('visible'); return; }
-    sec.classList.add('visible');
-    list.innerHTML = restingPlayers.map(p => {
-        const name = getPlayerName(p.id);
-        return `<span>🛌 ${_esc(name)}</span>`;
-    }).join('');
 }
 </script>
 </body>
