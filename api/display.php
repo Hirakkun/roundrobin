@@ -103,19 +103,13 @@ body {
     align-items: center;
 }
 #ticker-inner {
-    display: inline-flex;
-    align-items: center;
+    display: inline-block;
     white-space: nowrap;
     font-size: 0.72em;
     font-weight: bold;
     color: var(--ticker-fg);
-    animation: ticker-scroll linear infinite;
     will-change: transform;
-}
-#ticker-inner.paused { animation-play-state: paused; }
-@keyframes ticker-scroll {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    /* アニメーションはJS（Web Animations API）で制御 */
 }
 
 /* ── ヘッダー右 ── */
@@ -597,7 +591,7 @@ function fitPlayerNames() {
         normalizeBadgeSizes();
     });
 }
-window.addEventListener('resize', fitPlayerNames);
+window.addEventListener('resize', () => { fitPlayerNames(); updateTicker(); });
 
 // ── ペア内の○バッジサイズを統一（小さい方に合わせる） ──
 function normalizeBadgeSizes() {
@@ -619,25 +613,41 @@ function normalizeBadgeSizes() {
 }
 
 // ── テロップ更新（休憩中選手のみ） ──
+// Web Animations API を使用：テキストを1本だけ表示し右→左にスクロール（二重表示なし）
+let _tickerAnim = null;
 function updateTicker() {
+    const wrap   = document.getElementById('ticker-wrap');
     const ticker = document.getElementById('ticker-inner');
-    if (!ticker || !state) return;
+    if (!ticker || !wrap || !state) return;
+
+    // 既存アニメーション停止
+    if (_tickerAnim) { _tickerAnim.cancel(); _tickerAnim = null; }
 
     const resting = (state.players || []).filter(p => p.resting);
     if (!resting.length) {
         ticker.textContent = '';
-        ticker.style.animationDuration = '0s';
         return;
     }
 
     const names = resting.map(p => getPlayerName(p.id)).join('　・　');
-    const text   = '🛌 待機中：' + names;
-    // 2倍にしてシームレスループ（translateX -50% で一周）
-    const full   = text + '　　　　　　' + text;
-    ticker.textContent = full;
+    ticker.textContent = '休憩中：' + names;
 
-    const duration = Math.max(8, text.length * 0.22);
-    ticker.style.animationDuration = duration + 's';
+    // レイアウト確定後にサイズを取得してアニメーション開始
+    requestAnimationFrame(() => {
+        const wrapW = wrap.clientWidth;
+        const textW = ticker.scrollWidth;
+        if (textW <= 0 || wrapW <= 0) return;
+
+        // 右端から左へスクロール：開始=ラップ幅（右外）、終了=テキスト幅分（左外）
+        const totalDist = wrapW + textW;
+        const speed     = 90; // px/秒
+        const duration  = (totalDist / speed) * 1000; // ms
+
+        _tickerAnim = ticker.animate([
+            { transform: `translateX(${wrapW}px)` },
+            { transform: `translateX(${-textW}px)` }
+        ], { duration, iterations: Infinity, easing: 'linear' });
+    });
 }
 
 // ── 描画 ──

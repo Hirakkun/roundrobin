@@ -3042,17 +3042,43 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     if (fromPhysicalIndex === undefined) {
         const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
         const canAdd = lastRd && lastRd.courts.length < state.courts;
+
+        // 現在進行中（スコアあり・未終了）の物理コートを特定
+        const inProgressPhy = new Set();
+        state.schedule.forEach(rd => {
+            rd.courts.forEach((ct, ci) => {
+                const mid = `r${rd.round}c${ci}`;
+                const sc = state.scores?.[mid];
+                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0)) {
+                    const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+                    inProgressPhy.add(pi);
+                }
+            });
+        });
+
         if (canAdd) {
-            // 既存ラウンドに追加 → そのラウンドで未使用の物理コートを先頭から選ぶ
+            // 既存ラウンドに追加 → そのラウンドで未使用 かつ 進行中でない物理コートを先頭から選ぶ
             const usedPhy = new Set(lastRd.courts.map((ct, ci) =>
                 ct.physicalIndex !== undefined ? ct.physicalIndex : ci));
-            fromPhysicalIndex = 0;
+            fromPhysicalIndex = -1;
+            // まず進行中を避けて選ぶ
             for (let i = 0; i < (state.courts || 2); i++) {
-                if (!usedPhy.has(i)) { fromPhysicalIndex = i; break; }
+                if (!usedPhy.has(i) && !inProgressPhy.has(i)) { fromPhysicalIndex = i; break; }
             }
+            // 全コートが進行中の場合はフォールバック（進行中も含めて選ぶ）
+            if (fromPhysicalIndex < 0) {
+                for (let i = 0; i < (state.courts || 2); i++) {
+                    if (!usedPhy.has(i)) { fromPhysicalIndex = i; break; }
+                }
+            }
+            if (fromPhysicalIndex < 0) fromPhysicalIndex = 0;
         } else {
-            // 新しいラウンドを開始 → コート0（A）から
-            fromPhysicalIndex = 0;
+            // 新しいラウンドを開始 → 進行中でない最初のコートから
+            fromPhysicalIndex = -1;
+            for (let i = 0; i < (state.courts || 2); i++) {
+                if (!inProgressPhy.has(i)) { fromPhysicalIndex = i; break; }
+            }
+            if (fromPhysicalIndex < 0) fromPhysicalIndex = 0;
         }
     }
 
@@ -3208,7 +3234,8 @@ function renderMatchContainer() {
                     const courtDoneBtn = showCourtDoneBtn
                         ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ 試合終了</button>`
                         : '';
-                    const announceBtn = isAdmin && state.geminiApiKey
+                    // APIキーが設定済み かつ 試合未終了の場合のみアナウンスボタンを表示
+                    const announceBtn = isAdmin && state.geminiApiKey && !courtDone
                         ? `<button class="announce-btn" onclick="announceMatch(${rd.round},${arrayIdx},${physIdx},this)">📢 アナウンス</button>`
                         : '';
                     return `
