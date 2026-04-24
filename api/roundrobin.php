@@ -161,6 +161,8 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
     .match-card-done-wrap.expanded .done-arrow { transform:rotate(180deg); display:inline-block; }
 }
 .court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
+.court-start-btn { background:#2e7d32 !important; }
+.court-start-btn:active { background:#1b5e20 !important; }
 .announce-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#f57f17; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
 .announce-btn:active { background:#e65100; }
 .announce-btn:disabled { background:#b0bec5; cursor:not-allowed; }
@@ -2516,7 +2518,7 @@ function onNextRoundBtn() {
             rd.courts.forEach((ct, ci) => {
                 const mid = `r${rd.round}c${ci}`;
                 const sc  = state.scores?.[mid];
-                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0)) {
+                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0 || sc.status === 'playing')) {
                     inProgressPhy.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
                 }
             });
@@ -2904,6 +2906,16 @@ function markCourtDone(roundNum, courtIndex) {
     // 自動OFF・順次OFFの場合は手動で「次の試合を作る」ボタンを押す
 }
 
+// コート試合開始ボタン（呼び出し中 → 試合中）
+function markCourtStarted(roundNum, courtIndex) {
+    if (isEventLocked()) return;
+    const mid = `r${roundNum}c${courtIndex}`;
+    if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
+    state.scores[mid].status = 'playing';
+    saveState();
+    renderMatchContainer();
+}
+
 // ラウンド終了ボタン（一括モード）
 function markRoundDone(e, roundNum) {
     e.stopPropagation();
@@ -3080,7 +3092,7 @@ function assignNextPoolMatch(fromPhysicalIndex) {
             rd.courts.forEach((ct, ci) => {
                 const mid = `r${rd.round}c${ci}`;
                 const sc = state.scores?.[mid];
-                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0)) {
+                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0 || sc.status === 'playing')) {
                     const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
                     inProgressPhy.add(pi);
                 }
@@ -3130,6 +3142,7 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
     const canAddToLast = lastRd && lastRd.courts.length < state.courts;
 
+    let newMid;
     if (canAddToLast) {
         // 既存ラウンドに追加
         lastRd.courts.push({ team1: nextMatch.team1, team2: nextMatch.team2, physicalIndex: fromPhysicalIndex });
@@ -3139,6 +3152,7 @@ function assignNextPoolMatch(fromPhysicalIndex) {
             const p = state.players.find(pp => pp.id === id);
             if (p) { p.lastRound = lastRd.round; p.isOnCourt = true; }
         });
+        newMid = `r${lastRd.round}c${lastRd.courts.length - 1}`;
     } else {
         // 新ラウンドを作成
         const roundNum = state.roundCount + 1;
@@ -3154,7 +3168,12 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         });
         state.schedule.push({ round: roundNum, courts: [{ team1: nextMatch.team1, team2: nextMatch.team2, physicalIndex: fromPhysicalIndex }], playerStates });
         state.roundCount = roundNum;
+        newMid = `r${roundNum}c0`;
     }
+    // 新試合のステータスを「呼び出し中」で初期化
+    if (!state.scores) state.scores = {};
+    if (!state.scores[newMid]) state.scores[newMid] = { s1: 0, s2: 0 };
+    state.scores[newMid].status = 'calling';
 
     // プールが空になったら次バッチを非同期で補充
     if (state.matchPool.length === 0) {
@@ -3261,9 +3280,22 @@ function renderMatchContainer() {
                     }
 
                     // 通常表示（未終了コート）
+                    // status が未設定の場合はスコアで後方互換判定
+                    const courtStatus = sc.status
+                        || ((sc.s1 > 0 || sc.s2 > 0) ? 'playing' : 'calling');
+                    const isCalling = courtStatus === 'calling';
+
                     const showCourtDoneBtn = isAdmin && !isEventLocked() && autoOrSeq && !courtDone;
                     const courtDoneBtn = showCourtDoneBtn
-                        ? `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ 試合終了</button>`
+                        ? isCalling
+                            ? `<button class="court-done-btn court-start-btn" onclick="markCourtStarted(${rd.round},${arrayIdx})">▶ 試合開始</button>`
+                            : `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ 試合終了</button>`
+                        : '';
+                    // ステータスバッジ
+                    const statusBadge = showCourtDoneBtn
+                        ? isCalling
+                            ? `<span style="font-size:11px;font-weight:bold;color:#ff9800;white-space:nowrap;">📢 呼び出し中</span>`
+                            : `<span style="font-size:11px;font-weight:bold;color:#4caf50;white-space:nowrap;">🏸 試合中</span>`
                         : '';
                     // APIキーが設定済み かつ 試合未終了の場合のみアナウンスボタンを表示
                     const announceBtn = isAdmin && state.geminiApiKey && !courtDone
@@ -3274,6 +3306,7 @@ function renderMatchContainer() {
                         <div class="match-header-row">
                             ${getCourtNameHTML(physIdx)}
                             <div style="display:flex;gap:4px;align-items:center;">
+                                ${statusBadge}
                                 ${announceBtn}
                                 ${courtDoneBtn}
                             </div>

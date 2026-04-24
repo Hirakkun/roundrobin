@@ -510,8 +510,25 @@ function onStateUpdate(state) {
         return;
     }
 
-    // 試合進行中 → メイン画面を表示
-    showMain();
+    // ─ 同じ試合 → status で画面を決定 ─────────────────────────
+    // status が未設定の場合はスコアで後方互換判定
+    const courtStatus = found.sc.status
+        || ((found.sc.s1 > 0 || found.sc.s2 > 0) ? 'playing' : 'calling');
+
+    if (courtStatus === 'playing') {
+        if (matchStarted) {
+            showMain();             // 通常の試合中
+        } else {
+            showServeSetup();       // Firebase側がplayingだが手元でサーブ未選択
+        }
+    } else {
+        // 'calling'
+        if (matchStarted) {
+            resetMatch();           // 外部からcallingに戻された → リセット
+        } else {
+            showServeSetup();       // 通常のサーブ待ち
+        }
+    }
 }
 
 // ── 選手名生成 ───────────────────────────────────────────────
@@ -620,6 +637,8 @@ window.onCourtSideSelect = function(side) {
     hideAll();
     matchStarted = true;
     showMain();
+    // Firebase に「試合中」を書き込む
+    writeStatus('playing');
 };
 
 // ── メイン画面表示 ────────────────────────────────────────────
@@ -770,6 +789,8 @@ window.undoLastPoint = function() {
         game_score_t1 = 0; game_score_t2 = 0;
         current_server = 1;
         showServeSetup();
+        // Firebase に「呼び出し中」とスコアリセットを書き込む
+        writeStatus('calling', true);
         return;
     }
     if (game_is_over) {
@@ -895,6 +916,19 @@ function swapHistoryRows() {
         const r = row.querySelector('.history-score-right');
         [l.innerHTML, r.innerHTML] = [r.innerHTML, l.innerHTML];
     });
+}
+
+// ── ステータス書き込み ─────────────────────────────────────────
+async function writeStatus(status, resetScores = false) {
+    if (!currentMid) return;
+    const upd = {};
+    upd['scores/' + currentMid + '/status'] = status;
+    if (resetScores) {
+        upd['scores/' + currentMid + '/s1'] = 0;
+        upd['scores/' + currentMid + '/s2'] = 0;
+    }
+    upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
+    await update(stateRef, upd);
 }
 
 // ── Firebase書き込み ───────────────────────────────────────────
