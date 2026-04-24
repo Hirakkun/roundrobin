@@ -204,7 +204,7 @@ body.light #theme-thumb { left: 1.15em; }
     opacity: 0.25;
 }
 
-/* 呼び出し中：カード全体が明滅 */
+/* 呼び出し中：カード全体が明滅（ダーク） */
 @keyframes pulse-card {
     0%, 100% {
         border-color: var(--bd-calling);
@@ -215,10 +215,33 @@ body.light #theme-thumb { left: 1.15em; }
         box-shadow: 0 0 0.7em 0.2em rgba(249,168,37,0.45);
     }
 }
-/* 呼び出し中：ヘッダー帯も明滅 */
+/* 呼び出し中：ヘッダー帯も明滅（ダーク） */
 @keyframes pulse-head-calling {
     0%, 100% { background: #f59f00; }
     50%       { background: #ffd54f; }
+}
+/* ライトモード専用：より強い明滅（橙→深橙） */
+@keyframes pulse-card-light {
+    0%, 100% {
+        border-color: #f59f00;
+        background: #fff8e1;
+        box-shadow: none;
+    }
+    50% {
+        border-color: #d84315;
+        background: #ffe0b2;
+        box-shadow: 0 0 0.9em 0.35em rgba(216,67,21,0.55), inset 0 0 0.5em rgba(216,67,21,0.12);
+    }
+}
+@keyframes pulse-head-calling-light {
+    0%, 100% { background: #f59f00; }
+    50%       { background: #d84315; }
+}
+body.light .court-card.status-calling {
+    animation: pulse-card-light 1.2s ease-in-out infinite;
+}
+body.light .status-calling .card-head {
+    animation: pulse-head-calling-light 1.2s ease-in-out infinite;
 }
 
 /* ── カードヘッダーバー（全幅色帯） ── */
@@ -435,11 +458,13 @@ const firebaseConfig = {
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 
 // ── アイコンSVG（絵文字に依存しないSVG） ──
-const ICON_PLAYING = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
-  <ellipse cx="9" cy="9" rx="7" ry="7"/>
-  <line x1="5" y1="9" x2="13" y2="9"/>
-  <line x1="9" y1="5" x2="9" y2="13"/>
-  <line x1="14.5" y1="14.5" x2="21" y2="21" stroke-width="3"/>
+// コートを上から見た形（バドミントンコート）
+const ICON_PLAYING = `<svg viewBox="0 0 28 20" fill="none" stroke="white" stroke-linecap="square">
+  <rect x="1" y="1" width="26" height="18" stroke-width="1.8"/>
+  <line x1="1"  y1="10" x2="27" y2="10" stroke-width="2.8"/>
+  <line x1="14" y1="1"  x2="14" y2="19" stroke-width="1.4"/>
+  <line x1="5"  y1="1"  x2="5"  y2="19" stroke-width="1.2"/>
+  <line x1="23" y1="1"  x2="23" y2="19" stroke-width="1.2"/>
 </svg>`;
 const ICON_CALLING = `<svg viewBox="0 0 24 24" fill="white">
   <path d="M3 9v6h4l5 5V4L7 9H3z"/>
@@ -593,45 +618,25 @@ function normalizeBadgeSizes() {
     });
 }
 
-// ── テロップ更新 ──
+// ── テロップ更新（休憩中選手のみ） ──
 function updateTicker() {
     const ticker = document.getElementById('ticker-inner');
     if (!ticker || !state) return;
 
-    const items = [];
-
-    // 休憩中選手
     const resting = (state.players || []).filter(p => p.resting);
-    if (resting.length) {
-        const names = resting.map(p => getPlayerName(p.id)).join('、');
-        items.push('🛌 待機中：' + names);
-    }
-
-    // ペア情報（同一試合の同一チームを「・」で結合して表示）
-    if (state.schedule?.length) {
-        const lastRound = state.schedule[state.schedule.length - 1];
-        if (lastRound?.courts) {
-            lastRound.courts.forEach(ct => {
-                const t1 = (ct.team1 || []).map(id => getPlayerName(id)).join(' ・ ');
-                const t2 = (ct.team2 || []).map(id => getPlayerName(id)).join(' ・ ');
-                if (t1 && t2) items.push(`${t1}　vs　${t2}`);
-            });
-        }
-    }
-
-    if (!items.length) {
-        ticker.style.display = 'none';
+    if (!resting.length) {
+        ticker.textContent = '';
+        ticker.style.animationDuration = '0s';
         return;
     }
-    ticker.style.display = '';
 
-    // コンテンツを2倍にしてシームレスループ
-    const text = items.join('　　　◆　　　');
-    const full  = text + '　　　　　　' + text;
+    const names = resting.map(p => getPlayerName(p.id)).join('　・　');
+    const text   = '🛌 待機中：' + names;
+    // 2倍にしてシームレスループ（translateX -50% で一周）
+    const full   = text + '　　　　　　' + text;
     ticker.textContent = full;
 
-    // 速度：文字数に応じた秒数（1文字あたり約0.22秒）
-    const duration = Math.max(10, text.length * 0.22);
+    const duration = Math.max(8, text.length * 0.22);
     ticker.style.animationDuration = duration + 's';
 }
 
