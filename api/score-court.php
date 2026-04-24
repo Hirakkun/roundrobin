@@ -553,7 +553,8 @@ function resetMatch() {
 
 // ── セットアップ画面共通タイトル更新 ────────────────────────
 function updateSetupTitles() {
-    const text = currentRoundLabel ? currentRoundLabel + '　' + courtLabel : courtLabel;
+    const base = currentRoundLabel ? currentRoundLabel + '　' + courtLabel : courtLabel;
+    const text = base + '　' + MATCH_GAMES + 'ゲームマッチ';
     ['serve-match-title', 'court-match-title'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = text;
