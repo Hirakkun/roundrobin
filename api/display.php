@@ -200,29 +200,68 @@ body.light #theme-thumb { left: 1.15em; }
     50%      { border-color: #ffcc02; box-shadow: 0 0 0.4em 0.1em rgba(249,168,37,0.35); }
 }
 
-/* ── カードヘッダー ── */
+/* ── カードヘッダーバー（全幅色帯） ── */
 .card-head {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: stretch;
+    margin: -0.2em -0.45em 0.15em;   /* カードのpaddingを打ち消して端まで伸ばす */
+    border-radius: 0.35em 0.35em 0 0;
+    overflow: hidden;
     flex-shrink: 0;
-    line-height: 1;
-    padding-bottom: 0.05em;
+    min-height: 1.9em;
 }
-.court-label-wrap  { display: flex; align-items: baseline; gap: 0.06em; }
-.court-label-big   { font-size: 1.4em; font-weight: 900; line-height: 1; }
-.court-label-small { font-size: 0.55em; font-weight: bold; }
+.status-calling .card-head { background: #f59f00; }
+.status-playing .card-head { background: #388e3c; }
+.status-done    .card-head { background: #666; }
+.status-empty   .card-head { background: #444; }
 
-.status-badge {
-    font-size: 0.55em;
-    font-weight: bold;
-    padding: 0.18em 0.6em;
-    border-radius: 2em;
-    white-space: nowrap;
+/* コートバッジ（左の暗いボックス） */
+.court-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.28);
+    padding: 0.08em 0.45em;
+    min-width: 2.4em;
+    flex-shrink: 0;
+    gap: 0;
 }
-.status-badge.calling { background: var(--badge-calling-bg); color: var(--badge-calling-fg); }
-.status-badge.playing { background: var(--badge-playing-bg); color: var(--badge-playing-fg); }
-.status-badge.done    { background: var(--badge-done-bg);    color: var(--badge-done-fg); }
+.court-letter {
+    font-size: 1.6em;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+}
+.court-text {
+    font-size: 0.4em;
+    font-weight: bold;
+    color: rgba(255,255,255,0.9);
+    line-height: 1.2;
+}
+
+/* ステータスラベル（中央） */
+.card-head-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72em;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* アイコン（右） */
+.card-head-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.4em;
+    font-size: 0.85em;
+    flex-shrink: 0;
+}
 
 /* ── チーム表示 ── */
 .match-row {
@@ -565,11 +604,12 @@ function renderCourts() {
             card.classList.add('status-empty');
             const lbl = getCourtLabel(physIdx);
             card.innerHTML = `<div class="card-head">
-                <div class="court-label-wrap">
-                    ${lbl.prefix ? `<span class="court-label-small">${lbl.prefix}</span>` : ''}
-                    <span class="court-label-big">${lbl.big}</span>
-                    <span class="court-label-small">${lbl.small}</span>
+                <div class="court-badge">
+                    <span class="court-letter">${lbl.big}</span>
+                    <span class="court-text">コート</span>
                 </div>
+                <div class="card-head-center"></div>
+                <div class="card-head-icon"></div>
             </div>`;
             grid.appendChild(card);
             return;
@@ -580,14 +620,9 @@ function renderCourts() {
         card.classList.add('status-' + status);
 
         const lbl = getCourtLabel(pi);
-        const prefixHtml = lbl.prefix ? `<span class="court-label-small">${lbl.prefix}</span>` : '';
 
-        const badgeMap = {
-            calling: ['calling', '📢 呼び出し中'],
-            playing: ['playing', '試合中'],
-            done:    ['done',    '終了'],
-        };
-        const [badgeClass, badgeText] = badgeMap[status] || ['calling',''];
+        const statusTextMap = { calling: '呼び出し中', playing: '試合中', done: '終了' };
+        const iconMap        = { calling: '📢', playing: '🏸', done: '✅' };
 
         const sc = state.scores?.[mid] || {};
         const s1 = sc.s1 ?? 0;
@@ -619,12 +654,12 @@ function renderCourts() {
 
         card.innerHTML = `
             <div class="card-head">
-                <div class="court-label-wrap">
-                    ${prefixHtml}
-                    <span class="court-label-big">${lbl.big}</span>
-                    <span class="court-label-small">${lbl.small}</span>
+                <div class="court-badge">
+                    <span class="court-letter">${lbl.big}</span>
+                    <span class="court-text">コート</span>
                 </div>
-                <div class="status-badge ${badgeClass}">${badgeText}</div>
+                <div class="card-head-center">${_esc(statusTextMap[status] || '')}</div>
+                <div class="card-head-icon">${iconMap[status] || ''}</div>
             </div>
             ${bodyHtml}`;
 
