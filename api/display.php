@@ -179,6 +179,21 @@ body {
 .sub-msg.calling { color: #f9a825; }
 .sub-msg.next    { color: #90caf9; }
 
+/* ── 次試合・呼び出し中：選手名をギリギリまで大きく ── */
+.court-card.status-next .player-name,
+.court-card.status-calling .player-name {
+    font-size: 1.85em;
+    line-height: 1.1;
+}
+.court-card.status-next .vs-label,
+.court-card.status-calling .vs-label {
+    font-size: 1.2em;
+}
+.court-card.status-next .sub-msg,
+.court-card.status-calling .sub-msg {
+    font-size: 0.85em;
+}
+
 /* ── 休憩中エリア ── */
 #resting-section {
     background: #1b2a3b;
