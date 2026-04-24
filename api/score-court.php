@@ -223,23 +223,19 @@ header('Content-Type: text/html; charset=UTF-8');
         .setup-btn { font-size: 1.3em; padding: 0.9em 0.7em; text-align: left; }
         .serve-btn-lines {
             display: flex; flex-direction: column;
-            align-items: flex-start; width: 100%; gap: 0.1em;
+            align-items: flex-start; width: 100%; gap: 0.15em;
         }
+        /* 各行：絵文字列(固定幅) + 名前列 の2カラム */
         .serve-line {
             display: flex; align-items: center; gap: 0.25em;
             line-height: 1.35; white-space: nowrap;
         }
-        /* 絵文字列の固定幅列（2行目のインデント基準） */
-        .serve-emoji { flex-shrink: 0; width: 1.4em; text-align: center; }
-        /* 2行目以降：絵文字列分だけ字下げ */
-        .serve-indent { padding-left: 1.4em; }
-        /* 「ペア」バッジ */
-        .serve-pair-label {
-            display: inline-block; margin-left: 0.3em;
-            font-size: 0.72em; font-weight: 900;
-            background: rgba(255,255,255,0.25);
-            border-radius: 0.3em; padding: 0.1em 0.35em;
-            vertical-align: middle; letter-spacing: 0.05em;
+        .serve-col1 {
+            width: 1.5em; flex-shrink: 0; text-align: center;
+            /* 絵文字または空白スペーサーを同じ幅に固定 */
+        }
+        .serve-col2 {
+            display: flex; align-items: center; gap: 0.2em;
         }
 
         /* ===== 完了画面 ===== */
@@ -558,27 +554,19 @@ function updateServeSetupButtons() {
 }
 
 // ペアボタンHTML生成：
-//   🎾 [1人目]
-//      [2人目] ペア   ← 🎾幅分だけ字下げ
+//   🎾  ⑩本多 良子        ← col1=🎾  col2=badge+name
+//   (空)  ㊲古田 八重子    ← col1=空白 col2=badge+name（番号が揃う）
 function buildServeHTML(names) {
     if (!names.length) return '';
     const lines = names.map((n, i) => {
-        const nameHtml = n.withNum
-            ? `<span class="num-badge">${n.id}</span>${n.name}`
-            : n.name;
-        const isLast = (i === names.length - 1);
-        const pairBadge = isLast ? '<span class="serve-pair-label">ペア</span>' : '';
-
-        if (i === 0) {
-            return `<div class="serve-line">
-                        <span class="serve-emoji">🎾</span>
-                        <span>${nameHtml}${pairBadge}</span>
-                    </div>`;
-        } else {
-            return `<div class="serve-line serve-indent">
-                        <span>${nameHtml}${pairBadge}</span>
-                    </div>`;
-        }
+        const badgeHtml = n.withNum
+            ? `<span class="num-badge">${n.id}</span>`
+            : '';
+        const col1 = i === 0 ? '🎾' : ''; // 1行目のみ絵文字
+        return `<div class="serve-line">
+                    <span class="serve-col1">${col1}</span>
+                    <span class="serve-col2">${badgeHtml}${n.name}</span>
+                </div>`;
     });
     return `<div class="serve-btn-lines">${lines.join('')}</div>`;
 }
