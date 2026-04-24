@@ -11,7 +11,15 @@ header('Content-Type: text/html; charset=UTF-8');
     <title>スコア入力</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; font-family: Arial, sans-serif; background: #f4f4f9; }
+
+        /* ベースフォント：画面幅に追従（高齢者対応・大きめ設定） */
+        html {
+            font-size: clamp(20px, 5.8vw, 30px);
+        }
+        body {
+            height: 100%; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', Arial, sans-serif;
+            background: #f4f4f9; font-size: 1rem;
+        }
 
         /* ===== オーバーレイ（待機・接続中） ===== */
         .overlay {
@@ -19,14 +27,14 @@ header('Content-Type: text/html; charset=UTF-8');
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             background: #1a237e; color: #fff;
-            text-align: center; padding: 30px;
+            text-align: center; padding: 1.5em;
         }
-        .overlay .ov-icon { font-size: 64px; margin-bottom: 16px; }
-        .overlay .ov-msg  { font-size: 20px; font-weight: bold; line-height: 1.7; white-space: pre-line; }
-        .overlay .ov-sub  { font-size: 14px; color: #9fa8da; margin-top: 10px; }
-        .loading-dots { display: flex; gap: 8px; margin-top: 20px; justify-content: center; }
+        .overlay .ov-icon { font-size: 3.2em; margin-bottom: 0.7em; }
+        .overlay .ov-msg  { font-size: 1.05em; font-weight: bold; line-height: 1.8; white-space: pre-line; }
+        .overlay .ov-sub  { font-size: 0.75em; color: #9fa8da; margin-top: 0.6em; }
+        .loading-dots { display: flex; gap: 0.4em; margin-top: 1em; justify-content: center; }
         .loading-dots span {
-            width: 12px; height: 12px; background: #7986cb;
+            width: 0.6em; height: 0.6em; background: #7986cb;
             border-radius: 50%; animation: bounce 1.2s infinite;
         }
         .loading-dots span:nth-child(2) { animation-delay: .2s; }
@@ -41,20 +49,25 @@ header('Content-Type: text/html; charset=UTF-8');
             position: fixed; inset: 0; z-index: 40; background: #283593;
             display: none; flex-direction: column;
             align-items: stretch; justify-content: center;
-            gap: 16px; padding: 20px;
+            gap: 0.8em; padding: 1.2em 1em;
         }
-        .setup-screen h2 { color: #fff; font-size: 26px; text-align: center; font-weight: bold; }
-        .setup-screen .sub { color: #9fa8da; font-size: 16px; text-align: center; line-height: 1.7; }
+        .setup-screen h2 {
+            color: #fff; font-size: 1.35em; text-align: center;
+            font-weight: bold; line-height: 1.3;
+        }
+        .setup-screen .sub {
+            color: #c5cae9; font-size: 0.82em;
+            text-align: center; line-height: 1.6;
+        }
         .setup-btn {
-            width: 100%; padding: 22px 16px;
-            border: none; border-radius: 14px;
-            font-size: 20px; font-weight: bold; cursor: pointer;
+            width: 100%; padding: 1.1em 0.8em;
+            border: none; border-radius: 0.65em;
+            font-size: 1.1em; font-weight: bold; cursor: pointer;
             line-height: 1.5; text-align: center;
         }
         .setup-btn:active { opacity: .8; }
         .setup-btn.t1 { background: #1565c0; color: #fff; }
         .setup-btn.t2 { background: #2e7d32; color: #fff; }
-        .setup-btn.neutral { background: #fff; color: #283593; font-size: 18px; }
 
         /* セットアップ画面・バッジの色調整 */
         .setup-btn .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
@@ -62,27 +75,30 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ② サーバー位置選択：コート左右ボタン */
         .court-side-select {
-            display: flex; width: 100%; height: 220px;
-            border-radius: 14px; overflow: hidden; border: 3px solid #fff;
+            display: flex; width: 100%;
+            flex: 1;                       /* 残り縦幅を使い切る */
+            min-height: 10em;
+            max-height: 18em;
+            border-radius: 0.65em; overflow: hidden; border: 3px solid #fff;
         }
         .court-half {
             flex: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            border: none; cursor: pointer; gap: 10px;
+            border: none; cursor: pointer; gap: 0.4em;
             transition: opacity .15s;
         }
         .court-half:active { opacity: .75; }
         .court-half.left-half  { background: #1565c0; color: #fff; }
         .court-half.right-half { background: #2e7d32; color: #fff; }
-        .half-arrow { font-size: 2.2em; font-weight: 900; line-height: 1; }
-        .half-word  { font-size: 1.6em; font-weight: 900; }
-        .half-serve { font-size: 0.95em; opacity: .85; margin-top: 4px; }
+        .half-arrow { font-size: 2.4em; font-weight: 900; line-height: 1; }
+        .half-word  { font-size: 2em;   font-weight: 900; }
+        .half-serve { font-size: 0.8em; opacity: .85; margin-top: 0.2em; }
         .court-net-div {
-            width: 6px; background: #fff; flex-shrink: 0;
+            width: 5px; background: #fff; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
         }
         .court-net-div span {
-            writing-mode: vertical-rl; font-size: 11px;
+            writing-mode: vertical-rl; font-size: 0.5em;
             color: #aaa; letter-spacing: 2px;
         }
 
@@ -90,104 +106,115 @@ header('Content-Type: text/html; charset=UTF-8');
         .court-info-bar {
             background: #283593; color: #fff;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 14px; font-size: 13px; font-weight: bold;
+            padding: 0.35em 0.7em; font-size: 0.75em; font-weight: bold;
+            flex-shrink: 0;
         }
         .court-info-bar .round-name { color: #9fa8da; }
-        .court-info-bar .court-name { font-size: 16px; }
+        .court-info-bar .court-name { font-size: 1.1em; }
         .court-info-bar .games-badge {
-            font-size: 11px; background: rgba(255,255,255,.2);
-            padding: 2px 8px; border-radius: 10px;
+            font-size: 0.85em; background: rgba(255,255,255,.2);
+            padding: 0.15em 0.5em; border-radius: 1em;
         }
 
         /* ===== メイン画面 ===== */
-        .container { width: 100%; min-height: 100%; background: #fff; display: flex; flex-direction: column; }
+        .container {
+            width: 100%; min-height: 100%; background: #fff;
+            display: flex; flex-direction: column;
+        }
 
         /* サーブ/レシーブ + 取消 */
         .header-row {
-            display: flex; justify-content: space-between; align-items: center;
-            font-weight: bold; font-size: 1.1em; background: #f0f0f0;
+            display: flex; justify-content: space-between; align-items: stretch;
+            font-weight: bold; background: #f0f0f0; flex-shrink: 0;
         }
         .role-button {
-            flex: 1; text-align: center; padding: 10px 4px;
+            flex: 1; text-align: center; padding: 0.45em 0.2em;
             cursor: default; border: none; background: transparent;
-            font-size: 1.1em; font-weight: bold;
+            font-size: 0.9em; font-weight: bold;
         }
         .role-button.is-serving { color: #1565c0; background: #cce5ff; }
         .role-button.undo { background: #f8d7da; color: #721c24; cursor: pointer; }
 
         /* チーム名 */
-        .team-name-row { display: flex; align-items: stretch; min-height: 70px; }
+        .team-name-row { display: flex; align-items: stretch; flex-shrink: 0; }
         .team-name-block {
             flex: 1; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 10px 8px; font-size: 20px;
-            font-weight: bold; text-align: center; line-height: 1.6;
+            justify-content: center; padding: 0.4em 0.3em;
+            font-size: 0.95em; font-weight: bold;
+            text-align: center; line-height: 1.5; min-height: 3em;
         }
         .team-name-block.t1 { background: #e3f2fd; color: #0d47a1; }
         .team-name-block.t2 { background: #e8f5e9; color: #1b5e20; }
-        .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 0.25em; }
         .num-badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 28px; height: 28px; border-radius: 50%;
+            width: 1.45em; height: 1.45em; border-radius: 50%;
             background: #1565c0; color: #fff;
-            font-size: 13px; font-weight: bold; flex-shrink: 0;
+            font-size: 0.75em; font-weight: bold; flex-shrink: 0;
         }
         .team-name-block.t2 .num-badge { background: #2e7d32; }
 
         /* ポイントボタン */
-        .player-name-row { display: flex; }
+        .player-name-row { display: flex; flex-shrink: 0; }
         .score-button {
-            flex: 1; padding: 14px 6px; font-size: 0.95em;
+            flex: 1; padding: 0.7em 0.3em; font-size: 0.85em;
             border: none; cursor: pointer; font-weight: bold;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.2em;
         }
-        .score-button .btn-team-name { font-size: 0.9em; opacity: 0.9; line-height: 1.3; }
-        .score-button .btn-point-label { font-size: 1.6em; font-weight: bold; line-height: 1; }
+        .score-button .btn-team-name  { font-size: 0.85em; opacity: 0.9; line-height: 1.3; }
+        .score-button .btn-point-label { font-size: 1.5em; font-weight: bold; line-height: 1; }
         .score-button.p1 { background: #1565c0; color: #fff; }
         .score-button.p2 { background: #2e7d32; color: #fff; }
         .score-button:disabled { background: #ccc; cursor: not-allowed; }
 
         /* 審判コール */
         .umpire-call-area {
-            position: relative; font-size: 1.3em; font-weight: bold; color: #333;
-            padding: 12px 15px; min-height: 1.5em; background: #e9f5ff;
-            border: 2px solid #aed9f7; border-radius: 10px; margin: 10px;
+            position: relative; font-size: 1.15em; font-weight: bold; color: #333;
+            padding: 0.5em 0.7em; min-height: 1.4em; background: #e9f5ff;
+            border: 2px solid #aed9f7; border-radius: 0.5em; margin: 0.45em;
+            flex-shrink: 0;
         }
         .umpire-call-area::after {
-            content: ''; position: absolute; bottom: -12px;
+            content: ''; position: absolute; bottom: -0.6em;
             left: 50%; transform: translateX(-50%);
-            border-width: 12px 12px 0; border-style: solid;
+            border-width: 0.6em 0.6em 0; border-style: solid;
             border-color: #e9f5ff transparent transparent; z-index: 1;
         }
 
         /* 確認ボタン */
         .action-button {
-            width: 100%; padding: 16px; border: none; cursor: pointer;
-            font-size: 1.4em; font-weight: bold; display: none;
+            width: 100%; padding: 0.8em; border: none; cursor: pointer;
+            font-size: 1.3em; font-weight: bold; display: none; flex-shrink: 0;
         }
         .action-button.confirm { background: #ffc107; }
-        .action-button.end     { background: #dc3545; color: #fff; padding: 20px; }
+        .action-button.end     { background: #dc3545; color: #fff; padding: 1em; }
 
         /* ポイント大表示 */
-        .point-score-row { position: relative; display: flex; }
-        .score-point { font-size: 6em; font-weight: 700; flex: 1; text-align: center; cursor: pointer; }
+        .point-score-row { position: relative; display: flex; flex: 1; min-height: 0; }
+        .score-point {
+            font-size: 5.5em; font-weight: 700; flex: 1;
+            text-align: center; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
         .score-point.p1-bg { background: #cce5ff; }
         .score-point.p2-bg { background: #d4edda; }
         .tennis-ball {
-            position: absolute; font-size: 1.5em; opacity: .7;
+            position: absolute; font-size: 1.4em; opacity: .7;
             user-select: none; transition: all .3s; display: none;
         }
 
         /* ゲームスコア */
-        .set-score-area { padding: 10px; background: #f9f9f9; }
-        .set-score-label { font-size: 1.1em; font-weight: 600; color: #555; }
-        .current-set-display { font-size: 2.2em; font-weight: bold; color: #333; }
-        .set-history-display { font-size: 1.4em; color: #666; min-height: 1.5em; }
+        .set-score-area { padding: 0.5em; background: #f9f9f9; flex-shrink: 0; }
+        .set-score-label { font-size: 0.8em; font-weight: 600; color: #555; }
+        .current-set-display { font-size: 2em; font-weight: bold; color: #333; }
+        .set-history-display { font-size: 1.1em; color: #666; min-height: 1.3em; }
         .history-row {
             display: grid; grid-template-columns: 1fr auto 1fr;
             line-height: 1.4; align-items: center;
         }
         .history-score-left  { text-align: right; }
-        .history-hyphen      { text-align: center; }
+        .history-hyphen      { text-align: center; padding: 0 0.3em; }
         .history-score-right { text-align: left; }
         .winner-highlight    { background: yellow; font-weight: bold; }
         hr { border: 0; height: 1px; background: #eee; }
@@ -196,12 +223,13 @@ header('Content-Type: text/html; charset=UTF-8');
         #done-screen {
             position: fixed; inset: 0; z-index: 45; background: #1b5e20;
             display: none; flex-direction: column;
-            align-items: center; justify-content: center; gap: 16px; padding: 30px;
+            align-items: center; justify-content: center;
+            gap: 0.8em; padding: 1.5em;
         }
-        #done-screen .icon  { font-size: 72px; }
-        #done-screen .title { color: #fff; font-size: 24px; font-weight: bold; }
-        #done-screen .score { color: #a5d6a7; font-size: 48px; font-weight: bold; }
-        #done-screen .sub   { color: #a5d6a7; font-size: 14px; }
+        #done-screen .icon  { font-size: 3.5em; }
+        #done-screen .title { color: #fff; font-size: 1.3em; font-weight: bold; }
+        #done-screen .score { color: #a5d6a7; font-size: 2.8em; font-weight: bold; }
+        #done-screen .sub   { color: #a5d6a7; font-size: 0.8em; }
     </style>
 </head>
 <body>
