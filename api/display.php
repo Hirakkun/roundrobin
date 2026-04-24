@@ -141,6 +141,16 @@ body {
     text-align: center;
     line-height: 1.15;
     white-space: nowrap;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.25em;
+}
+.player-num {
+    font-size: 0.65em;
+    font-weight: 900;
+    color: #ffcc80;
+    opacity: 0.9;
 }
 .vs-label {
     font-size: 0.85em;
@@ -360,7 +370,10 @@ function getCourtStatus(mid, ct) {
 function teamHTML(ids) {
     return ids.map(id => {
         const name = getPlayerName(id);
-        return `<div class="player-name">${_esc(name)}</div>`;
+        const numHtml = state.showPlayerNum
+            ? `<span class="player-num">${id}</span>`
+            : '';
+        return `<div class="player-name">${numHtml}${_esc(name)}</div>`;
     }).join('');
 }
 
