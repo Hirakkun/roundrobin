@@ -219,6 +219,29 @@ header('Content-Type: text/html; charset=UTF-8');
         .winner-highlight    { background: yellow; font-weight: bold; }
         hr { border: 0; height: 1px; background: #eee; }
 
+        /* ===== サーブ選択ボタン内レイアウト ===== */
+        .setup-btn { font-size: 1.3em; padding: 0.9em 0.7em; text-align: left; }
+        .serve-btn-lines {
+            display: flex; flex-direction: column;
+            align-items: flex-start; width: 100%; gap: 0.1em;
+        }
+        .serve-line {
+            display: flex; align-items: center; gap: 0.25em;
+            line-height: 1.35; white-space: nowrap;
+        }
+        /* 絵文字列の固定幅列（2行目のインデント基準） */
+        .serve-emoji { flex-shrink: 0; width: 1.4em; text-align: center; }
+        /* 2行目以降：絵文字列分だけ字下げ */
+        .serve-indent { padding-left: 1.4em; }
+        /* 「ペア」バッジ */
+        .serve-pair-label {
+            display: inline-block; margin-left: 0.3em;
+            font-size: 0.72em; font-weight: 900;
+            background: rgba(255,255,255,0.25);
+            border-radius: 0.3em; padding: 0.1em 0.35em;
+            vertical-align: middle; letter-spacing: 0.05em;
+        }
+
         /* ===== 完了画面 ===== */
         #done-screen {
             position: fixed; inset: 0; z-index: 45; background: #1b5e20;
@@ -251,7 +274,6 @@ header('Content-Type: text/html; charset=UTF-8');
 <!-- ① サーブ選択画面 -->
 <div class="setup-screen" id="serve-setup">
     <h2>🎾 最初にサーブするチームは？</h2>
-    <div class="sub" id="serve-sub"></div>
     <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)"></button>
     <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)"></button>
 </div>
@@ -529,12 +551,36 @@ function teamNamesToHTML(names) {
 }
 
 function updateServeSetupButtons() {
-    const sub = document.getElementById('serve-sub');
-    if (sub) sub.textContent = teamNamesToText(team1Names) + '\nvs\n' + teamNamesToText(team2Names);
     const b1 = document.getElementById('serve-btn-t1');
     const b2 = document.getElementById('serve-btn-t2');
-    if (b1) b1.innerHTML = '🎾 ' + teamNamesToHTML(team1Names) + ' がサーブ';
-    if (b2) b2.innerHTML = '🎾 ' + teamNamesToHTML(team2Names) + ' がサーブ';
+    if (b1) b1.innerHTML = buildServeHTML(team1Names);
+    if (b2) b2.innerHTML = buildServeHTML(team2Names);
+}
+
+// ペアボタンHTML生成：
+//   🎾 [1人目]
+//      [2人目] ペア   ← 🎾幅分だけ字下げ
+function buildServeHTML(names) {
+    if (!names.length) return '';
+    const lines = names.map((n, i) => {
+        const nameHtml = n.withNum
+            ? `<span class="num-badge">${n.id}</span>${n.name}`
+            : n.name;
+        const isLast = (i === names.length - 1);
+        const pairBadge = isLast ? '<span class="serve-pair-label">ペア</span>' : '';
+
+        if (i === 0) {
+            return `<div class="serve-line">
+                        <span class="serve-emoji">🎾</span>
+                        <span>${nameHtml}${pairBadge}</span>
+                    </div>`;
+        } else {
+            return `<div class="serve-line serve-indent">
+                        <span>${nameHtml}${pairBadge}</span>
+                    </div>`;
+        }
+    });
+    return `<div class="serve-btn-lines">${lines.join('')}</div>`;
 }
 
 window.onServeSelect = function(team) {
