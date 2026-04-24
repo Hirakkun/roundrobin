@@ -2508,8 +2508,39 @@ function generateNextRound() {
 
 // 「次の試合を作る」ボタンのハンドラ（モード対応）
 function onNextRoundBtn() {
-    if (state.seqMatch && state.schedule.length > 0) {
-        // 順次モード・2試合目以降 → プールから1コートずつ投入
+    if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
+        // 自動ON + 順次ON + 2試合目以降:
+        // 「終了済みで新ラウンドにまだ割り当てられていない空きコート」がなければブロック
+        const inProgressPhy = new Set();
+        state.schedule.forEach(rd => {
+            rd.courts.forEach((ct, ci) => {
+                const mid = `r${rd.round}c${ci}`;
+                const sc  = state.scores?.[mid];
+                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0)) {
+                    inProgressPhy.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
+                }
+            });
+        });
+        // 現在構築中のラウンドで既に割り当て済みの物理コート
+        const lastRd = state.schedule[state.schedule.length - 1];
+        const assignedInNew = new Set();
+        if (lastRd && lastRd.courts.length < state.courts) {
+            lastRd.courts.forEach((ct, ci) => {
+                assignedInNew.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
+            });
+        }
+        // 進行中でも割り当て済みでもない空きコートが1つでもあるか確認
+        let hasFreeCourt = false;
+        for (let i = 0; i < (state.courts || 2); i++) {
+            if (!inProgressPhy.has(i) && !assignedInNew.has(i)) { hasFreeCourt = true; break; }
+        }
+        if (!hasFreeCourt) {
+            showToast('⚠️ 終了済みのコートがありません。試合が終わってから作成してください');
+            return;
+        }
+        assignNextPoolMatch();
+    } else if (state.seqMatch && state.schedule.length > 0) {
+        // 順次モード（自動OFF）・2試合目以降 → プールから1コートずつ投入
         assignNextPoolMatch();
     } else {
         // 初回 or 一括モード → 全コートまとめて生成
