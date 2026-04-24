@@ -90,16 +90,10 @@ header('Content-Type: text/html; charset=UTF-8');
         .court-half:active { opacity: .75; }
         .court-half.left-half  { background: #1565c0; color: #fff; }
         .court-half.right-half { background: #2e7d32; color: #fff; }
-        .half-arrow { font-size: 2.4em; font-weight: 900; line-height: 1; }
-        .half-word  { font-size: 2em;   font-weight: 900; }
-        .half-serve { font-size: 0.8em; opacity: .85; margin-top: 0.2em; }
+        .half-arrow { font-size: 2em;  font-weight: 900; line-height: 1; opacity: 0.8; }
+        .half-word  { font-size: 3.8em; font-weight: 900; line-height: 1; }
         .court-net-div {
             width: 5px; background: #fff; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .court-net-div span {
-            writing-mode: vertical-rl; font-size: 0.5em;
-            color: #aaa; letter-spacing: 2px;
         }
 
         /* ===== コート情報バー ===== */
@@ -225,11 +219,19 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 1em;
             font-weight: 900;
             color: #fff;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             background: rgba(255,255,255,0.12);
             border-radius: 0.5em;
-            padding: 0.35em 0.8em;
+            padding: 0.35em 0.9em;
             align-self: center;
+            line-height: 1.5;
+        }
+        .setup-match-title .title-games {
+            display: block;
+            font-size: 0.82em;
+            font-weight: bold;
+            opacity: 0.85;
+            letter-spacing: 0.04em;
         }
 
         /* ===== サーブ選択ボタン内レイアウト ===== */
@@ -291,19 +293,17 @@ header('Content-Type: text/html; charset=UTF-8');
 <!-- ② サーバー位置選択画面 -->
 <div class="setup-screen" id="court-setup">
     <div class="setup-match-title" id="court-match-title"></div>
-    <h2>🏸 サーバーはどちら側ですか？</h2>
+    <h2>🎾 サーバーはどちら側ですか？</h2>
     <div class="sub" id="court-sub"></div>
     <div class="court-side-select">
         <button class="court-half left-half" onclick="onCourtSideSelect('left')">
             <div class="half-arrow">←</div>
             <div class="half-word">左</div>
-            <div class="half-serve">🎾 ここでサーブ</div>
         </button>
-        <div class="court-net-div"><span>ネット</span></div>
+        <div class="court-net-div"></div>
         <button class="court-half right-half" onclick="onCourtSideSelect('right')">
             <div class="half-arrow">→</div>
             <div class="half-word">右</div>
-            <div class="half-serve">🎾 ここでサーブ</div>
         </button>
     </div>
 </div>
@@ -553,11 +553,11 @@ function resetMatch() {
 
 // ── セットアップ画面共通タイトル更新 ────────────────────────
 function updateSetupTitles() {
-    const base = currentRoundLabel ? currentRoundLabel + '　' + courtLabel : courtLabel;
-    const text = base + '　' + MATCH_GAMES + 'ゲームマッチ';
+    const line1 = currentRoundLabel ? currentRoundLabel + '　' + courtLabel : courtLabel;
+    const html  = `${line1}<span class="title-games">${MATCH_GAMES}ゲームマッチ</span>`;
     ['serve-match-title', 'court-match-title'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = text;
+        if (el) el.innerHTML = html;
     });
 }
 
