@@ -56,28 +56,35 @@ header('Content-Type: text/html; charset=UTF-8');
         .setup-btn.t2 { background: #2e7d32; color: #fff; }
         .setup-btn.neutral { background: #fff; color: #283593; font-size: 18px; }
 
-        /* コート選択：左右表示 */
-        .court-preview {
-            display: flex; width: 100%;
-            border-radius: 14px; overflow: hidden; border: 2px solid #fff;
-        }
-        .court-preview .side {
-            flex: 1; padding: 18px 10px; text-align: center;
-            font-size: 18px; font-weight: bold; line-height: 1.6;
-        }
-        .court-preview .side.left  { background: #1565c0; color: #fff; }
-        .court-preview .side.right { background: #2e7d32; color: #fff; }
-        .court-preview .side-label { font-size: 13px; opacity: .7; margin-bottom: 6px; }
-        .court-preview .divider {
-            width: 4px; background: #fff; flex-shrink: 0; display: flex;
-            align-items: center; justify-content: center;
-        }
-        .court-preview .net-label { writing-mode: vertical-rl; font-size: 11px; color: #ccc; letter-spacing: 2px; }
-        /* セットアップ画面・コートプレビュー内のバッジは白背景にして背景色と区別 */
+        /* セットアップ画面・バッジの色調整 */
         .setup-btn .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
         .setup-btn.t2 .num-badge { color: #2e7d32; }
-        .court-preview .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
-        .court-preview .side.right .num-badge { color: #2e7d32; }
+
+        /* ② サーバー位置選択：コート左右ボタン */
+        .court-side-select {
+            display: flex; width: 100%; height: 220px;
+            border-radius: 14px; overflow: hidden; border: 3px solid #fff;
+        }
+        .court-half {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border: none; cursor: pointer; gap: 10px;
+            transition: opacity .15s;
+        }
+        .court-half:active { opacity: .75; }
+        .court-half.left-half  { background: #1565c0; color: #fff; }
+        .court-half.right-half { background: #2e7d32; color: #fff; }
+        .half-arrow { font-size: 2.2em; font-weight: 900; line-height: 1; }
+        .half-word  { font-size: 1.6em; font-weight: 900; }
+        .half-serve { font-size: 0.95em; opacity: .85; margin-top: 4px; }
+        .court-net-div {
+            width: 6px; background: #fff; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .court-net-div span {
+            writing-mode: vertical-rl; font-size: 11px;
+            color: #aaa; letter-spacing: 2px;
+        }
 
         /* ===== コート情報バー ===== */
         .court-info-bar {
@@ -221,24 +228,23 @@ header('Content-Type: text/html; charset=UTF-8');
     <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)"></button>
 </div>
 
-<!-- ② コート選択画面（左右） -->
+<!-- ② サーバー位置選択画面 -->
 <div class="setup-screen" id="court-setup">
-    <h2>🏸 コートの左右を選んでください</h2>
-    <div class="sub">ネットに向かって自分たちはどちら側ですか？</div>
-    <!-- プレビュー -->
-    <div class="court-preview" id="court-preview">
-        <div class="side left" id="preview-left">
-            <div class="side-label">← 左サイド</div>
-            <div id="preview-left-name"></div>
-        </div>
-        <div class="divider"><span class="net-label">ネット</span></div>
-        <div class="side right" id="preview-right">
-            <div class="side-label">右サイド →</div>
-            <div id="preview-right-name"></div>
-        </div>
+    <h2>🏸 サーバーはどちら側ですか？</h2>
+    <div class="sub" id="court-sub"></div>
+    <div class="court-side-select">
+        <button class="court-half left-half" onclick="onCourtSideSelect('left')">
+            <div class="half-arrow">←</div>
+            <div class="half-word">左</div>
+            <div class="half-serve">🎾 ここでサーブ</div>
+        </button>
+        <div class="court-net-div"><span>ネット</span></div>
+        <button class="court-half right-half" onclick="onCourtSideSelect('right')">
+            <div class="half-arrow">→</div>
+            <div class="half-word">右</div>
+            <div class="half-serve">🎾 ここでサーブ</div>
+        </button>
     </div>
-    <button class="setup-btn neutral" onclick="swapCourtSide()">⇔ 左右を入れ替え</button>
-    <button class="setup-btn t1" style="background:#f57f17;" onclick="startMatch()">この配置で試合開始</button>
 </div>
 
 <!-- 完了 -->
@@ -508,26 +514,21 @@ window.onServeSelect = function(team) {
     showCourtSetup();
 };
 
-// ── ② コート選択 ─────────────────────────────────────────────
+// ── ② サーバー位置選択 ───────────────────────────────────────
 function showCourtSetup() {
     hideAll();
-    updateCourtPreview();
+    // サーブするチーム名をサブテキストに表示
+    const serverNames = current_server === 1 ? team1Names : team2Names;
+    const sub = document.getElementById('court-sub');
+    if (sub) sub.textContent = '「' + teamNamesToText(serverNames) + '」がサーブします';
     document.getElementById('court-setup').style.display = 'flex';
 }
 
-function updateCourtPreview() {
-    const leftNames  = leftTeam === 1 ? team1Names : team2Names;
-    const rightNames = leftTeam === 1 ? team2Names : team1Names;
-    document.getElementById('preview-left-name').innerHTML  = leftNames.map(renderName).join('<br>');
-    document.getElementById('preview-right-name').innerHTML = rightNames.map(renderName).join('<br>');
-}
-
-window.swapCourtSide = function() {
-    leftTeam = leftTeam === 1 ? 2 : 1;
-    updateCourtPreview();
-};
-
-window.startMatch = function() {
+// 左または右を選んだら即試合開始
+window.onCourtSideSelect = function(side) {
+    // 選択したサイドにサーブチームを配置
+    leftTeam = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
+    // 試合開始
     hideAll();
     matchStarted = true;
     document.getElementById('btn-swap').style.display = 'none';
