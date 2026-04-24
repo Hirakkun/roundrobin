@@ -90,8 +90,8 @@ header('Content-Type: text/html; charset=UTF-8');
         .court-half:active { opacity: .75; }
         .court-half.left-half  { background: #1565c0; color: #fff; }
         .court-half.right-half { background: #2e7d32; color: #fff; }
-        .half-arrow { font-size: 2em;  font-weight: 900; line-height: 1; opacity: 0.8; }
-        .half-word  { font-size: 3.8em; font-weight: 900; line-height: 1; }
+        .half-arrow { font-size: 2.5em;  font-weight: 900; line-height: 1; opacity: 0.8; }
+        .half-word  { font-size: 6em; font-weight: 900; line-height: 1; }
         .court-net-div {
             width: 5px; background: #fff; flex-shrink: 0;
         }
