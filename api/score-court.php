@@ -133,13 +133,14 @@ header('Content-Type: text/html; charset=UTF-8');
         .team-name-row { display: flex; align-items: stretch; flex-shrink: 0; }
         .team-name-block {
             flex: 1; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 0.4em 0.3em;
+            justify-content: center; padding: 0.15em 0.3em;
             font-size: 0.95em; font-weight: bold;
-            text-align: center; line-height: 1.5; min-height: 3em;
+            text-align: center; line-height: 1.1; min-height: 0;
+            gap: 0;
         }
         .team-name-block.t1 { background: #e3f2fd; color: #0d47a1; }
         .team-name-block.t2 { background: #e8f5e9; color: #1b5e20; }
-        .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 0.25em; }
+        .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 0.25em; width: 100%; }
         .num-badge {
             display: inline-flex; align-items: center; justify-content: center;
             width: 1.45em; height: 1.45em; border-radius: 50%;
@@ -238,12 +239,12 @@ header('Content-Type: text/html; charset=UTF-8');
         .setup-btn { font-size: 1.3em; padding: 0.9em 0.7em; text-align: left; }
         .serve-btn-lines {
             display: flex; flex-direction: column;
-            align-items: flex-start; width: 100%; gap: 0.15em;
+            align-items: flex-start; width: 100%; gap: 0.02em;
         }
         /* 各行：絵文字列(固定幅) + 名前列 の2カラム */
         .serve-line {
             display: flex; align-items: center; gap: 0.25em;
-            line-height: 1.35; white-space: nowrap;
+            line-height: 1.1; white-space: nowrap;
         }
         .serve-col1 {
             width: 1.5em; flex-shrink: 0; text-align: center;
@@ -326,8 +327,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
     <div class="header-row">
         <button class="role-button" id="role-left">サーブ</button>
-        <button class="role-button" id="btn-swap"   onclick="onSwapClick()">⇔</button>
-        <button class="role-button undo" id="btn-undo" style="display:none;" onclick="undoLastPoint()">取消</button>
+        <button class="role-button undo" id="btn-undo" onclick="undoLastPoint()">戻る</button>
         <button class="role-button" id="role-right">レシーブ</button>
     </div>
 
@@ -539,8 +539,6 @@ function resetMatch() {
     historyStack  = [];
     leftTeam      = 1;
     document.getElementById('game-history').innerHTML = '';
-    document.getElementById('btn-undo').style.display  = 'none';
-    document.getElementById('btn-swap').style.display  = 'inline-block';
     document.getElementById('btn-confirm').style.display = 'none';
     document.getElementById('btn-end').style.display     = 'none';
     document.getElementById('umpire-msg').textContent    = 'プレイボール';
@@ -618,11 +616,9 @@ function showCourtSetup() {
 window.onCourtSideSelect = function(side) {
     // 選択したサイドにサーブチームを配置
     leftTeam = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
-    // 試合開始
+    // 試合開始（ボタン状態は updateDisplay() が matchStarted で管理）
     hideAll();
     matchStarted = true;
-    document.getElementById('btn-swap').style.display = 'none';
-    document.getElementById('btn-undo').style.display = 'inline-block';
     showMain();
 };
 
@@ -631,19 +627,6 @@ function showMain() {
     document.getElementById('main-container').style.display = 'flex';
     updateDisplay();
 }
-
-// ── 役割クリック（試合前のみサーブ交代） ─────────────────────
-window.onRoleClick = function() {
-    if (matchStarted) return;
-    current_server = current_server === 1 ? 2 : 1;
-    updateDisplay();
-};
-
-window.onSwapClick = function() {
-    if (matchStarted) return;
-    // サーブ設定画面に戻る
-    showServeSetup();
-};
 
 // ── ポイント追加 ──────────────────────────────────────────────
 window.addPoint = function(side) {
@@ -812,23 +795,23 @@ window.undoLastPoint = function() {
     game_score_t2 = last.game_score_t2;
     current_server = last.current_server;
     setUmpire(last.umpireMsg);
-    if (historyStack.length === 0) {
-        document.getElementById('btn-undo').style.display = 'none';
-        document.getElementById('btn-swap').style.display = 'inline-block';
-        matchStarted = false;
-    }
+    // ボタン状態は updateDisplay() が matchStarted で一元管理する
     updateDisplay();
 };
 
 // ── 表示更新 ──────────────────────────────────────────────────
 function updateDisplay() {
+    // ─ 戻る／取消ボタンのラベル切替 ────────────────────────────
+    const undoBtn = document.getElementById('btn-undo');
+    undoBtn.textContent = historyStack.length === 0 ? '戻る' : '取消';
+
     // 左右のチーム
     const leftNames  = leftTeam === 1 ? team1Names : team2Names;
     const rightNames = leftTeam === 1 ? team2Names : team1Names;
     const nameLeftEl  = document.getElementById('name-left');
     const nameRightEl = document.getElementById('name-right');
-    if (nameLeftEl)  nameLeftEl.innerHTML  = leftNames.map(renderName).join('<br>');
-    if (nameRightEl) nameRightEl.innerHTML = rightNames.map(renderName).join('<br>');
+    if (nameLeftEl)  nameLeftEl.innerHTML  = leftNames.map(renderName).join('');
+    if (nameRightEl) nameRightEl.innerHTML = rightNames.map(renderName).join('');
 
     // ポイントボタンのラベル（名前 + 大きい「ポイント」）
     document.getElementById('btn-left').innerHTML  =
