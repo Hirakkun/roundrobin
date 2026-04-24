@@ -219,6 +219,19 @@ header('Content-Type: text/html; charset=UTF-8');
         .winner-highlight    { background: yellow; font-weight: bold; }
         hr { border: 0; height: 1px; background: #eee; }
 
+        /* ===== セットアップ画面 上部タイトル（第○試合 ○コート） ===== */
+        .setup-match-title {
+            text-align: center;
+            font-size: 1em;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 0.08em;
+            background: rgba(255,255,255,0.12);
+            border-radius: 0.5em;
+            padding: 0.35em 0.8em;
+            align-self: center;
+        }
+
         /* ===== サーブ選択ボタン内レイアウト ===== */
         .setup-btn { font-size: 1.3em; padding: 0.9em 0.7em; text-align: left; }
         .serve-btn-lines {
@@ -269,6 +282,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <!-- ① サーブ選択画面 -->
 <div class="setup-screen" id="serve-setup">
+    <div class="setup-match-title" id="serve-match-title"></div>
     <h2>🎾 最初にサーブするチームは？</h2>
     <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)"></button>
     <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)"></button>
@@ -276,6 +290,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <!-- ② サーバー位置選択画面 -->
 <div class="setup-screen" id="court-setup">
+    <div class="setup-match-title" id="court-match-title"></div>
     <h2>🏸 サーバーはどちら側ですか？</h2>
     <div class="sub" id="court-sub"></div>
     <div class="court-side-select">
@@ -405,6 +420,7 @@ let historyStack   = [];
 
 // Firebase上のマッチ情報
 let currentMid = null;
+let currentRoundLabel = '';
 
 // ── Firebase監視 ─────────────────────────────────────────────
 onValue(stateRef, snap => {
@@ -479,8 +495,8 @@ function onStateUpdate(state) {
     team1Names = found.ct.team1.map(id => buildName(id, pnames, showPlayerNum));
     team2Names = found.ct.team2.map(id => buildName(id, pnames, showPlayerNum));
 
-    const roundLabel = '第' + found.rd.round + '試合';
-    document.getElementById('hd-round').textContent = roundLabel;
+    currentRoundLabel = '第' + found.rd.round + '試合';
+    document.getElementById('hd-round').textContent = currentRoundLabel;
 
     // サーブ設定ボタンのラベル更新
     updateServeSetupButtons();
@@ -535,9 +551,19 @@ function resetMatch() {
     showServeSetup();
 }
 
+// ── セットアップ画面共通タイトル更新 ────────────────────────
+function updateSetupTitles() {
+    const text = currentRoundLabel ? currentRoundLabel + '　' + courtLabel : courtLabel;
+    ['serve-match-title', 'court-match-title'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    });
+}
+
 // ── ① サーブ設定 ─────────────────────────────────────────────
 function showServeSetup() {
     hideAll();
+    updateSetupTitles();
     updateServeSetupButtons();
     document.getElementById('serve-setup').style.display = 'flex';
 }
@@ -579,6 +605,7 @@ window.onServeSelect = function(team) {
 // ── ② サーバー位置選択 ───────────────────────────────────────
 function showCourtSetup() {
     hideAll();
+    updateSetupTitles();
     // サーブするチーム名をサブテキストに表示
     const serverNames = current_server === 1 ? team1Names : team2Names;
     const sub = document.getElementById('court-sub');
