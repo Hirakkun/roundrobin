@@ -40,18 +40,18 @@ body {
     align-items: center;
     justify-content: space-between;
     background: #1b2a3b;
-    border-radius: 0.4em;
-    padding: 0.3em 0.8em;
+    border-radius: 0.3em;
+    padding: 0.15em 0.6em;
     flex-shrink: 0;
 }
 #event-name {
-    font-size: 1.2em;
+    font-size: 0.85em;
     font-weight: bold;
     color: #fff;
     letter-spacing: 0.04em;
 }
 #current-time {
-    font-size: 1.2em;
+    font-size: 0.85em;
     font-weight: bold;
     color: #90caf9;
     font-variant-numeric: tabular-nums;
@@ -60,7 +60,7 @@ body {
 /* ── コートグリッド ── */
 #courts-grid {
     display: grid;
-    gap: 0.4em;
+    gap: 0.3em;
     flex: 1;
     min-height: 0;
 }
@@ -73,24 +73,24 @@ body {
 
 /* ── コートカード ── */
 .court-card {
-    border-radius: 0.5em;
-    padding: 0.4em 0.7em;
+    border-radius: 0.4em;
+    padding: 0.25em 0.5em;
     display: flex;
     flex-direction: column;
-    gap: 0.2em;
+    gap: 0;
     min-height: 0;
     overflow: hidden;
     transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
-.court-card.status-next    { background: #1a3a5c; border: 0.12em solid #1565c0; }
-.court-card.status-calling { background: #3a2a00; border: 0.18em solid #f9a825; animation: pulse-border 1.5s infinite; }
-.court-card.status-playing { background: #1a3a1a; border: 0.12em solid #2e7d32; }
-.court-card.status-done    { background: #1e1e1e; border: 0.12em solid #444; opacity: 0.5; }
-.court-card.status-empty   { background: #111; border: 0.12em dashed #333; opacity: 0.3; }
+.court-card.status-next    { background: #1a3a5c; border: 0.1em solid #1565c0; }
+.court-card.status-calling { background: #3a2a00; border: 0.15em solid #f9a825; animation: pulse-border 1.5s infinite; }
+.court-card.status-playing { background: #1a3a1a; border: 0.1em solid #2e7d32; }
+.court-card.status-done    { background: #1e1e1e; border: 0.1em solid #444; opacity: 0.5; }
+.court-card.status-empty   { background: #111; border: 0.1em dashed #333; opacity: 0.3; }
 
 @keyframes pulse-border {
     0%, 100% { border-color: #f9a825; box-shadow: 0 0 0 0 rgba(249,168,37,0); }
-    50%       { border-color: #ffcc02; box-shadow: 0 0 0.5em 0.15em rgba(249,168,37,0.4); }
+    50%       { border-color: #ffcc02; box-shadow: 0 0 0.4em 0.1em rgba(249,168,37,0.4); }
 }
 
 /* カードヘッダー */
@@ -99,15 +99,16 @@ body {
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    line-height: 1;
 }
-.court-label-wrap { display: flex; align-items: baseline; gap: 0.1em; }
-.court-label-big  { font-size: 2.6em; font-weight: 900; line-height: 1; }
-.court-label-small{ font-size: 0.75em; font-weight: bold; }
+.court-label-wrap  { display: flex; align-items: baseline; gap: 0.08em; }
+.court-label-big   { font-size: 1.4em; font-weight: 900; line-height: 1; }
+.court-label-small { font-size: 0.6em; font-weight: bold; }
 
 .status-badge {
-    font-size: 0.72em;
+    font-size: 0.58em;
     font-weight: bold;
-    padding: 0.2em 0.8em;
+    padding: 0.18em 0.65em;
     border-radius: 2em;
     white-space: nowrap;
 }
@@ -121,7 +122,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5em;
+    gap: 0.4em;
     flex: 1;
     min-height: 0;
 }
@@ -130,19 +131,19 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.15em;
+    gap: 0;
     flex: 1;
     min-width: 0;
 }
 .player-name {
-    font-size: 1.25em;
+    font-size: 1.15em;
     font-weight: bold;
     text-align: center;
-    line-height: 1.35;
-    word-break: break-all;
+    line-height: 1.15;
+    white-space: nowrap;
 }
 .vs-label {
-    font-size: 1em;
+    font-size: 0.85em;
     font-weight: 900;
     color: #888;
     flex-shrink: 0;
@@ -157,7 +158,7 @@ body {
     flex-shrink: 0;
 }
 .score-val {
-    font-size: 4em;
+    font-size: 3em;
     font-weight: 900;
     line-height: 1;
     min-width: 1em;
@@ -165,15 +166,15 @@ body {
 }
 .score-val.t1 { color: #90caf9; }
 .score-val.t2 { color: #a5d6a7; }
-.score-hyphen { font-size: 2.5em; color: #555; font-weight: bold; }
+.score-hyphen { font-size: 2em; color: #555; font-weight: bold; }
 
 /* サブメッセージ */
 .sub-msg {
     text-align: center;
-    font-size: 0.9em;
+    font-size: 0.75em;
     font-weight: bold;
     flex-shrink: 0;
-    padding-bottom: 0.3em;
+    line-height: 1.2;
 }
 .sub-msg.calling { color: #f9a825; }
 .sub-msg.next    { color: #90caf9; }
