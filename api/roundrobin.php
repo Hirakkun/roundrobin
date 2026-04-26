@@ -1,7 +1,6 @@
-<?php
+﻿<?php
 // =====================================================================
-// メール送信処理
-// =====================================================================
+// 繝｡繝ｼ繝ｫ騾∽ｿ｡蜃ｦ逅・// =====================================================================
 if (isset($_POST['action']) && $_POST['action'] === 'send_report') {
     $to       = 'ainan.tennis@gmail.com';
     $date_tag = isset($_POST['date_tag']) ? preg_replace('/[^0-9]/', '', $_POST['date_tag']) : date('Ymd');
@@ -10,19 +9,17 @@ if (isset($_POST['action']) && $_POST['action'] === 'send_report') {
     mb_language('Japanese');
     mb_internal_encoding('UTF-8');
 
-    $subject = '【交流練習会】試合結果レポート ' . $date_tag;
+    $subject = '縲蝉ｺ､豬∫ｷｴ鄙剃ｼ壹題ｩｦ蜷育ｵ先棡繝ｬ繝昴・繝・' . $date_tag;
 
-    // ロリポップのsendmailはReturn-Pathを-fオプションで指定
-    $headers  = 'From: arechi@dv.main.jp' . "\r\n";
+    // 繝ｭ繝ｪ繝昴ャ繝励・sendmail縺ｯReturn-Path繧・f繧ｪ繝励す繝ｧ繝ｳ縺ｧ謖・ｮ・    $headers  = 'From: arechi@dv.main.jp' . "\r\n";
     $headers .= 'Reply-To: arechi@dv.main.jp' . "\r\n";
     $headers .= 'X-Mailer: PHP/' . phpversion();
 
-    // mb_send_mailは内部でJIS変換・エンコードを処理する
-    $result = mb_send_mail($to, $subject, $body, $headers, '-f arechi@dv.main.jp');
+    // mb_send_mail縺ｯ蜀・Κ縺ｧJIS螟画鋤繝ｻ繧ｨ繝ｳ繧ｳ繝ｼ繝峨ｒ蜃ｦ逅・☆繧・    $result = mb_send_mail($to, $subject, $body, $headers, '-f arechi@dv.main.jp');
 
     if (!$result) {
         $err = error_get_last();
-        error_log('mail送信失敗: ' . ($err['message'] ?? 'unknown'));
+        error_log('mail騾∽ｿ｡螟ｱ謨・ ' . ($err['message'] ?? 'unknown'));
     }
 
     header('Content-Type: application/json; charset=UTF-8');
@@ -33,8 +30,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'send_report') {
     exit;
 }
 
-// 設定のデフォルト値のみPHPで渡す
-$default_players = isset($_POST['players']) ? intval($_POST['players']) : 10;
+// 險ｭ螳壹・繝・ヵ繧ｩ繝ｫ繝亥､縺ｮ縺ｿPHP縺ｧ貂｡縺・$default_players = isset($_POST['players']) ? intval($_POST['players']) : 10;
 $default_courts  = isset($_POST['courts'])  ? intval($_POST['courts'])  : 2;
 ?>
 <!DOCTYPE html>
@@ -43,113 +39,115 @@ $default_courts  = isset($_POST['courts'])  ? intval($_POST['courts'])  : 2;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
+/* 笏笏 繝ｬ繧ｹ繝昴Φ繧ｷ繝門渕貅悶ヵ繧ｩ繝ｳ繝医し繧､繧ｺ・・w 繧ｹ繧ｱ繝ｼ繝ｫ・・笏笏 */
+html { font-size: clamp(11px, 1.3vw, 16px); }
 * { box-sizing: border-box; }
-body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; background: #f0f4f8; }
+body { font-family: sans-serif; font-size: 1.125rem; color: #222; margin: 0; background: #f0f4f8; }
 
-/* ステップバー */
+/* 繧ｹ繝・ャ繝励ヰ繝ｼ */
 .step-bar { background: #fff; border-bottom: 3px solid #1565c0; display: flex; flex-direction: row; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
-.step-btn { flex: 1; padding: 10px 4px 8px; text-align: center; font-size: 18px; font-weight: bold; color: #333; background: #fff; border: none; border-bottom: 4px solid transparent; cursor: pointer; line-height: 1.3; }
-.step-btn .step-icon { font-size: 26px; display: block; margin-bottom: 3px; }
+.step-btn { flex: 1; padding: 0.625rem 0.25rem 0.5rem; text-align: center; font-size: 1.125rem; font-weight: bold; color: #333; background: #fff; border: none; border-bottom: 4px solid transparent; cursor: pointer; line-height: 1.3; }
+.step-btn .step-icon { font-size: 1.625rem; display: block; margin-bottom: 0.2rem; }
 .step-btn.active { color: #1565c0; border-bottom-color: #1565c0; background: #e8f0fe; }
 .step-btn.disabled { color: #bbb; cursor: not-allowed; pointer-events: none; }
 
-/* マッチングルール選択 */
-.match-rule-row { display: flex; gap: 10px; margin-bottom: 0; }
-.rule-btn { flex: 1; padding: 14px 8px; font-size: 17px; font-weight: bold; border: 3px solid #ccc; border-radius: 12px; background: #fff; color: #555; cursor: pointer; text-align: center; line-height: 1.4; }
+/* 繝槭ャ繝√Φ繧ｰ繝ｫ繝ｼ繝ｫ驕ｸ謚・*/
+.match-rule-row { display: flex; gap: 0.625rem; margin-bottom: 0; }
+.rule-btn { flex: 1; padding: 0.875rem 0.5rem; font-size: 1.0625rem; font-weight: bold; border: 3px solid #ccc; border-radius: 0.75rem; background: #fff; color: #555; cursor: pointer; text-align: center; line-height: 1.4; }
 .rule-btn.selected { border-color: #1565c0; background: #e8f0fe; color: #1565c0; }
-.rule-btn .rule-icon { font-size: 26px; display: block; margin-bottom: 4px; }
+.rule-btn .rule-icon { font-size: 1.625rem; display: block; margin-bottom: 0.25rem; }
 
-/* パネル共通 */
-.panel { display: none; padding: 12px 10px; }
+/* 繝代ロ繝ｫ蜈ｱ騾・*/
+.panel { display: none; padding: 0.75rem 0.625rem; }
 .panel.active { display: block; }
-.panel-title { font-size: 20px; font-weight: bold; color: #1565c0; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 3px solid #1565c0; display: flex; align-items: center; gap: 8px; }
+.panel-title { font-size: 1.25rem; font-weight: bold; color: #1565c0; margin: 0 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 3px solid #1565c0; display: flex; align-items: center; gap: 0.5rem; }
 
-/* STEP1: 設定 */
-.setup-card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 14px; }
-.setup-label { font-size: 16px; color: #555; margin-bottom: 6px; font-weight: bold; }
+/* STEP1: 險ｭ螳・*/
+.setup-card { background: #fff; border-radius: 0.875rem; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 0.875rem; }
+.setup-label { font-size: 1rem; color: #555; margin-bottom: 0.375rem; font-weight: bold; }
 .counter-row { display: flex; align-items: center; }
-.counter-btn { width: 52px; height: 52px; font-size: 28px; font-weight: bold; border: 2px solid #1565c0; background: #e8f0fe; color: #1565c0; border-radius: 10px; cursor: pointer; line-height: 1; }
-.counter-val { flex: 1; text-align: center; font-size: 36px; font-weight: bold; color: #222; border: 2px solid #ccc; border-radius: 10px; margin: 0 8px; padding: 4px 0; background: #fff; }
-.start-btn { width: 100%; font-size: 22px; font-weight: bold; padding: 16px; background: #2e7d32; color: #fff; border: none; border-radius: 14px; margin-top: 6px; box-shadow: 0 4px 10px rgba(46,125,50,.4); cursor: pointer; letter-spacing: 1px; }
+.counter-btn { width: 3.25rem; height: 3.25rem; font-size: 1.75rem; font-weight: bold; border: 2px solid #1565c0; background: #e8f0fe; color: #1565c0; border-radius: 0.625rem; cursor: pointer; line-height: 1; }
+.counter-val { flex: 1; text-align: center; font-size: 2.25rem; font-weight: bold; color: #222; border: 2px solid #ccc; border-radius: 0.625rem; margin: 0 0.5rem; padding: 0.25rem 0; background: #fff; }
+.start-btn { width: 100%; font-size: 1.375rem; font-weight: bold; padding: 1rem; background: #2e7d32; color: #fff; border: none; border-radius: 0.875rem; margin-top: 0.375rem; box-shadow: 0 4px 10px rgba(46,125,50,.4); cursor: pointer; letter-spacing: 1px; }
 
-/* STEP2: 参加者 */
-.player-list { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); display: grid; grid-template-columns: 1fr; }
+/* STEP2: 蜿ょ刈閠・*/
+.player-list { background: #fff; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); display: grid; grid-template-columns: 1fr; }
 @media (min-aspect-ratio: 1/1) { .player-list { grid-template-columns: 1fr 1fr 1fr; } }
-.player-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #eee; }
+.player-item { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
 .player-item:last-child { border-bottom: none; }
-.player-num { width: 30px; height: 30px; border-radius: 50%; background: #1565c0; color: #fff; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.playerSelectWrap { flex: 1; position: relative; height: 52px; }
-.playerSelectWrap > select.playerSelect { position: absolute; inset: 0; width: 100%; height: 100%; font-size: 22px; border: 2px solid #aaa; border-radius: 8px; font-weight: bold; padding: 0 6px; background: #fff; color: transparent; text-shadow: none; }
+.player-num { width: 1.875rem; height: 1.875rem; border-radius: 50%; background: #1565c0; color: #fff; font-size: 0.8125rem; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.playerSelectWrap { flex: 1; position: relative; height: 3.25rem; }
+.playerSelectWrap > select.playerSelect { position: absolute; inset: 0; width: 100%; height: 100%; font-size: 1.375rem; border: 2px solid #aaa; border-radius: 0.5rem; font-weight: bold; padding: 0 0.375rem; background: #fff; color: transparent; text-shadow: none; }
 .playerSelectWrap > select.playerSelect:disabled { background: #f5f5f5; }
 .playerSelectWrap > select.playerSelect option { color: #000; background: #fff; }
-.playerSelectWrap > .playerSelectLabel { position: absolute; left: 8px; right: 26px; top: 0; bottom: 0; display: flex; align-items: center; pointer-events: none; font-weight: bold; font-size: 22px; color: #000; overflow: hidden; white-space: nowrap; }
-.playerSelectWrap > .playerSelectLabel .club { font-size: 12px; color: #666; font-weight: normal; margin-left: 2px; }
+.playerSelectWrap > .playerSelectLabel { position: absolute; left: 0.5rem; right: 1.625rem; top: 0; bottom: 0; display: flex; align-items: center; pointer-events: none; font-weight: bold; font-size: 1.375rem; color: #000; overflow: hidden; white-space: nowrap; }
+.playerSelectWrap > .playerSelectLabel .club { font-size: 0.75rem; color: #666; font-weight: normal; margin-left: 0.125rem; }
 .playerSelectWrap > .playerSelectLabel.placeholder { color: #888; }
-/* 休憩/復帰/削除ボタン */
-.rest-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #f57c00; background: #fff3e0; color: #e65100; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
+/* 莨第・/蠕ｩ蟶ｰ/蜑企勁繝懊ち繝ｳ */
+.rest-btn { font-size: 0.8125rem; padding: 0.375rem 0.5rem; border: 2px solid #f57c00; background: #fff3e0; color: #e65100; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
 .rest-btn.resting { background: #2e7d32; border-color: #1b5e20; color: #fff; }
 .rest-btn.delete-btn { background: #ffebee; border-color: #c62828; color: #c62828; }
-/* ペア固定 */
+/* 繝壹い蝗ｺ螳・*/
 .rest-btn.pair-btn { background: #e8eaf6; border-color: #3949ab; color: #3949ab; }
 .rest-btn.pair-btn.paired { background: #3949ab; border-color: #1a237e; color: #fff; }
-.pair-badge { display:inline-block; font-size:10px; font-weight:bold; padding:1px 6px; border-radius:8px; margin-left:4px; vertical-align:middle; }
+.pair-badge { display:inline-block; font-size:0.625rem; font-weight:bold; padding:1px 0.375rem; border-radius:0.5rem; margin-left:0.25rem; vertical-align:middle; }
 .pair-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000; align-items:center; justify-content:center; }
 .pair-modal-bg.show { display:flex; }
-.pair-modal { background:#fff; border-radius:14px; padding:20px; max-width:340px; width:90%; max-height:70vh; overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,.3); }
-.pair-modal h3 { margin:0 0 12px; font-size:16px; color:#1a237e; }
-.pair-modal .pm-item { display:flex; align-items:center; gap:8px; padding:10px 8px; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:8px; }
+.pair-modal { background:#fff; border-radius:0.875rem; padding:1.25rem; max-width:340px; width:90%; max-height:70vh; overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,.3); }
+.pair-modal h3 { margin:0 0 0.75rem; font-size:1rem; color:#1a237e; }
+.pair-modal .pm-item { display:flex; align-items:center; gap:0.5rem; padding:0.625rem 0.5rem; border-bottom:1px solid #f0f0f0; cursor:pointer; border-radius:0.5rem; }
 .pair-modal .pm-item:hover { background:#e8eaf6; }
-.pair-modal .pm-item .pm-name { font-weight:bold; font-size:14px; }
-.pair-modal .pm-item .pm-club { font-size:11px; color:#666; }
-.pair-modal .pm-cancel { width:100%; padding:10px; margin-top:10px; background:#e0e0e0; border:none; border-radius:8px; font-size:14px; font-weight:bold; cursor:pointer; }
-.new-btn { font-size: 13px; padding: 6px 8px; border: 2px solid #7b1fa2; background: #fff; color: #7b1fa2; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
-.player-add-btn { width: 100%; font-size: 17px; padding: 12px; background: #1565c0; color: #fff; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; }
-.court-change-row { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 10px; }
-.court-change-row .setup-label { margin-bottom: 8px; }
+.pair-modal .pm-item .pm-name { font-weight:bold; font-size:0.875rem; }
+.pair-modal .pm-item .pm-club { font-size:0.6875rem; color:#666; }
+.pair-modal .pm-cancel { width:100%; padding:0.625rem; margin-top:0.625rem; background:#e0e0e0; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:bold; cursor:pointer; }
+.new-btn { font-size: 0.8125rem; padding: 0.375rem 0.5rem; border: 2px solid #7b1fa2; background: #fff; color: #7b1fa2; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
+.player-add-btn { width: 100%; font-size: 1.0625rem; padding: 0.75rem; background: #1565c0; color: #fff; border: none; border-radius: 0.625rem; margin-top: 0.625rem; cursor: pointer; font-weight: bold; }
+.court-change-row { background: #fff; border-radius: 0.75rem; padding: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 0.625rem; }
+.court-change-row .setup-label { margin-bottom: 0.5rem; }
 
-/* STEP3: 組合せ */
-.round-block { margin-bottom: 8px; }
-.round-toggle { background: #1565c0; color: #fff; padding: 12px 14px; border-radius: 10px; font-size: 19px; font-weight: bold; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+/* STEP3: 邨・粋縺・*/
+.round-block { margin-bottom: 0.5rem; }
+.round-toggle { background: #1565c0; color: #fff; padding: 0.75rem 0.875rem; border-radius: 0.625rem; font-size: 1.1875rem; font-weight: bold; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
 .round-toggle.open { background: #e65100; }
 .round-toggle.done { background: #546e7a; }
 .round-toggle.done.open { background: #e65100; }
-.round-label { display: flex; align-items: center; gap: 10px; }
-.round-badge { background: rgba(255,255,255,.25); border-radius: 6px; font-size: 13px; padding: 2px 8px; }
-.round-toggle .arrow { font-size: 18px; transition: transform 0.2s; }
+.round-label { display: flex; align-items: center; gap: 0.625rem; }
+.round-badge { background: rgba(255,255,255,.25); border-radius: 0.375rem; font-size: 0.8125rem; padding: 0.125rem 0.5rem; }
+.round-toggle .arrow { font-size: 1.125rem; transition: transform 0.2s; }
 .round-toggle.open .arrow { transform: rotate(180deg); }
-.round-body { display: none; padding-top: 8px; }
-.round-body.open { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
+.round-body { display: none; padding-top: 0.5rem; }
+.round-body.open { display: grid; grid-template-columns: minmax(0,1fr); gap: 0.5rem; }
 @media (min-aspect-ratio: 1/1) { .round-body.open { grid-template-columns: repeat(3, minmax(0,1fr)); } }
-.match-card { border: 2px solid #ddd; margin-bottom: 10px; border-radius: 12px; background: #fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-.match-header { background: #37474f; color: #fff; padding: 6px 12px; font-size: 15px; font-weight: bold; }
-.court-toggle-wrap { display:flex; align-items:center; gap:8px; font-size:13px; color:#555; }
-.toggle-sw { position:relative; display:inline-block; width:44px; height:24px; }
+.match-card { border: 2px solid #ddd; margin-bottom: 0.625rem; border-radius: 0.75rem; background: #fff; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.match-header { background: #37474f; color: #fff; padding: 0.375rem 0.75rem; font-size: 0.9375rem; font-weight: bold; }
+.court-toggle-wrap { display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; color:#555; }
+.toggle-sw { position:relative; display:inline-block; width:2.75rem; height:1.5rem; }
 .toggle-sw input { opacity:0; width:0; height:0; }
-.toggle-sw .slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:24px; transition:.3s; }
-.toggle-sw .slider:before { position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+.toggle-sw .slider { position:absolute; cursor:pointer; inset:0; background:#ccc; border-radius:1.5rem; transition:.3s; }
+.toggle-sw .slider:before { position:absolute; content:""; height:1.125rem; width:1.125rem; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
 .toggle-sw input:checked + .slider { background:#1565c0; }
-.toggle-sw input:checked + .slider:before { transform:translateX(20px); }
-.match-content { display: flex; align-items: center; justify-content: space-between; padding: 10px 6px; }
-.team { width: 40%; text-align: center; font-weight: bold; font-size: 20px; padding: 24px 4px 10px; border: 2.5px solid #aaa; border-radius: 10px; background: #fafafa; min-height: 88px; position: relative; display: flex; flex-direction: column; justify-content: center; }
-.team::before { content: "＋"; position: absolute; top: 0; left: 0; font-size: 16px; color: #fff; background: #2e7d32; padding: 2px 7px; border-bottom-right-radius: 8px; }
-.team::after  { content: "ー"; position: absolute; top: 0; right: 0; font-size: 16px; color: #fff; background: #c62828; padding: 2px 7px; border-bottom-left-radius: 8px; }
-.score-area { width: 20%; text-align: center; font-size: 36px; font-weight: bold; color: #222; }
-.score-area small { font-size: 20px; color: #888; }
-.round-del-btn { font-size: 18px; background: none; border: none; cursor: pointer; padding: 2px 4px; line-height: 1; opacity: 0.7; }
-.next-round-btn { width: 100%; font-size: 20px; font-weight: bold; padding: 14px; background: #2e7d32; color: #fff; border: none; border-radius: 12px; margin-top: 10px; cursor: pointer; box-shadow: 0 3px 8px rgba(46,125,50,.4); }
-.pool-status-bar { display:none; margin-top:8px; padding:8px 12px; background:#e8f5e9; border-radius:8px; border-left:4px solid #2e7d32; font-size:13px; color:#2e7d32; font-weight:bold; }
+.toggle-sw input:checked + .slider:before { transform:translateX(1.25rem); }
+.match-content { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.375rem; }
+.team { width: 40%; text-align: center; font-weight: bold; font-size: 1.25rem; padding: 1.5rem 0.25rem 0.625rem; border: 2.5px solid #aaa; border-radius: 0.625rem; background: #fafafa; min-height: 5.5rem; position: relative; display: flex; flex-direction: column; justify-content: center; }
+.team::before { content: "・・; position: absolute; top: 0; left: 0; font-size: 1rem; color: #fff; background: #2e7d32; padding: 2px 7px; border-bottom-right-radius: 0.5rem; }
+.team::after  { content: "繝ｼ"; position: absolute; top: 0; right: 0; font-size: 1rem; color: #fff; background: #c62828; padding: 2px 7px; border-bottom-left-radius: 0.5rem; }
+.score-area { width: 20%; text-align: center; font-size: 2.25rem; font-weight: bold; color: #222; }
+.score-area small { font-size: 1.25rem; color: #888; }
+.round-del-btn { font-size: 1.125rem; background: none; border: none; cursor: pointer; padding: 2px 4px; line-height: 1; opacity: 0.7; }
+.next-round-btn { width: 100%; font-size: 1.25rem; font-weight: bold; padding: 0.875rem; background: #2e7d32; color: #fff; border: none; border-radius: 0.75rem; margin-top: 0.625rem; cursor: pointer; box-shadow: 0 3px 8px rgba(46,125,50,.4); }
+.pool-status-bar { display:none; margin-top:0.5rem; padding:0.5rem 0.75rem; background:#e8f5e9; border-radius:0.5rem; border-left:4px solid #2e7d32; font-size:0.8125rem; color:#2e7d32; font-weight:bold; }
 .seq-toggle-wrap { opacity:0.4; pointer-events:none; transition:opacity .2s; }
 .seq-toggle-wrap.enabled { opacity:1; pointer-events:auto; }
 .court-done-btn:active { background:#0d47a1; }
-.round-done-btn { font-size:13px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; white-space:nowrap; }
+.round-done-btn { font-size:0.8125rem; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:0.375rem; padding:0.3125rem 0.625rem; cursor:pointer; white-space:nowrap; }
 .round-done-btn:active { background:#0d47a1; }
-.court-done-badge { text-align:center; color:#2e7d32; font-size:13px; font-weight:bold; padding:6px 0 2px; }
-.round-done-badge { font-size:13px; font-weight:bold; color:#2e7d32; padding:4px 8px; }
-.match-card-done { background:#f5f5f5; border-radius:10px; margin-bottom:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:14px; }
+.court-done-badge { text-align:center; color:#2e7d32; font-size:0.8125rem; font-weight:bold; padding:0.375rem 0 0.125rem; }
+.round-done-badge { font-size:0.8125rem; font-weight:bold; color:#2e7d32; padding:0.25rem 0.5rem; }
+.match-card-done { background:#f5f5f5; border-radius:0.625rem; margin-bottom:0.625rem; padding:0.5rem 0.75rem; display:flex; align-items:center; justify-content:space-between; color:#888; font-size:0.875rem; }
 .match-card-done .done-court-name { font-weight:bold; color:#555; }
-.match-card-done .done-names { font-size:13px; flex:1; margin:0 10px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.match-card-done .done-names { font-size:0.8125rem; flex:1; margin:0 0.625rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .match-card-done .done-score { font-weight:bold; color:#555; white-space:nowrap; }
-.match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:2px 8px 2px 8px; font-size:15px; font-weight:bold; }
+.match-header-row { display:flex; align-items:center; justify-content:space-between; background:#37474f; color:#fff; padding:0.125rem 0.5rem; font-size:0.9375rem; font-weight:bold; }
 .court-label { display:flex; align-items:baseline; gap:2px; line-height:1; }
 .court-label-big { font-size:2em; font-weight:900; line-height:1; letter-spacing:-1px; }
 .court-label-small { font-size:0.72em; font-weight:bold; opacity:0.85; }
@@ -160,58 +158,58 @@ body { font-family: sans-serif; font-size: 18px; color: #222; margin: 0; backgro
     .match-header-done { cursor:pointer; }
     .match-card-done-wrap.expanded .done-arrow { transform:rotate(180deg); display:inline-block; }
 }
-.court-done-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
+.court-done-btn { padding:0.25rem 0.625rem; font-size:0.75rem; font-weight:bold; background:#1565c0; color:#fff; border:none; border-radius:0.375rem; cursor:pointer; white-space:nowrap; }
 .court-start-btn { background:#2e7d32 !important; }
 .court-start-btn:active { background:#1b5e20 !important; }
-.announce-btn { padding:4px 10px; font-size:12px; font-weight:bold; background:#f57f17; color:#fff; border:none; border-radius:6px; cursor:pointer; white-space:nowrap; }
+.announce-btn { padding:0.25rem 0.625rem; font-size:0.75rem; font-weight:bold; background:#f57f17; color:#fff; border:none; border-radius:0.375rem; cursor:pointer; white-space:nowrap; }
 .announce-btn:active { background:#e65100; }
 .announce-btn:disabled { background:#b0bec5; cursor:not-allowed; }
 .announce-btn.announced { background:#78909c; color:#eceff1; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
-.report-btn { width: 100%; font-size: 19px; font-weight: bold; padding: 14px; background: #1565c0; color: #fff; border: none; border-radius: 12px; margin-top: 14px; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
+.report-btn { width: 100%; font-size: 1.1875rem; font-weight: bold; padding: 0.875rem; background: #1565c0; color: #fff; border: none; border-radius: 0.75rem; margin-top: 0.875rem; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
-#reportStatus { text-align: center; margin-top: 10px; font-size: 16px; font-weight: bold; }
+#reportStatus { text-align: center; margin-top: 0.625rem; font-size: 1rem; font-weight: bold; }
 
-/* STEP4: 順位 */
-.rank-table-wrap { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+/* STEP4: 鬆・ｽ・*/
+.rank-table-wrap { background: #fff; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-th { background: #1565c0; color: #fff; font-size: 13px; padding: 8px 2px; }
-td { border-bottom: 1px solid #e0e0e0; padding: 6px 2px; text-align: center; font-size: 15px; vertical-align: middle; }
+th { background: #1565c0; color: #fff; font-size: 0.8125rem; padding: 0.5rem 0.125rem; }
+td { border-bottom: 1px solid #e0e0e0; padding: 0.375rem 0.125rem; text-align: center; font-size: 0.9375rem; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:nth-child(even) td { background: #f5f5f5; }
 .rank-1 td { background: #fff9c4 !important; }
 .rank-2 td { background: #f5f5f5 !important; }
 .rank-3 td { background: #fbe9e7 !important; }
-#rankTable col.c-rank { width: 32px; }
+#rankTable col.c-rank { width: 2rem; }
 #rankTable col.c-name { width: auto; }
-#rankTable col.c-winrate { width: 44px; }
-#rankTable col.c-played { width: 28px; }
-#rankTable col.c-win { width: 28px; }
-#rankTable col.c-lose { width: 28px; }
-#rankTable col.c-diff { width: 42px; }
-.name-cell { text-align: left; padding: 6px 4px; }
-.name-text { font-size: 21px; font-weight: bold; line-height: 1.2; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stats-mini { display: flex; gap: 4px; margin-top: 2px; }
-.stats-mini span { font-size: 10px; color: #888; white-space: nowrap; }
+#rankTable col.c-winrate { width: 2.75rem; }
+#rankTable col.c-played { width: 1.75rem; }
+#rankTable col.c-win { width: 1.75rem; }
+#rankTable col.c-lose { width: 1.75rem; }
+#rankTable col.c-diff { width: 2.625rem; }
+.name-cell { text-align: left; padding: 0.375rem 0.25rem; }
+.name-text { font-size: 1.3125rem; font-weight: bold; line-height: 1.2; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats-mini { display: flex; gap: 0.25rem; margin-top: 0.125rem; }
+.stats-mini span { font-size: 0.625rem; color: #888; white-space: nowrap; }
 
-/* 名簿(非表示) */
+/* 蜷咲ｰｿ(髱櫁｡ｨ遉ｺ) */
 #rosterTable col.r-name { width: auto; }
-#rosterTable col.r-age { width: 62px; }
-#rosterTable col.r-gender { width: 62px; }
-#rosterTable col.r-del { width: 45px; }
-#rosterTable input.r_name { font-size: 18px; width: 95%; padding: 6px; border: 1px solid #888; border-radius: 4px; box-sizing: border-box; }
-#rosterTable input.r_age { font-size: 18px; width: 52px; padding: 6px 0; border: 1px solid #888; border-radius: 4px; box-sizing: border-box; text-align: center; }
-#rosterTable select.r_gender { font-size: 18px; width: 56px; padding: 4px 0; border: 1px solid #888; border-radius: 4px; box-sizing: border-box; }
-.del-btn { background:#c62828; color:#fff; border:none; width: 34px; height: 34px; border-radius: 5px; font-size: 18px; cursor: pointer; }
-.age-blur { filter: blur(4px); user-select: none; cursor: pointer; transition: filter 0.2s; font-size: 16px; text-align: center; }
+#rosterTable col.r-age { width: 3.875rem; }
+#rosterTable col.r-gender { width: 3.875rem; }
+#rosterTable col.r-del { width: 2.8125rem; }
+#rosterTable input.r_name { font-size: 1.125rem; width: 95%; padding: 0.375rem; border: 1px solid #888; border-radius: 4px; box-sizing: border-box; }
+#rosterTable input.r_age { font-size: 1.125rem; width: 3.25rem; padding: 0.375rem 0; border: 1px solid #888; border-radius: 4px; box-sizing: border-box; text-align: center; }
+#rosterTable select.r_gender { font-size: 1.125rem; width: 3.5rem; padding: 0.25rem 0; border: 1px solid #888; border-radius: 4px; box-sizing: border-box; }
+.del-btn { background:#c62828; color:#fff; border:none; width: 2.125rem; height: 2.125rem; border-radius: 5px; font-size: 1.125rem; cursor: pointer; }
+.age-blur { filter: blur(4px); user-select: none; cursor: pointer; transition: filter 0.2s; font-size: 1rem; text-align: center; }
 .age-blur.revealed { filter: none; }
-.gender-badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:15px; font-weight:bold; }
+.gender-badge { display:inline-block; padding:0.125rem 0.375rem; border-radius:4px; font-size:0.9375rem; font-weight:bold; }
 .gender-badge.M { background:#cce5ff; color:#004085; }
 .gender-badge.F { background:#f8d7da; color:#721c24; }
 
-/* 閲覧モード */
+/* 髢ｲ隕ｧ繝｢繝ｼ繝・*/
 body.viewer-mode .admin-only { display: none !important; }
-body.viewer-mode .team { pointer-events: none; padding: 6px 2px; }
+body.viewer-mode .team { pointer-events: none; padding: 0.375rem 0.125rem; }
 body.viewer-mode .team::before { display: none; }
 body.viewer-mode .team::after  { display: none; }
 body.viewer-mode #initialSetup { display: none !important; }
@@ -222,61 +220,58 @@ body.viewer-mode #initialSetup { display: none !important; }
 
 <div class="step-bar">
     <button class="step-btn active" onclick="showStep('step-setup',this)" id="btn-setup">
-        <span class="step-icon">⚙️</span>①設定
-    </button>
+        <span class="step-icon">笞呻ｸ・/span>竭險ｭ螳・    </button>
     <button class="step-btn disabled" onclick="showStep('step-match',this)" id="btn-match">
-        <span class="step-icon">📋</span>②組合せ
-    </button>
+        <span class="step-icon">搭</span>竭｡邨・粋縺・    </button>
     <button class="step-btn disabled" onclick="showStep('step-rank',this)" id="btn-rank">
-        <span class="step-icon">🏆</span>③順位
-    </button>
+        <span class="step-icon">醇</span>竭｢鬆・ｽ・    </button>
 </div>
 
-<!-- 内部状態保持用（非表示） -->
+<!-- 蜀・Κ迥ｶ諷倶ｿ晄戟逕ｨ・磯撼陦ｨ遉ｺ・・-->
 <input type="hidden" id="sessionIdInput">
 <div id="sessionUrlBtns" style="display:none;"></div>
 
-<!-- STEP1: 設定＋参加者統合 -->
+<!-- STEP1: 險ｭ螳夲ｼ句盾蜉閠・ｵｱ蜷・-->
 <div id="step-setup" class="panel active">
     <div class="panel-title">
-        <span>⚙️ 設定・参加者</span>
+        <span>笞呻ｸ・險ｭ螳壹・蜿ょ刈閠・/span>
     </div>
 
-    <!-- クラウド同期・イベント状態カード -->
+    <!-- 繧ｯ繝ｩ繧ｦ繝牙酔譛溘・繧､繝吶Φ繝育憾諷九き繝ｼ繝・-->
     <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:15px;color:#1565c0;">☁️</span>
-            <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
-            <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
+            <span style="font-size:0.9375rem;color:#1565c0;">笘・ｸ・/span>
+            <span id="syncBadge" style="font-size:0.75rem;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">笞ｪ 譛ｪ謗･邯・/span>
+            <div id="modeIndicator" style="font-size:0.75rem;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
         </div>
-        <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:13px;line-height:1.6;"></div>
+        <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:0.8125rem;line-height:1.6;"></div>
     </div>
 
-    <!-- コートQRコードカード（管理者・セッション接続後） -->
+    <!-- 繧ｳ繝ｼ繝・R繧ｳ繝ｼ繝峨き繝ｼ繝会ｼ育ｮ｡逅・・・繧ｻ繝・す繝ｧ繝ｳ謗･邯壼ｾ鯉ｼ・-->
     <div id="courtQrCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div class="setup-label" style="margin:0;">📱 コートスコア入力QR</div>
-            <button onclick="toggleQrPanel()" id="qrToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#555;">▼ 開く</button>
+            <div class="setup-label" style="margin:0;">導 繧ｳ繝ｼ繝医せ繧ｳ繧｢蜈･蜉娉R</div>
+            <button onclick="toggleQrPanel()" id="qrToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;color:#555;">笆ｼ 髢九￥</button>
         </div>
         <div id="qrPanelBody" style="display:none;">
-            <div style="font-size:12px;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
+            <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">蜷・さ繝ｼ繝医・QR繧ｳ繝ｼ繝峨ｒ繧ｹ繧ｭ繝｣繝ｳ縺吶ｋ縺ｨ繧ｹ繧ｳ繧｢蜈･蜉帷判髱｢縺碁幕縺阪∪縺・/div>
             <div id="qrCodesWrap" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;"></div>
-            <!-- ゲーム数設定 -->
+            <!-- 繧ｲ繝ｼ繝謨ｰ險ｭ螳・-->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
-                <div style="font-size:13px;font-weight:bold;color:#333;margin-bottom:8px;">🎾 ゲーム数（スコア入力）</div>
+                <div style="font-size:0.8125rem;font-weight:bold;color:#333;margin-bottom:8px;">疾 繧ｲ繝ｼ繝謨ｰ・医せ繧ｳ繧｢蜈･蜉幢ｼ・/div>
                 <div class="counter-row">
-                    <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">－</button>
+                    <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">・・/button>
                     <div class="counter-val match-games-val">3</div>
-                    <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
+                    <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">・・/button>
                 </div>
-                <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+                <div class="match-games-desc-txt" style="font-size:0.75rem;color:#888;margin-top:4px;">3繧ｲ繝ｼ繝繝槭ャ繝・ｼ・繧ｲ繝ｼ繝蜈亥叙・・/div>
             </div>
-            <!-- Gemini APIキー設定 -->
+            <!-- Gemini API繧ｭ繝ｼ險ｭ螳・-->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                    <div style="font-size:13px;font-weight:bold;color:#333;">🔊 アナウンス（Gemini APIキー）</div>
-                    <div style="display:flex;align-items:center;gap:4px;font-size:13px;">
-                        <span id="tts-gender-female-label" style="color:#c2185b;font-weight:bold;">♀</span>
+                    <div style="font-size:0.8125rem;font-weight:bold;color:#333;">矧 繧｢繝翫え繝ｳ繧ｹ・・emini API繧ｭ繝ｼ・・/div>
+                    <div style="display:flex;align-items:center;gap:4px;font-size:0.8125rem;">
+                        <span id="tts-gender-female-label" style="color:#c2185b;font-weight:bold;">笙</span>
                         <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;">
                             <input type="checkbox" id="tts-gender-toggle" style="opacity:0;width:0;height:0;"
                                 onchange="saveTtsGender(this.checked)">
@@ -285,124 +280,119 @@ body.viewer-mode #initialSetup { display: none !important; }
                             <span style="position:absolute;left:2px;top:2px;width:18px;height:18px;background:white;border-radius:50%;transition:.3s;"
                                 id="tts-gender-thumb"></span>
                         </label>
-                        <span id="tts-gender-male-label" style="color:#888;font-weight:bold;">♂</span>
+                        <span id="tts-gender-male-label" style="color:#888;font-weight:bold;">笙・/span>
                     </div>
                 </div>
                 <input type="password" id="gemini-api-key-input" placeholder="AIza..."
-                    style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:monospace;box-sizing:border-box;"
+                    style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:0.8125rem;font-family:monospace;box-sizing:border-box;"
                     oninput="saveGeminiKey(this.value)">
-                <div style="font-size:11px;color:#888;margin-top:4px;">Google AI Studio で取得したAPIキー</div>
+                <div style="font-size:0.6875rem;color:#888;margin-top:4px;">Google AI Studio 縺ｧ蜿門ｾ励＠縺蘗PI繧ｭ繝ｼ</div>
             </div>
         </div>
     </div>
 
-    <!-- 試合案内パネルカード（管理者・セッション接続後） -->
+    <!-- 隧ｦ蜷域｡亥・繝代ロ繝ｫ繧ｫ繝ｼ繝会ｼ育ｮ｡逅・・・繧ｻ繝・す繝ｧ繝ｳ謗･邯壼ｾ鯉ｼ・-->
     <div id="displayPanelCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div class="setup-label" style="margin:0;">📺 試合案内パネル</div>
-            <button onclick="toggleDisplayPanel()" id="displayPanelToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#555;">▼ 開く</button>
+            <div class="setup-label" style="margin:0;">銅 隧ｦ蜷域｡亥・繝代ロ繝ｫ</div>
+            <button onclick="toggleDisplayPanel()" id="displayPanelToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;color:#555;">笆ｼ 髢九￥</button>
         </div>
         <div id="displayPanelBody" style="display:none;">
-            <div style="font-size:12px;color:#777;margin-bottom:10px;">プロジェクター等で試合状況をリアルタイム表示します</div>
+            <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">繝励Ο繧ｸ繧ｧ繧ｯ繧ｿ繝ｼ遲峨〒隧ｦ蜷育憾豕√ｒ繝ｪ繧｢繝ｫ繧ｿ繧､繝陦ｨ遉ｺ縺励∪縺・/div>
             <div id="displayPanelQrWrap" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
                 <div id="qr-display-panel"></div>
-                <div id="display-panel-url" style="font-size:11px;color:#555;word-break:break-all;text-align:center;"></div>
+                <div id="display-panel-url" style="font-size:0.6875rem;color:#555;word-break:break-all;text-align:center;"></div>
                 <a id="display-panel-link" href="#" target="_blank"
-                    style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:13px;text-decoration:none;font-weight:bold;">
-                    🔗 パネルを開く
-                </a>
+                    style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:0.8125rem;text-decoration:none;font-weight:bold;">
+                    迫 繝代ロ繝ｫ繧帝幕縺・                </a>
             </div>
         </div>
     </div>
 
-    <!-- 初期設定エリア -->
+    <!-- 蛻晄悄險ｭ螳壹お繝ｪ繧｢ -->
     <div id="initialSetup">
-        <!-- 参加者登録（名簿あり・管理者のみ） -->
+        <!-- 蜿ょ刈閠・匳骭ｲ・亥錐邁ｿ縺ゅｊ繝ｻ邂｡逅・・・縺ｿ・・-->
         <div id="entryListCard" class="setup-card admin-only" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-                <div class="setup-label" style="margin:0;">👥 参加者登録</div>
-                <span id="entry-count-label" style="font-size:13px;color:#555;font-weight:bold;"></span>
+                <div class="setup-label" style="margin:0;">則 蜿ょ刈閠・匳骭ｲ</div>
+                <span id="entry-count-label" style="font-size:0.8125rem;color:#555;font-weight:bold;"></span>
             </div>
             <div id="entryList"></div>
-            <button type="button" class="player-add-btn" style="margin-top:8px;" onclick="addEntryPlayer()">＋ 参加者を追加</button>
+            <button type="button" class="player-add-btn" style="margin-top:8px;" onclick="addEntryPlayer()">・・蜿ょ刈閠・ｒ霑ｽ蜉</button>
         </div>
-        <!-- 手動モード：参加人数カウンター（名簿なし・非表示） -->
+        <!-- 謇句虚繝｢繝ｼ繝会ｼ壼盾蜉莠ｺ謨ｰ繧ｫ繧ｦ繝ｳ繧ｿ繝ｼ・亥錐邁ｿ縺ｪ縺励・髱櫁｡ｨ遉ｺ・・-->
         <div id="manualMode" style="display:none;">
         <div class="setup-card">
-            <div class="setup-label">👤 参加人数</div>
+            <div class="setup-label">側 蜿ょ刈莠ｺ謨ｰ</div>
             <div class="counter-row">
-                <button type="button" class="counter-btn" onclick="changeCount('players',-1)">－</button>
+                <button type="button" class="counter-btn" onclick="changeCount('players',-1)">・・/button>
                 <div class="counter-val" id="disp-players"><?=$default_players?></div>
-                <button type="button" class="counter-btn" onclick="changeCount('players',+1)">＋</button>
+                <button type="button" class="counter-btn" onclick="changeCount('players',+1)">・・/button>
             </div>
         </div>
         </div>
-        <!-- コート数・マッチングルール（名簿なし時のみ表示） -->
+        <!-- 繧ｳ繝ｼ繝域焚繝ｻ繝槭ャ繝√Φ繧ｰ繝ｫ繝ｼ繝ｫ・亥錐邁ｿ縺ｪ縺玲凾縺ｮ縺ｿ陦ｨ遉ｺ・・-->
         <div id="manualModeExtra" style="display:none;">
         <div class="setup-card">
-            <div class="setup-label">🏸 コート数</div>
+            <div class="setup-label">昇 繧ｳ繝ｼ繝域焚</div>
             <div class="counter-row">
-                <button type="button" class="counter-btn" onclick="changeCount('courts',-1)">－</button>
+                <button type="button" class="counter-btn" onclick="changeCount('courts',-1)">・・/button>
                 <div class="counter-val" id="disp-courts"><?=$default_courts?></div>
-                <button type="button" class="counter-btn" onclick="changeCount('courts',+1)">＋</button>
+                <button type="button" class="counter-btn" onclick="changeCount('courts',+1)">・・/button>
             </div>
         </div>
         <div class="setup-card">
-            <div class="setup-label">🎾 ゲーム数（スコア入力）</div>
+            <div class="setup-label">疾 繧ｲ繝ｼ繝謨ｰ・医せ繧ｳ繧｢蜈･蜉幢ｼ・/div>
             <div class="counter-row">
-                <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">－</button>
+                <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">・・/button>
                 <div class="counter-val match-games-val">3</div>
-                <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
+                <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">・・/button>
             </div>
-            <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+            <div class="match-games-desc-txt" style="font-size:0.75rem;color:#888;margin-top:4px;">3繧ｲ繝ｼ繝繝槭ャ繝・ｼ・繧ｲ繝ｼ繝蜈亥叙・・/div>
         </div>
         <div class="setup-card">
-            <div class="setup-label">🎯 マッチングルール</div>
+            <div class="setup-label">識 繝槭ャ繝√Φ繧ｰ繝ｫ繝ｼ繝ｫ</div>
             <div class="match-rule-row">
                 <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
-                    <span class="rule-icon">⚖️</span>
-                    バランスマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
+                    <span class="rule-icon">笞厄ｸ・/span>
+                    繝舌Λ繝ｳ繧ｹ繝槭ャ繝・                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">邱丞粋譛驕ｩ蛹悶・蝗ｺ螳壹げ繝ｫ繝ｼ繝苓ｧ｣豸医・騾｣莨鷹亟豁｢</div>
                 </button>
                 <button type="button" class="rule-btn" id="rule-rating" onclick="selectRule('rating')">
-                    <span class="rule-icon">📊</span>
-                    レーティングマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・μ値でチームバランス</div>
+                    <span class="rule-icon">投</span>
+                    繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ繝槭ャ繝・                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">隧ｦ蜷域焚蝮・ｭ峨・ﾎｼ蛟､縺ｧ繝√・繝繝舌Λ繝ｳ繧ｹ</div>
                 </button>
                 <button type="button" class="rule-btn selected" id="rule-random" onclick="selectRule('random')">
-                    <span class="rule-icon">🎲</span>
-                    ランダムマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・ペア重複なし・対戦偏りなし</div>
+                    <span class="rule-icon">軸</span>
+                    繝ｩ繝ｳ繝繝繝槭ャ繝・                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">隧ｦ蜷域焚蝮・ｭ峨・繝壹い驥崎､・↑縺励・蟇ｾ謌ｦ蛛上ｊ縺ｪ縺・/div>
                 </button>
             </div>
-            <div id="setupRuleDesc" style="margin-top:10px;font-size:13px;color:#444;background:#f0f4ff;border-radius:8px;padding:10px 12px;border-left:3px solid #1565c0;line-height:1.7;"></div>
+            <div id="setupRuleDesc" style="margin-top:10px;font-size:0.8125rem;color:#444;background:#f0f4ff;border-radius:8px;padding:10px 12px;border-left:3px solid #1565c0;line-height:1.7;"></div>
         </div>
         </div>
     </div>
 
-    <!-- 参加者・途中変更エリア（試合開始後に表示） -->
+    <!-- 蜿ょ刈閠・・騾比ｸｭ螟画峩繧ｨ繝ｪ繧｢・郁ｩｦ蜷磯幕蟋句ｾ後↓陦ｨ遉ｺ・・-->
     <div id="liveSetup" style="display:none;">
-        <div style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
-            名前の割り当て・休憩・コート数の変更は次の試合から反映されます。
-        </div>
+        <div style="color:#555;font-size:0.9375rem;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
+            蜷榊燕縺ｮ蜑ｲ繧雁ｽ薙※繝ｻ莨第・繝ｻ繧ｳ繝ｼ繝域焚縺ｮ螟画峩縺ｯ谺｡縺ｮ隧ｦ蜷医°繧牙渚譏縺輔ｌ縺ｾ縺吶・        </div>
         <div class="court-change-row">
-            <div class="setup-label">🏸 次の試合からのコート数</div>
+            <div class="setup-label">昇 谺｡縺ｮ隧ｦ蜷医°繧峨・繧ｳ繝ｼ繝域焚</div>
             <div class="counter-row">
-                <button type="button" class="counter-btn admin-only" onclick="changeCourts(-1)">－</button>
+                <button type="button" class="counter-btn admin-only" onclick="changeCourts(-1)">・・/button>
                 <div class="counter-val" id="disp-courts-live">2</div>
-                <button type="button" class="counter-btn admin-only" onclick="changeCourts(+1)">＋</button>
+                <button type="button" class="counter-btn admin-only" onclick="changeCourts(+1)">・・/button>
             </div>
         </div>
         <div id="playerList" class="player-list"></div>
-        <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
-        <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:15px;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">🏁 イベントを終了</button>
+        <button class="player-add-btn admin-only" onclick="addPlayer()">・・譁ｰ縺溘↓蜿ょ刈縺吶ｋ莠ｺ繧定ｿｽ蜉</button>
+        <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:0.9375rem;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">潤 繧､繝吶Φ繝医ｒ邨ゆｺ・/button>
     </div>
 </div>
 
 <!-- STEP3 -->
 <div id="step-match" class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-        <div class="panel-title" style="margin:0;">📋 試合の組合せ・結果入力</div>
+        <div class="panel-title" style="margin:0;">搭 隧ｦ蜷医・邨・粋縺帙・邨先棡蜈･蜉・/div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
             <div class="court-toggle-wrap admin-only">
                 <span>1,2</span>
@@ -413,81 +403,80 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <span>A,B</span>
             </div>
             <div class="court-toggle-wrap admin-only">
-                <span>選手番号</span>
+                <span>驕ｸ謇狗分蜿ｷ</span>
                 <label class="toggle-sw">
                     <input type="checkbox" id="playerNumToggle" onchange="updatePlayerNumDisplay()">
                     <span class="slider"></span>
                 </label>
-                <span>表示</span>
+                <span>陦ｨ遉ｺ</span>
             </div>
             <div class="court-toggle-wrap admin-only">
-                <span>手動</span>
+                <span>謇句虚</span>
                 <label class="toggle-sw">
                     <input type="checkbox" id="autoMatchToggle" onchange="onAutoMatchChange()">
                     <span class="slider"></span>
                 </label>
-                <span>自動</span>
+                <span>閾ｪ蜍・/span>
             </div>
             <div class="court-toggle-wrap seq-toggle-wrap admin-only" id="seqMatchWrap">
-                <span>一括</span>
+                <span>荳諡ｬ</span>
                 <label class="toggle-sw">
                     <input type="checkbox" id="seqMatchToggle" onchange="onSeqMatchChange()">
                     <span class="slider"></span>
                 </label>
-                <span>順次</span>
+                <span>鬆・ｬ｡</span>
             </div>
         </div>
     </div>
-    <div style="font-size:13px;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;color:#444;" id="matchRuleDesc">
+    <div style="font-size:0.8125rem;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;color:#444;" id="matchRuleDesc">
     </div>
-    <div class="admin-only" style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #e65100;">
-        チームをタップするとスコアが変わります。左半分で＋、右半分でー。
-    </div>
+    <div class="admin-only" style="color:#555;font-size:0.9375rem;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #e65100;">
+        繝√・繝繧偵ち繝・・縺吶ｋ縺ｨ繧ｹ繧ｳ繧｢縺悟､峨ｏ繧翫∪縺吶ょｷｦ蜊雁・縺ｧ・九∝承蜊雁・縺ｧ繝ｼ縲・    </div>
     <div id="matchContainer"></div>
     <div class="pool-status-bar admin-only" id="poolStatusBar"></div>
-    <button class="next-round-btn admin-only" id="nextRoundBtn" onclick="onNextRoundBtn()">▶ 次の試合を作る</button>
+    <button class="next-round-btn admin-only" id="nextRoundBtn" onclick="onNextRoundBtn()">笆ｶ 谺｡縺ｮ隧ｦ蜷医ｒ菴懊ｋ</button>
 </div>
 
 <!-- STEP4 -->
 <div id="step-rank" class="panel">
-    <div class="panel-title">🏆 順位表</div>
+    <div class="panel-title">醇 鬆・ｽ崎｡ｨ</div>
     <div class="rank-table-wrap">
         <table id="rankTable">
             <colgroup><col class="c-rank"><col class="c-name"><col class="c-winrate"><col class="c-played"><col class="c-win"><col class="c-lose"><col class="c-diff"></colgroup>
             <tbody id="rankBody"></tbody>
         </table>
     </div>
-    <button class="report-btn" id="btn-preview-report" onclick="previewReport()" style="display:none;">📋 結果を確認する</button>
+    <button class="report-btn" id="btn-preview-report" onclick="previewReport()" style="display:none;">搭 邨先棡繧堤｢ｺ隱阪☆繧・/button>
     <div id="reportPreview" style="display:none;margin-top:12px;">
-        <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
-        <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="downloadReport()">📥 結果をダウンロードする</button>
+        <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:0.75rem;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
+        <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="downloadReport()">踏 邨先棡繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨☆繧・/button>
     </div>
     <div id="reportStatus"></div>
 
-    <!-- 期間集計パネル -->
-    <button class="report-btn" id="btn-period-agg" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;display:none;">📅 期間集計</button>
+    <!-- 譛滄俣髮・ｨ医ヱ繝阪Ν -->
+    <button class="report-btn" id="btn-period-agg" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;display:none;">套 譛滄俣髮・ｨ・/button>
     <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
-        <div style="font-weight:bold;font-size:15px;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
+        <div style="font-weight:bold;font-size:0.9375rem;margin-bottom:10px;color:#6a1b9a;">投 譛滄俣蛻･髮・ｨ・/div>
         <div style="margin-bottom:8px;">
-            <div style="font-size:12px;color:#555;margin-bottom:4px;">イベント名（前方一致）</div>
-            <input id="periodPrefix" type="text" placeholder="例: らさんて" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:15px;box-sizing:border-box;">
+            <div style="font-size:0.75rem;color:#555;margin-bottom:4px;">繧､繝吶Φ繝亥錐・亥燕譁ｹ荳閾ｴ・・/div>
+            <input id="periodPrefix" type="text" placeholder="萓・ 繧峨＆繧薙※" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:0.9375rem;box-sizing:border-box;">
         </div>
         <div style="display:flex;gap:8px;margin-bottom:6px;">
             <div style="flex:1;">
-                <div style="font-size:12px;color:#555;margin-bottom:4px;">期間１（開始日）</div>
-                <input id="period1" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:4px;">譛滄俣・托ｼ磯幕蟋区律・・/div>
+                <input id="period1" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:0.875rem;box-sizing:border-box;">
             </div>
             <div style="flex:1;">
-                <div style="font-size:12px;color:#555;margin-bottom:4px;">期間２（終了日）</div>
-                <input id="period2" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:4px;">譛滄俣・抵ｼ育ｵゆｺ・律・・/div>
+                <input id="period2" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:0.875rem;box-sizing:border-box;">
             </div>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:10px;">
-            <button onclick="setPeriodYear()" style="flex:1;padding:7px;background:#4527a0;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">📅 年間</button>
-            <button onclick="setPeriodFiscal()" style="flex:1;padding:7px;background:#311b92;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">📅 年度</button>
+            <button onclick="setPeriodYear()" style="flex:1;padding:7px;background:#4527a0;color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-weight:bold;cursor:pointer;">套 蟷ｴ髢・/button>
+            <button onclick="setPeriodFiscal()" style="flex:1;padding:7px;background:#311b92;color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-weight:bold;cursor:pointer;">套 蟷ｴ蠎ｦ</button>
         </div>
-        <button onclick="calcPeriodStats()" style="width:100%;padding:10px;background:#6a1b9a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🔍 集計する</button>
-        <div id="periodStatus" style="text-align:center;margin-top:8px;font-size:13px;font-weight:bold;"></div>
+        <button onclick="calcPeriodStats()" style="width:100%;padding:10px;background:#6a1b9a;color:#fff;border:none;border-radius:8px;font-size:0.9375rem;font-weight:bold;cursor:pointer;">剥 髮・ｨ医☆繧・/button>
+        <div id="periodStatus" style="text-align:center;margin-top:8px;font-size:0.8125rem;font-weight:bold;"></div>
         <div id="periodResult" style="margin-top:10px;overflow-x:auto;"></div>
     </div>
 </div>
@@ -495,7 +484,7 @@ body.viewer-mode #initialSetup { display: none !important; }
 
 <script>
 // =====================================================================
-// 試合状態 (メモリ管理・Firebase同期、rr_state_v2はページ復元用キャッシュ)
+// 隧ｦ蜷育憾諷・(繝｡繝｢繝ｪ邂｡逅・・Firebase蜷梧悄縲〉r_state_v2縺ｯ繝壹・繧ｸ蠕ｩ蜈・畑繧ｭ繝｣繝・す繝･)
 // =====================================================================
 let state = {
     courts: 2,
@@ -508,22 +497,17 @@ let state = {
     schedule: [],
     scores: {},
     playerNames: {},
-    playerKana:  {},        // {id: フリガナ}
-    geminiApiKey: '',       // Gemini TTS APIキー
-    ttsVoiceGender: 'female', // TTS音声性別 'female'=Aoede / 'male'=Puck
-    announcedCourts: {},    // {r${round}c${idx}: timestamp} アナウンス済みコート
-    courtNameAlpha: false,  // false=第○コート, true=A・Bコート
-    showPlayerNum:  false,  // false=名前のみ, true=番号+名前
-    fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
-    createdAt: '',          // 大会作成日時（ISO文字列）
-    autoMatch:  false,      // 自動組合せ ON/OFF
-    seqMatch:   false,      // 順次組合せ ON/OFF（プール方式）
-    matchPool:  [],         // 順次プール [{team1:[...], team2:[...]}]
-    matchGames: 3,          // スコアページのゲーム数（奇数: 1,3,5,7）
-};
+    playerKana:  {},        // {id: 繝輔Μ繧ｬ繝笠
+    geminiApiKey: '',       // Gemini TTS API繧ｭ繝ｼ
+    ttsVoiceGender: 'female', // TTS髻ｳ螢ｰ諤ｧ蛻･ 'female'=Aoede / 'male'=Puck
+    announcedCourts: {},    // {r${round}c${idx}: timestamp} 繧｢繝翫え繝ｳ繧ｹ貂医∩繧ｳ繝ｼ繝・    courtNameAlpha: false,  // false=隨ｬ笳九さ繝ｼ繝・ true=A繝ｻB繧ｳ繝ｼ繝・    showPlayerNum:  false,  // false=蜷榊燕縺ｮ縺ｿ, true=逡ｪ蜿ｷ+蜷榊燕
+    fixedPairs:     [],     // 繝壹い蝗ｺ螳・[[id1,id2], ...]
+    createdAt: '',          // 螟ｧ莨壻ｽ懈・譌･譎ゑｼ・SO譁・ｭ怜・・・    autoMatch:  false,      // 閾ｪ蜍慕ｵ・粋縺・ON/OFF
+    seqMatch:   false,      // 鬆・ｬ｡邨・粋縺・ON/OFF・医・繝ｼ繝ｫ譁ｹ蠑擾ｼ・    matchPool:  [],         // 鬆・ｬ｡繝励・繝ｫ [{team1:[...], team2:[...]}]
+    matchGames: 3,          // 繧ｹ繧ｳ繧｢繝壹・繧ｸ縺ｮ繧ｲ繝ｼ繝謨ｰ・亥･・焚: 1,3,5,7・・};
 
 // =====================================================================
-// UI: ステップ切替
+// UI: 繧ｹ繝・ャ繝怜・譖ｿ
 // =====================================================================
 function showStep(id, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -536,7 +520,7 @@ function showStep(id, el) {
 }
 
 // =====================================================================
-// UI: 設定カウンター
+// UI: 險ｭ螳壹き繧ｦ繝ｳ繧ｿ繝ｼ
 // =====================================================================
 let setupPlayers = <?=$default_players?>;
 let setupCourts  = <?=$default_courts?>;
@@ -544,14 +528,13 @@ let matchingRule = 'random'; // 'random' or 'rating'
 
 function selectRule(rule) {
     matchingRule = rule;
-    state.matchingRule = rule; // stateにも即反映
+    state.matchingRule = rule; // state縺ｫ繧ょ叉蜿肴丐
     document.getElementById('rule-random').classList.toggle('selected', rule === 'random');
     document.getElementById('rule-rating').classList.toggle('selected', rule === 'rating');
     const rb = document.getElementById('rule-balance');
     if (rb) rb.classList.toggle('selected', rule === 'balance');
     updateMatchRuleDesc();
-    saveState(); // _fbApply中はisApplyingRemote=trueなのでpushされない（echo防止）
-}
+    saveState(); // _fbApply荳ｭ縺ｯisApplyingRemote=true縺ｪ縺ｮ縺ｧpush縺輔ｌ縺ｪ縺・ｼ・cho髦ｲ豁｢・・}
 
 function changeCount(key, delta) {
     if (key === 'players') {
@@ -560,21 +543,19 @@ function changeCount(key, delta) {
     } else {
         setupCourts = Math.max(1, Math.min(20, setupCourts + delta));
         document.getElementById('disp-courts').textContent = setupCourts;
-        // state.courtsにも即反映（generateNextRoundが直接参照するため）
-        state.courts = setupCourts;
+        // state.courts縺ｫ繧ょ叉蜿肴丐・・enerateNextRound縺檎峩謗･蜿ら・縺吶ｋ縺溘ａ・・        state.courts = setupCourts;
         document.getElementById('disp-courts-live').textContent = setupCourts;
         if (_sessionId) saveState();
     }
 }
 
 // =====================================================================
-// 試合初期化
+// 隧ｦ蜷亥・譛溷喧
 // =====================================================================
 function initTournament() {
-    if (state.roundCount > 0 && !confirm('現在の試合データをリセットして最初からやり直しますか？')) return;
+    if (state.roundCount > 0 && !confirm('迴ｾ蝨ｨ縺ｮ隧ｦ蜷医ョ繝ｼ繧ｿ繧偵Μ繧ｻ繝・ヨ縺励※譛蛻昴°繧峨ｄ繧顔峩縺励∪縺吶°・・)) return;
 
-    // セッションIDがなければ試合開始時に生成してFirebase接続
-    if (!_sessionId) {
+    // 繧ｻ繝・す繝ｧ繝ｳID縺後↑縺代ｌ縺ｰ隧ｦ蜷磯幕蟋区凾縺ｫ逕滓・縺励※Firebase謗･邯・    if (!_sessionId) {
         const inputVal = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '').toUpperCase();
         const sid   = inputVal.length >= 3 ? inputVal : String(Math.floor(Math.random() * 900000) + 100000);
         const token = Math.random().toString(36).substr(2, 8).toUpperCase();
@@ -590,25 +571,21 @@ function initTournament() {
         if (window._fbStart) { window._fbStart(sid); delete window._pendingFbSid; }
         saveSessionToHistory(sid, true);
         updateAdminUI();
-        updateSyncStatus('🟡 接続中...', '#e65100');
+        updateSyncStatus('泯 謗･邯壻ｸｭ...', '#e65100');
     }
 
-    // エントリーモード（名簿あり）か手動モードか判定
-    const isEntryMode = document.getElementById('entryListCard').style.display !== 'none';
+    // 繧ｨ繝ｳ繝医Μ繝ｼ繝｢繝ｼ繝会ｼ亥錐邁ｿ縺ゅｊ・峨°謇句虚繝｢繝ｼ繝峨°蛻､螳・    const isEntryMode = document.getElementById('entryListCard').style.display !== 'none';
     const hasPreloaded = _sessionId && Array.isArray(state.players) && state.players.length > 0;
 
     if (isEntryMode) {
-        // 1名ずつ追加したエントリーリストからstateを構築
-        if (!applyEntryPlayers()) return;
+        // 1蜷阪★縺､霑ｽ蜉縺励◆繧ｨ繝ｳ繝医Μ繝ｼ繝ｪ繧ｹ繝医°繧鋭tate繧呈ｧ狗ｯ・        if (!applyEntryPlayers()) return;
     } else if (hasPreloaded) {
-        // ラウンド・試合データのみリセット（選手・名前・レーティングは維持）
-        state.roundCount = 0;
+        // 繝ｩ繧ｦ繝ｳ繝峨・隧ｦ蜷医ョ繝ｼ繧ｿ縺ｮ縺ｿ繝ｪ繧ｻ繝・ヨ・磯∈謇九・蜷榊燕繝ｻ繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ縺ｯ邯ｭ謖・ｼ・        state.roundCount = 0;
         state.schedule   = [];
         state.scores     = {};
         state.courts     = setupCourts;
         state.matchingRule = matchingRule;
-        // pairMatrix / oppMatrix を再初期化
-        const ids = state.players.map(p => p.id);
+        // pairMatrix / oppMatrix 繧貞・蛻晄悄蛹・        const ids = state.players.map(p => p.id);
         state.pairMatrix = {};
         state.oppMatrix  = {};
         ids.forEach(i => {
@@ -618,8 +595,7 @@ function initTournament() {
         });
         state.players.forEach(p => { p.playCount = 0; p.lastRound = -1; p.resting = false; p.restCount = 0; });
     } else {
-        // 通常の初期化
-        state.courts       = setupCourts;
+        // 騾壼ｸｸ縺ｮ蛻晄悄蛹・        state.courts       = setupCourts;
         state.roundCount   = 0;
         state.matchingRule = matchingRule;
         state.players      = [];
@@ -641,8 +617,7 @@ function initTournament() {
     renderPlayerList();
     renderMatchContainer();
     document.getElementById('disp-courts-live').textContent = state.courts;
-    // 設定タブのまま留まる（組合せには自動移動しない）
-    showStep('step-setup', document.getElementById('btn-setup'));
+    // 險ｭ螳壹ち繝悶・縺ｾ縺ｾ逡吶∪繧具ｼ育ｵ・粋縺帙↓縺ｯ閾ｪ蜍慕ｧｻ蜍輔＠縺ｪ縺・ｼ・    showStep('step-setup', document.getElementById('btn-setup'));
 }
 
 function showLiveSetup() {
@@ -651,19 +626,17 @@ function showLiveSetup() {
 }
 
 // =====================================================================
-// 参加者エントリー（1名ずつ追加方式）
-// =====================================================================
-let entryPlayers = []; // 確定した参加者 [{pid,name,kana,mu,sigma,...}]
-const entryRestingPids = new Set(); // 開始前に休憩設定した選手のpid
+// 蜿ょ刈閠・お繝ｳ繝医Μ繝ｼ・・蜷阪★縺､霑ｽ蜉譁ｹ蠑擾ｼ・// =====================================================================
+let entryPlayers = []; // 遒ｺ螳壹＠縺溷盾蜉閠・[{pid,name,kana,mu,sigma,...}]
+const entryRestingPids = new Set(); // 髢句ｧ句燕縺ｫ莨第・險ｭ螳壹＠縺滄∈謇九・pid
 
 function showEntryMode() {
     if (!isAdmin) return;
     document.getElementById('entryListCard').style.display = 'block';
     document.getElementById('manualMode').style.display = 'none';
-    document.getElementById('manualModeExtra').style.display = 'block'; // 準備中はコート数・ルールを表示
+    document.getElementById('manualModeExtra').style.display = 'block'; // 貅門ｙ荳ｭ縺ｯ繧ｳ繝ｼ繝域焚繝ｻ繝ｫ繝ｼ繝ｫ繧定｡ｨ遉ｺ
     renderEntryList();
-    // 管理者は準備中でも組合せ・順位タブを有効化
-    document.getElementById('btn-match').classList.remove('disabled');
+    // 邂｡逅・・・貅門ｙ荳ｭ縺ｧ繧らｵ・粋縺帙・鬆・ｽ阪ち繝悶ｒ譛牙柑蛹・    document.getElementById('btn-match').classList.remove('disabled');
     document.getElementById('btn-rank').classList.remove('disabled');
 }
 
@@ -675,8 +648,7 @@ function getUnusedRoster() {
 }
 
 function addEntryPlayer() {
-    // 既存の未確定行に選手が選択済みなら自動で確定する
-    document.querySelectorAll('.entry-pending-row').forEach(row => {
+    // 譌｢蟄倥・譛ｪ遒ｺ螳夊｡後↓驕ｸ謇九′驕ｸ謚樊ｸ医∩縺ｪ繧芽・蜍輔〒遒ｺ螳壹☆繧・    document.querySelectorAll('.entry-pending-row').forEach(row => {
         const sel = row.querySelector('select');
         if (sel && sel.value) {
             const pid = sel.value;
@@ -687,23 +659,23 @@ function addEntryPlayer() {
             row.remove();
         }
     });
-    // 自動確定が発生した場合は保存・再描画
+    // 閾ｪ蜍慕｢ｺ螳壹′逋ｺ逕溘＠縺溷ｴ蜷医・菫晏ｭ倥・蜀肴緒逕ｻ
     renderEntryList();
     _saveEntryToState();
     const unused = getUnusedRoster();
-    if (!unused.length) { showToast('名簿の全員が登録済みです'); return; }
+    if (!unused.length) { showToast('蜷咲ｰｿ縺ｮ蜈ｨ蜩｡縺檎匳骭ｲ貂医∩縺ｧ縺・); return; }
     const list = document.getElementById('entryList');
     const row = document.createElement('div');
     row.className = 'entry-pending-row';
     row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;';
-    const opts = `<option value="">--- 選択してください ---</option>` +
+    const opts = `<option value="">--- 驕ｸ謚槭＠縺ｦ縺上□縺輔＞ ---</option>` +
         unused.map(p => `<option value="${_esc(p.pid)}">${_esc(p.name)}${p.kana?' ('+_esc(p.kana)+')':''}</option>`).join('');
     row.innerHTML = `
-        <select style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:14px;">${opts}</select>
+        <select style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:0.875rem;">${opts}</select>
         <button type="button" onclick="confirmEntryRow(this)"
-            style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:13px;white-space:nowrap;">✓ 決定</button>
+            style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.8125rem;white-space:nowrap;">笨・豎ｺ螳・/button>
         <button type="button" onclick="this.closest('.entry-pending-row').remove()"
-            style="padding:8px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:14px;">×</button>`;
+            style="padding:8px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">ﾃ・/button>`;
     list.appendChild(row);
 }
 
@@ -711,22 +683,20 @@ function confirmEntryRow(btn) {
     const row = btn.closest('.entry-pending-row');
     const sel = row.querySelector('select');
     const pid = sel.value;
-    if (!pid) { showToast('選手を選択してください'); return; }
-    if (entryPlayers.find(p => p.pid === pid)) { showToast('すでに追加されています'); return; }
+    if (!pid) { showToast('驕ｸ謇九ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞'); return; }
+    if (entryPlayers.find(p => p.pid === pid)) { showToast('縺吶〒縺ｫ霑ｽ蜉縺輔ｌ縺ｦ縺・∪縺・); return; }
     const rp = (state.roster || []).find(p => p.pid === pid);
     if (!rp) return;
     entryPlayers.push(rp);
     row.remove();
     renderEntryList();
-    _saveEntryToState(); // Firebaseに即保存
-}
+    _saveEntryToState(); // Firebase縺ｫ蜊ｳ菫晏ｭ・}
 
 window.removeConfirmedEntry = function(pid) {
     entryPlayers = entryPlayers.filter(p => p.pid !== pid);
     entryRestingPids.delete(pid);
     renderEntryList();
-    _saveEntryToState(); // Firebaseに即保存
-};
+    _saveEntryToState(); // Firebase縺ｫ蜊ｳ菫晏ｭ・};
 
 window.toggleEntryRest = function(pid) {
     if (entryRestingPids.has(pid)) entryRestingPids.delete(pid);
@@ -735,8 +705,7 @@ window.toggleEntryRest = function(pid) {
     _saveEntryToState();
 };
 
-// entryPlayersをstate.playersに即反映してFirebaseに保存
-function _saveEntryToState() {
+// entryPlayers繧痴tate.players縺ｫ蜊ｳ蜿肴丐縺励※Firebase縺ｫ菫晏ｭ・function _saveEntryToState() {
     if (entryPlayers.length === 0) {
         state.players = [];
         state.playerNames = {};
@@ -771,15 +740,13 @@ function _saveEntryToState() {
     saveState();
 }
 
-// state.players + state.roster からentryPlayersを復元
-function _rebuildEntryPlayers() {
+// state.players + state.roster 縺九ｉentryPlayers繧貞ｾｩ蜈・function _rebuildEntryPlayers() {
     entryPlayers = [];
     entryRestingPids.clear();
     const roster = state.roster || [];
     const playerNames = state.playerNames || {};
     const players = state.players || [];
-    // playerNames の順序（id順）でrosterから一致するものを探す
-    const maxId = players.length ? Math.max(0, ...players.map(p => p.id)) : 0;
+    // playerNames 縺ｮ鬆・ｺ擾ｼ・d鬆・ｼ峨〒roster縺九ｉ荳閾ｴ縺吶ｋ繧ゅ・繧呈爾縺・    const maxId = players.length ? Math.max(0, ...players.map(p => p.id)) : 0;
     if (!state.playerKana) state.playerKana = {};
     for (let id = 1; id <= maxId; id++) {
         const name = playerNames[id];
@@ -787,17 +754,14 @@ function _rebuildEntryPlayers() {
         const rp = roster.find(r => r.name === name);
         if (rp) {
             entryPlayers.push(rp);
-            // 休憩状態を復元
-            const sp = players.find(p => p.id === id);
+            // 莨第・迥ｶ諷九ｒ蠕ｩ蜈・            const sp = players.find(p => p.id === id);
             if (sp && sp.resting && rp.pid) entryRestingPids.add(rp.pid);
-            // 旧イベント（kana未保存）のマイグレーション: rosterのkanaで補完
-            if (!state.playerKana[id] && rp.kana) state.playerKana[id] = rp.kana;
+            // 譌ｧ繧､繝吶Φ繝茨ｼ・ana譛ｪ菫晏ｭ假ｼ峨・繝槭う繧ｰ繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ: roster縺ｮkana縺ｧ陬懷ｮ・            if (!state.playerKana[id] && rp.kana) state.playerKana[id] = rp.kana;
         }
     }
 }
 
-// idから所属クラブ名を取得（stateのplayerClubsまたはrosterから推測）
-function getPlayerClubName(id) {
+// id縺九ｉ謇螻槭け繝ｩ繝門錐繧貞叙蠕暦ｼ・tate縺ｮplayerClubs縺ｾ縺溘・roster縺九ｉ謗ｨ貂ｬ・・function getPlayerClubName(id) {
     if (state.playerClubs && state.playerClubs[id]) return state.playerClubs[id];
     const name = state.playerNames?.[id];
     if (!name) return '';
@@ -809,7 +773,7 @@ function renderEntryList() {
     const list = document.getElementById('entryList');
     if (!list) return;
     list.querySelectorAll('.entry-confirmed-row').forEach(r => r.remove());
-    // 組合せ（schedule）が1件以上あれば開催中とみなしてロック
+    // 邨・粋縺幢ｼ・chedule・峨′1莉ｶ莉･荳翫≠繧後・髢句ぎ荳ｭ縺ｨ縺ｿ縺ｪ縺励※繝ｭ繝・け
     const isActive = Array.isArray(state.schedule) && state.schedule.length > 0;
     const frag = document.createDocumentFragment();
     entryPlayers.forEach(p => {
@@ -819,37 +783,36 @@ function renderEntryList() {
         const isResting = entryRestingPids.has(p.pid);
         let actionBtns;
         if (isActive) {
-            actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:11px;white-space:nowrap;">🔒 参加済</span>`;
+            actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:0.6875rem;white-space:nowrap;">白 蜿ょ刈貂・/span>`;
         } else {
             const restBtn = isResting
-                ? `<button type="button" class="rest-btn resting" style="font-size:12px;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">復帰</button>`
-                : `<button type="button" class="rest-btn" style="font-size:12px;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">休憩</button>`;
-            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:12px;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(p.pid)}')">削除</button>`;
+                ? `<button type="button" class="rest-btn resting" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">蠕ｩ蟶ｰ</button>`
+                : `<button type="button" class="rest-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">莨第・</button>`;
+            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(p.pid)}')">蜑企勁</button>`;
             actionBtns = restBtn + delBtn;
         }
         const clubBadge = p.clubName
-            ? ` <span style="font-size:11px;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
+            ? ` <span style="font-size:0.6875rem;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
             : '';
         div.style.opacity = isResting ? '0.5' : '1';
         div.innerHTML = `
             <div style="flex:1;">
-                <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}${clubBadge}</div>
-                <div style="font-size:11px;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
+                <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${clubBadge}</div>
+                <div style="font-size:0.6875rem;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' ﾎｼ='+Number(p.mu).toFixed(1):''}</div>
             </div>
             <div style="display:flex;gap:6px;">${actionBtns}</div>`;
         frag.appendChild(div);
     });
     list.insertBefore(frag, list.firstChild);
-    // 開催中は「追加」ボタンも非表示
+    // 髢句ぎ荳ｭ縺ｯ縲瑚ｿｽ蜉縲阪・繧ｿ繝ｳ繧る撼陦ｨ遉ｺ
     const addBtn = list.parentElement?.querySelector('.player-add-btn');
     if (addBtn) addBtn.style.display = isActive ? 'none' : '';
     const lbl = document.getElementById('entry-count-label');
-    if (lbl) lbl.textContent = entryPlayers.length + '人登録中';
+    if (lbl) lbl.textContent = entryPlayers.length + '莠ｺ逋ｻ骭ｲ荳ｭ';
 }
 
-// entryPlayersをstateに反映（initTournamentから呼ぶ）
-function applyEntryPlayers() {
-    if (!entryPlayers.length) { alert('参加者を1人以上追加してください'); return false; }
+// entryPlayers繧痴tate縺ｫ蜿肴丐・・nitTournament縺九ｉ蜻ｼ縺ｶ・・function applyEntryPlayers() {
+    if (!entryPlayers.length) { alert('蜿ょ刈閠・ｒ1莠ｺ莉･荳願ｿｽ蜉縺励※縺上□縺輔＞'); return false; }
     state.players     = [];
     state.playerNames = {};
     state.playerClubs = {};
@@ -882,46 +845,46 @@ function enableTabs() {
     document.getElementById('btn-rank').classList.remove('disabled');
 }
 
-// 評価バッジ生成
+// 隧穂ｾ｡繝舌ャ繧ｸ逕滓・
 function _evalBadge(mark) {
     const cfg = {
-        '◎': { bg: '#e8f5e9', color: '#2e7d32', border: '#a5d6a7' },
-        '△': { bg: '#fff8e1', color: '#f57f17', border: '#ffe082' },
-        '×': { bg: '#fce4ec', color: '#b71c1c', border: '#f48fb1' },
+        '笳・: { bg: '#e8f5e9', color: '#2e7d32', border: '#a5d6a7' },
+        '笆ｳ': { bg: '#fff8e1', color: '#f57f17', border: '#ffe082' },
+        'ﾃ・: { bg: '#fce4ec', color: '#b71c1c', border: '#f48fb1' },
     }[mark] || {};
-    return `<span style="display:inline-block;font-size:12px;font-weight:bold;padding:1px 7px;border-radius:10px;border:1px solid ${cfg.border};background:${cfg.bg};color:${cfg.color};margin-left:4px;">${mark}</span>`;
+    return `<span style="display:inline-block;font-size:0.75rem;font-weight:bold;padding:1px 7px;border-radius:10px;border:1px solid ${cfg.border};background:${cfg.bg};color:${cfg.color};margin-left:4px;">${mark}</span>`;
 }
 
 const RULE_DESCS = {
     random: {
-        label: '🎲 ランダムマッチ',
+        label: '軸 繝ｩ繝ｳ繝繝繝槭ャ繝・,
         rows: [
-            { num:'①', text:'出場回数を均等に', mark:'◎', note:'出場率が低い人から必ず選出。常に保証されます。' },
-            { num:'②', text:'同じペアを避ける',  mark:'◎', note:'ペア重複ゼロの組み合わせを全探索で探します。' },
-            { num:'③', text:'同じ対戦相手を避ける', mark:'△', note:'①②を満たした残りの選択肢の中で最小化。参加人数が少ないと保証できないことがあります。' },
-            { num:'④', text:'出場間隔を均等に', mark:'×', note:'①〜③が優先されるため、間隔の調整は限定的です。' },
+            { num:'竭', text:'蜃ｺ蝣ｴ蝗樊焚繧貞插遲峨↓', mark:'笳・, note:'蜃ｺ蝣ｴ邇・′菴弱＞莠ｺ縺九ｉ蠢・★驕ｸ蜃ｺ縲ょｸｸ縺ｫ菫晁ｨｼ縺輔ｌ縺ｾ縺吶・ },
+            { num:'竭｡', text:'蜷後§繝壹い繧帝∩縺代ｋ',  mark:'笳・, note:'繝壹い驥崎､・ぞ繝ｭ縺ｮ邨・∩蜷医ｏ縺帙ｒ蜈ｨ謗｢邏｢縺ｧ謗｢縺励∪縺吶・ },
+            { num:'竭｢', text:'蜷後§蟇ｾ謌ｦ逶ｸ謇九ｒ驕ｿ縺代ｋ', mark:'笆ｳ', note:'竭竭｡繧呈ｺ縺溘＠縺滓ｮ九ｊ縺ｮ驕ｸ謚櫁い縺ｮ荳ｭ縺ｧ譛蟆丞喧縲ょ盾蜉莠ｺ謨ｰ縺悟ｰ代↑縺・→菫晁ｨｼ縺ｧ縺阪↑縺・％縺ｨ縺後≠繧翫∪縺吶・ },
+            { num:'竭｣', text:'蜃ｺ蝣ｴ髢馴囈繧貞插遲峨↓', mark:'ﾃ・, note:'竭縲懌造縺悟━蜈医＆繧後ｋ縺溘ａ縲・俣髫斐・隱ｿ謨ｴ縺ｯ髯仙ｮ夂噪縺ｧ縺吶・ },
         ],
-        summary: '参加人数が多いほど③④も機能しやすくなります。',
+        summary: '蜿ょ刈莠ｺ謨ｰ縺悟､壹＞縺ｻ縺ｩ竭｢竭｣繧よｩ溯・縺励ｄ縺吶￥縺ｪ繧翫∪縺吶・,
     },
     rating: {
-        label: '📊 レーティングマッチ',
+        label: '投 繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ繝槭ャ繝・,
         rows: [
-            { num:'①', text:'出場回数を均等に',   mark:'◎', note:'出場率が低い人から必ず選出。常に保証されます。' },
-            { num:'②', text:'同じペアを避ける',   mark:'◎', note:'ペア重複を抑えた上でグループを構成します。' },
-            { num:'③', text:'μ値が近い4人を同コートに', mark:'△', note:'①②で絞られた出場者の中で最良のグループ化を試みます。全員のμ差が小さい場合はランダムに切り替わります。' },
-            { num:'④', text:'同じ対戦相手を避ける', mark:'×', note:'③のグループ内でのみ調整。①〜③の制約が強いため保証できないことがあります。' },
+            { num:'竭', text:'蜃ｺ蝣ｴ蝗樊焚繧貞插遲峨↓',   mark:'笳・, note:'蜃ｺ蝣ｴ邇・′菴弱＞莠ｺ縺九ｉ蠢・★驕ｸ蜃ｺ縲ょｸｸ縺ｫ菫晁ｨｼ縺輔ｌ縺ｾ縺吶・ },
+            { num:'竭｡', text:'蜷後§繝壹い繧帝∩縺代ｋ',   mark:'笳・, note:'繝壹い驥崎､・ｒ謚代∴縺滉ｸ翫〒繧ｰ繝ｫ繝ｼ繝励ｒ讒区・縺励∪縺吶・ },
+            { num:'竭｢', text:'ﾎｼ蛟､縺瑚ｿ代＞4莠ｺ繧貞酔繧ｳ繝ｼ繝医↓', mark:'笆ｳ', note:'竭竭｡縺ｧ邨槭ｉ繧後◆蜃ｺ蝣ｴ閠・・荳ｭ縺ｧ譛濶ｯ縺ｮ繧ｰ繝ｫ繝ｼ繝怜喧繧定ｩｦ縺ｿ縺ｾ縺吶ょ・蜩｡縺ｮﾎｼ蟾ｮ縺悟ｰ上＆縺・ｴ蜷医・繝ｩ繝ｳ繝繝縺ｫ蛻・ｊ譖ｿ繧上ｊ縺ｾ縺吶・ },
+            { num:'竭｣', text:'蜷後§蟇ｾ謌ｦ逶ｸ謇九ｒ驕ｿ縺代ｋ', mark:'ﾃ・, note:'竭｢縺ｮ繧ｰ繝ｫ繝ｼ繝怜・縺ｧ縺ｮ縺ｿ隱ｿ謨ｴ縲や蔵縲懌造縺ｮ蛻ｶ邏・′蠑ｷ縺・◆繧∽ｿ晁ｨｼ縺ｧ縺阪↑縺・％縺ｨ縺後≠繧翫∪縺吶・ },
         ],
-        summary: 'レーティングに差がついてくるほど③の精度が上がります。',
+        summary: '繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ縺ｫ蟾ｮ縺後▽縺・※縺上ｋ縺ｻ縺ｩ竭｢縺ｮ邊ｾ蠎ｦ縺御ｸ翫′繧翫∪縺吶・,
     },
     balance: {
-        label: '⚖️ バランスマッチ',
+        label: '笞厄ｸ・繝舌Λ繝ｳ繧ｹ繝槭ャ繝・,
         rows: [
-            { num:'①', text:'出場回数を均等に',     mark:'◎', note:'コストとして全候補を同時評価。必ず考慮されます。' },
-            { num:'②', text:'同じペアを避ける',      mark:'◎', note:'最も重いペナルティ（×100）で強力に排除します。' },
-            { num:'③', text:'未対戦相手を優先する',  mark:'◎', note:'未対戦ペアにボーナスを付与し、交流を広げます。' },
-            { num:'④', text:'連休・連投を防止する',  mark:'◎', note:'連続休み・連続出場をコスト化して自動調整します。' },
+            { num:'竭', text:'蜃ｺ蝣ｴ蝗樊焚繧貞插遲峨↓',     mark:'笳・, note:'繧ｳ繧ｹ繝医→縺励※蜈ｨ蛟呵｣懊ｒ蜷梧凾隧穂ｾ｡縲ょｿ・★閠・・縺輔ｌ縺ｾ縺吶・ },
+            { num:'竭｡', text:'蜷後§繝壹い繧帝∩縺代ｋ',      mark:'笳・, note:'譛繧る㍾縺・・繝翫Ν繝・ぅ・暗・00・峨〒蠑ｷ蜉帙↓謗帝勁縺励∪縺吶・ },
+            { num:'竭｢', text:'譛ｪ蟇ｾ謌ｦ逶ｸ謇九ｒ蜆ｪ蜈医☆繧・,  mark:'笳・, note:'譛ｪ蟇ｾ謌ｦ繝壹い縺ｫ繝懊・繝翫せ繧剃ｻ倅ｸ弱＠縲∽ｺ､豬√ｒ蠎・￡縺ｾ縺吶・ },
+            { num:'竭｣', text:'騾｣莨代・騾｣謚輔ｒ髦ｲ豁｢縺吶ｋ',  mark:'笳・, note:'騾｣邯壻ｼ代∩繝ｻ騾｣邯壼・蝣ｴ繧偵さ繧ｹ繝亥喧縺励※閾ｪ蜍戊ｪｿ謨ｴ縺励∪縺吶・ },
         ],
-        summary: '①〜④をすべて同時に最適化するため、全項目で高い効果を発揮します。',
+        summary: '竭縲懌促繧偵☆縺ｹ縺ｦ蜷梧凾縺ｫ譛驕ｩ蛹悶☆繧九◆繧√∝・鬆・岼縺ｧ鬮倥＞蜉ｹ譫懊ｒ逋ｺ謠ｮ縺励∪縺吶・,
     },
 };
 
@@ -933,37 +896,35 @@ function updateMatchRuleDesc() {
         `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;">
             <span style="min-width:1.4em;font-weight:bold;color:#1565c0;">${r.num}</span>
             ${_evalBadge(r.mark)}
-            <span><b>${r.text}</b> <span style="color:#666;font-size:12px;">— ${r.note}</span></span>
+            <span><b>${r.text}</b> <span style="color:#666;font-size:0.75rem;">窶・${r.note}</span></span>
         </div>`
     ).join('');
 
     const buildDetail = desc =>
         buildRows(desc.rows) +
-        `<div style="margin-top:6px;font-size:12px;color:#888;border-top:1px solid #ddd;padding-top:6px;">💡 ${desc.summary}</div>`;
+        `<div style="margin-top:6px;font-size:0.75rem;color:#888;border-top:1px solid #ddd;padding-top:6px;">庁 ${desc.summary}</div>`;
 
     const buildPriority = desc =>
-        desc.rows.map(r => `${r.num}${r.text} ${_evalBadge(r.mark)}`).join('<span style="color:#aaa;margin:0 4px;">›</span>');
+        desc.rows.map(r => `${r.num}${r.text} ${_evalBadge(r.mark)}`).join('<span style="color:#aaa;margin:0 4px;">窶ｺ</span>');
 
-    // 設定タブ内の説明欄
-    const setup = document.getElementById('setupRuleDesc');
+    // 險ｭ螳壹ち繝門・縺ｮ隱ｬ譏取ｬ・    const setup = document.getElementById('setupRuleDesc');
     if (setup) setup.innerHTML = buildDetail(desc);
 
-    // 組合せタブ内の優先順位欄（クリックで展開）
-    const el = document.getElementById('matchRuleDesc');
+    // 邨・粋縺帙ち繝門・縺ｮ蜆ｪ蜈磯・ｽ肴ｬ・ｼ医け繝ｪ繝・け縺ｧ螻暮幕・・    const el = document.getElementById('matchRuleDesc');
     if (!el) return;
     el.style.display = '';
     el.style.cursor = 'pointer';
     const expanded = !!window._matchRuleDescOpen;
-    const arrow = expanded ? '▼' : '▶';
+    const arrow = expanded ? '笆ｼ' : '笆ｶ';
     const bodyHtml = expanded
-        ? `<div style="margin-top:8px;">${buildRows(desc.rows)}<div style="margin-top:4px;font-size:12px;color:#888;">💡 ${desc.summary}</div></div>`
+        ? `<div style="margin-top:8px;">${buildRows(desc.rows)}<div style="margin-top:4px;font-size:0.75rem;color:#888;">庁 ${desc.summary}</div></div>`
         : '';
-    el.innerHTML = `<div style="font-weight:bold;color:#1565c0;display:flex;align-items:center;gap:6px;"><span style="font-size:11px;">${arrow}</span>📌 組合せの優先順位（${desc.label}）</div>${bodyHtml}`;
+    el.innerHTML = `<div style="font-weight:bold;color:#1565c0;display:flex;align-items:center;gap:6px;"><span style="font-size:0.6875rem;">${arrow}</span>東 邨・粋縺帙・蜆ｪ蜈磯・ｽ搾ｼ・{desc.label}・・/div>${bodyHtml}`;
     el.onclick = () => { window._matchRuleDescOpen = !window._matchRuleDescOpen; updateMatchRuleDesc(); };
 }
 
 function _resetState() {
-    const savedRoster = state.roster; // リセット後も名簿を保持
+    const savedRoster = state.roster; // 繝ｪ繧ｻ繝・ヨ蠕後ｂ蜷咲ｰｿ繧剃ｿ晄戟
     state.roundCount   = 0;
     state.players      = [];
     state.schedule     = [];
@@ -978,9 +939,8 @@ function _resetState() {
     state.seqMatch     = false;
     state.matchPool    = [];
     if (savedRoster) state.roster = savedRoster;
-    // 組合せがなくなったのでFirebaseのイベント状態を準備中に戻す
-    if (_sessionId && window._fbSetEventStatus) {
-        window._fbSetEventStatus(_sessionId, '準備中');
+    // 邨・粋縺帙′縺ｪ縺上↑縺｣縺溘・縺ｧFirebase縺ｮ繧､繝吶Φ繝育憾諷九ｒ貅門ｙ荳ｭ縺ｫ謌ｻ縺・    if (_sessionId && window._fbSetEventStatus) {
+        window._fbSetEventStatus(_sessionId, '貅門ｙ荳ｭ');
     }
 }
 
@@ -995,7 +955,7 @@ function _resetUI() {
     document.getElementById('matchContainer').innerHTML = '';
     document.getElementById('rankBody').innerHTML = '';
     showStep('step-setup', document.getElementById('btn-setup'));
-    // 名簿が残っている場合はエントリーモードを再表示
+    // 蜷咲ｰｿ縺梧ｮ九▲縺ｦ縺・ｋ蝣ｴ蜷医・繧ｨ繝ｳ繝医Μ繝ｼ繝｢繝ｼ繝峨ｒ蜀崎｡ｨ遉ｺ
     if (Array.isArray(state.roster) && state.roster.length > 0) {
         showEntryMode();
     } else {
@@ -1006,16 +966,14 @@ function _resetUI() {
 }
 
 function resetTournament() {
-    if (!confirm('試合データをすべて削除して最初からやり直しますか？')) return;
+    if (!confirm('隧ｦ蜷医ョ繝ｼ繧ｿ繧偵☆縺ｹ縺ｦ蜑企勁縺励※譛蛻昴°繧峨ｄ繧顔峩縺励∪縺吶°・・)) return;
     _resetState();
-    // Firebase にも空の状態を即座に反映（他の端末の古いデータを上書き）
-    saveState();
+    // Firebase 縺ｫ繧らｩｺ縺ｮ迥ｶ諷九ｒ蜊ｳ蠎ｧ縺ｫ蜿肴丐・井ｻ悶・遶ｯ譛ｫ縺ｮ蜿､縺・ョ繝ｼ繧ｿ繧剃ｸ頑嶌縺搾ｼ・    saveState();
     _resetUI();
 }
 
 function addPlayerToState(id, isNew = false) {
-    // 行列を先に初期化（pushより前）
-    state.pairMatrix[id] = {};
+    // 陦悟・繧貞・縺ｫ蛻晄悄蛹厄ｼ・ush繧医ｊ蜑搾ｼ・    state.pairMatrix[id] = {};
     state.oppMatrix[id] = {};
     state.players.forEach(p => {
         state.pairMatrix[id][p.id] = 0;
@@ -1026,7 +984,7 @@ function addPlayerToState(id, isNew = false) {
     state.pairMatrix[id][id] = 0;
     state.oppMatrix[id][id] = 0;
 
-    // 途中参加: 過去ラウンドに not-joined を遡及記録
+    // 騾比ｸｭ蜿ょ刈: 驕主悉繝ｩ繧ｦ繝ｳ繝峨↓ not-joined 繧帝■蜿願ｨ倬鹸
     if (isNew && state.schedule.length > 0) {
         state.schedule.forEach(rd => {
             if (!rd.playerStates) rd.playerStates = {};
@@ -1038,34 +996,32 @@ function addPlayerToState(id, isNew = false) {
         joinedRound: state.roundCount
     });
 
-    // TrueSkill初期値（μ=25, σ=25/3）
-    if (!state.tsMap[id]) {
+    // TrueSkill蛻晄悄蛟､・夷ｼ=25, ﾏ・25/3・・    if (!state.tsMap[id]) {
         state.tsMap[id] = { mu: 25.0, sigma: 25.0 / 3 };
     }
 }
 
 // =====================================================================
-// STEP2: 参加者リスト描画
+// STEP2: 蜿ょ刈閠・Μ繧ｹ繝域緒逕ｻ
 // =====================================================================
 function renderPlayerList() {
     const rosterNames = (state.roster || []).map(r => r.name);
-    // 試合開始後（対戦表あり）は名前変更をロック
+    // 隧ｦ蜷磯幕蟋句ｾ鯉ｼ亥ｯｾ謌ｦ陦ｨ縺ゅｊ・峨・蜷榊燕螟画峩繧偵Ο繝・け
     const matchStarted = Array.isArray(state.schedule) && state.schedule.length > 0;
 
     const list = document.getElementById('playerList');
     list.innerHTML = '';
 
     state.players.forEach(p => {
-        const name = state.playerNames[p.id] || ('選手' + p.id);
+        const name = state.playerNames[p.id] || ('驕ｸ謇・ + p.id);
         const div = document.createElement('div');
         div.className = 'player-item';
         div.style.opacity = p.resting ? '0.5' : '1';
 
-        // 名前プルダウン：試合開始後はロック（途中参加は addPlayer → confirmLiveAdd で名前確定済み）
-        const neverPlayed = p.lastRound === -1;
+        // 蜷榊燕繝励Ν繝繧ｦ繝ｳ・夊ｩｦ蜷磯幕蟋句ｾ後・繝ｭ繝・け・磯比ｸｭ蜿ょ刈縺ｯ addPlayer 竊・confirmLiveAdd 縺ｧ蜷榊燕遒ｺ螳壽ｸ医∩・・        const neverPlayed = p.lastRound === -1;
         const selectDisabled = (!isAdmin || matchStarted) ? 'disabled' : '';
 
-        let opts = `<option value="">選手${p.id}</option>`;
+        let opts = `<option value="">驕ｸ謇・{p.id}</option>`;
         rosterNames.forEach(n => {
             const rp = (state.roster || []).find(r => r.name === n);
             const cn = rp && rp.clubName ? rp.clubName : '';
@@ -1073,37 +1029,36 @@ function renderPlayerList() {
             opts += `<option value="${n}"${name===n?' selected':''}>${label}</option>`;
         });
 
-        const restLabel = p.resting ? '復帰' : '休憩';
+        const restLabel = p.resting ? '蠕ｩ蟶ｰ' : '莨第・';
         const restClass = p.resting ? 'rest-btn resting' : 'rest-btn';
         const hasPair = getFixedPartnerId(p.id) != null;
         let restBtnHtml;
         if (neverPlayed && isAdmin && !isEventLocked()) {
             const toggleBtn = `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`;
-            const delBtn = hasPair ? '' : `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">削除</button>`;
+            const delBtn = hasPair ? '' : `<button class="rest-btn delete-btn" onclick="removeUnplayedPlayer(${p.id})">蜑企勁</button>`;
             restBtnHtml = toggleBtn + delBtn;
         } else {
             restBtnHtml = isAdmin
                 ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
-                : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
+                : (p.resting ? `<span style="font-size:0.75rem;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">彫 莨第・</span>` : '');
         }
-        // ペア固定ボタン（管理者 & イベント未終了）
-        if (isAdmin && !isEventLocked()) {
+        // 繝壹い蝗ｺ螳壹・繧ｿ繝ｳ・育ｮ｡逅・・& 繧､繝吶Φ繝域悴邨ゆｺ・ｼ・        if (isAdmin && !isEventLocked()) {
             if (hasPair) {
-                restBtnHtml = `<button class="rest-btn pair-btn paired" onclick="removePair(${p.id})">🤝解除</button>` + restBtnHtml;
+                restBtnHtml = `<button class="rest-btn pair-btn paired" onclick="removePair(${p.id})">､晁ｧ｣髯､</button>` + restBtnHtml;
             } else {
-                restBtnHtml = `<button class="rest-btn pair-btn" onclick="openPairModal(${p.id})">🤝ペア</button>` + restBtnHtml;
+                restBtnHtml = `<button class="rest-btn pair-btn" onclick="openPairModal(${p.id})">､昴・繧｢</button>` + restBtnHtml;
             }
         }
 
         const curClubName = getPlayerClubName(p.id);
         const pairColor = getPairColor(p.id);
         const pairBadgeHtml = pairColor
-            ? `<span class="pair-badge" style="background:${pairColor};color:#fff;">🤝</span>`
+            ? `<span class="pair-badge" style="background:${pairColor};color:#fff;">､・/span>`
             : '';
         const hasName = !!state.playerNames[p.id];
         const labelHtml = hasName
             ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}${pairBadgeHtml}`
-            : `選手${p.id}`;
+            : `驕ｸ謇・{p.id}`;
         const labelClass = hasName ? 'playerSelectLabel' : 'playerSelectLabel placeholder';
         const numStyle = pairColor ? `background:${pairColor}` : '';
         div.innerHTML = `
@@ -1120,8 +1075,8 @@ function renderPlayerList() {
 
 function setPlayerName(id, name) {
     if (isEventLocked()) { renderPlayerList(); return; }
-    state.playerNames[id] = name || ('選手' + id);
-    // 所属クラブ名をrosterから自動反映
+    state.playerNames[id] = name || ('驕ｸ謇・ + id);
+    // 謇螻槭け繝ｩ繝門錐繧池oster縺九ｉ閾ｪ蜍募渚譏
     if (!state.playerClubs) state.playerClubs = {};
     const rp = (state.roster || []).find(r => r.name === name);
     if (rp && rp.clubName) state.playerClubs[id] = rp.clubName;
@@ -1132,16 +1087,15 @@ function setPlayerName(id, name) {
 }
 
 function isEventLocked() {
-    return currentEventStatus === '終了';
+    return currentEventStatus === '邨ゆｺ・;
 }
 
 async function endEvent() {
-    if (isEventLocked()) { showToast('既に終了しています'); return; }
-    if (!state.players || state.players.length === 0) { showToast('参加者がいません'); return; }
-    if (!confirm('⚠️ このイベントを終了しますか？\n・終了後は管理者でも編集できません。\n・各選手の最終 μ/σ が元の選手データに上書き反映されます。')) return;
+    if (isEventLocked()) { showToast('譌｢縺ｫ邨ゆｺ・＠縺ｦ縺・∪縺・); return; }
+    if (!state.players || state.players.length === 0) { showToast('蜿ょ刈閠・′縺・∪縺帙ｓ'); return; }
+    if (!confirm('笞・・縺薙・繧､繝吶Φ繝医ｒ邨ゆｺ・＠縺ｾ縺吶°・歃n繝ｻ邨ゆｺ・ｾ後・邂｡逅・・〒繧らｷｨ髮・〒縺阪∪縺帙ｓ縲・n繝ｻ蜷・∈謇九・譛邨・ﾎｼ/ﾏ・縺悟・縺ｮ驕ｸ謇九ョ繝ｼ繧ｿ縺ｫ荳頑嶌縺榊渚譏縺輔ｌ縺ｾ縺吶・)) return;
 
-    // 元の選手データへ mu/sigma を上書き
-    const updates = [];
+    // 蜈・・驕ｸ謇九ョ繝ｼ繧ｿ縺ｸ mu/sigma 繧剃ｸ頑嶌縺・    const updates = [];
     state.players.forEach(p => {
         if (!p.pid) return;
         const ts = state.tsMap && state.tsMap[p.id];
@@ -1152,8 +1106,7 @@ async function endEvent() {
     });
     try { await Promise.all(updates); } catch(e) { console.error(e); }
 
-    // state.roster の mu/sigma も更新（次回イベントで正しい初期値を使うため）
-    if (Array.isArray(state.roster)) {
+    // state.roster 縺ｮ mu/sigma 繧よ峩譁ｰ・域ｬ｡蝗槭う繝吶Φ繝医〒豁｣縺励＞蛻晄悄蛟､繧剃ｽｿ縺・◆繧・ｼ・    if (Array.isArray(state.roster)) {
         state.players.forEach(p => {
             if (!p.pid) return;
             const ts = state.tsMap && state.tsMap[p.id];
@@ -1164,29 +1117,29 @@ async function endEvent() {
                 rp.sigma = ts.sigma;
             }
         });
-        saveState(); // 更新したrosterをFirebaseに反映
+        saveState(); // 譖ｴ譁ｰ縺励◆roster繧巽irebase縺ｫ蜿肴丐
     }
 
-    // イベント状態を 終了 に
+    // 繧､繝吶Φ繝育憾諷九ｒ 邨ゆｺ・縺ｫ
     if (_sessionId && window._fbSetEventStatus) {
-        await window._fbSetEventStatus(_sessionId, '終了');
+        await window._fbSetEventStatus(_sessionId, '邨ゆｺ・);
     }
-    currentEventStatus = '終了';
-    updateEventStatus('終了');
+    currentEventStatus = '邨ゆｺ・;
+    updateEventStatus('邨ゆｺ・);
     updateAdminUI();
     renderPlayerList();
     renderMatchContainer();
-    showToast('🏁 イベントを終了しました');
+    showToast('潤 繧､繝吶Φ繝医ｒ邨ゆｺ・＠縺ｾ縺励◆');
 }
 
 function removeUnplayedPlayer(id) {
     if (isEventLocked()) return;
-    if (getFixedPartnerId(id) != null) { showToast('ペア固定中は削除できません。先にペアを解除してください。'); return; }
+    if (getFixedPartnerId(id) != null) { showToast('繝壹い蝗ｺ螳壻ｸｭ縺ｯ蜑企勁縺ｧ縺阪∪縺帙ｓ縲ょ・縺ｫ繝壹い繧定ｧ｣髯､縺励※縺上□縺輔＞縲・); return; }
     const p = state.players.find(p => p.id === id);
     if (!p) return;
-    if (p.lastRound !== -1) { showToast('試合に出場済みの選手は削除できません'); return; }
+    if (p.lastRound !== -1) { showToast('隧ｦ蜷医↓蜃ｺ蝣ｴ貂医∩縺ｮ驕ｸ謇九・蜑企勁縺ｧ縺阪∪縺帙ｓ'); return; }
     const nm = state.playerNames[id];
-    if (!confirm(`${nm || ('選手'+id)} を削除しますか？`)) return;
+    if (!confirm(`${nm || ('驕ｸ謇・+id)} 繧貞炎髯､縺励∪縺吶°・歔)) return;
 
     state.players = state.players.filter(pp => pp.id !== id);
     delete state.playerNames[id];
@@ -1210,8 +1163,7 @@ function removeUnplayedPlayer(id) {
 }
 
 // =====================================================================
-// ペア固定
-// =====================================================================
+// 繝壹い蝗ｺ螳・// =====================================================================
 const PAIR_COLORS = ['#3949ab','#00897b','#d84315','#6a1b9a','#2e7d32','#c62828','#00695c','#4527a0','#ef6c00','#1565c0'];
 
 function getFixedPairs() {
@@ -1244,18 +1196,17 @@ let _pairTargetId = null;
 
 function openPairModal(id) {
     _pairTargetId = id;
-    const name = state.playerNames[id] || ('選手' + id);
-    document.getElementById('pairModalTitle').textContent = '🤝 ' + name + ' のペア相手を選択';
+    const name = state.playerNames[id] || ('驕ｸ謇・ + id);
+    document.getElementById('pairModalTitle').textContent = '､・' + name + ' 縺ｮ繝壹い逶ｸ謇九ｒ驕ｸ謚・;
     const list = document.getElementById('pairModalList');
-    // 候補：自分でない、まだペア固定されていない、参加中の選手
-    const candidates = state.players.filter(p =>
+    // 蛟呵｣懶ｼ夊・蛻・〒縺ｪ縺・√∪縺繝壹い蝗ｺ螳壹＆繧後※縺・↑縺・∝盾蜉荳ｭ縺ｮ驕ｸ謇・    const candidates = state.players.filter(p =>
         p.id !== id && getFixedPartnerId(p.id) == null
     );
     if (!candidates.length) {
-        list.innerHTML = '<div style="padding:16px;text-align:center;color:#888;">ペア可能な選手がいません</div>';
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:#888;">繝壹い蜿ｯ閭ｽ縺ｪ驕ｸ謇九′縺・∪縺帙ｓ</div>';
     } else {
         list.innerHTML = candidates.map(p => {
-            const n = state.playerNames[p.id] || ('選手' + p.id);
+            const n = state.playerNames[p.id] || ('驕ｸ謇・ + p.id);
             const club = getPlayerClubName(p.id);
             return `<div class="pm-item" onclick="confirmPair(${p.id})">
                 <div>
@@ -1279,23 +1230,23 @@ window.confirmPair = function(partnerId) {
     closePairModal();
     renderPlayerList();
     saveState();
-    const n1 = state.playerNames[_pairTargetId] || ('選手' + _pairTargetId);
-    const n2 = state.playerNames[partnerId] || ('選手' + partnerId);
-    showToast('🤝 ' + n1 + ' と ' + n2 + ' をペア固定しました');
+    const n1 = state.playerNames[_pairTargetId] || ('驕ｸ謇・ + _pairTargetId);
+    const n2 = state.playerNames[partnerId] || ('驕ｸ謇・ + partnerId);
+    showToast('､・' + n1 + ' 縺ｨ ' + n2 + ' 繧偵・繧｢蝗ｺ螳壹＠縺ｾ縺励◆');
 };
 
 window.removePair = function(id) {
     const partnerId = getFixedPartnerId(id);
     if (partnerId == null) return;
-    const n1 = state.playerNames[id] || ('選手' + id);
-    const n2 = state.playerNames[partnerId] || ('選手' + partnerId);
-    if (!confirm(n1 + ' と ' + n2 + ' のペア固定を解除しますか？')) return;
+    const n1 = state.playerNames[id] || ('驕ｸ謇・ + id);
+    const n2 = state.playerNames[partnerId] || ('驕ｸ謇・ + partnerId);
+    if (!confirm(n1 + ' 縺ｨ ' + n2 + ' 縺ｮ繝壹い蝗ｺ螳壹ｒ隗｣髯､縺励∪縺吶°・・)) return;
     state.fixedPairs = getFixedPairs().filter(pair =>
         !(pair[0] === id || pair[1] === id)
     );
     renderPlayerList();
     saveState();
-    showToast('ペア解除しました');
+    showToast('繝壹い隗｣髯､縺励∪縺励◆');
 };
 
 function toggleRest(id) {
@@ -1303,7 +1254,7 @@ function toggleRest(id) {
     const p = state.players.find(p => p.id === id);
     if (!p) return;
     p.resting = !p.resting;
-    // ペア固定の相方も連動して休憩/復帰
+    // 繝壹い蝗ｺ螳壹・逶ｸ譁ｹ繧る｣蜍輔＠縺ｦ莨第・/蠕ｩ蟶ｰ
     const partnerId = getFixedPartnerId(id);
     if (partnerId != null) {
         const partner = state.players.find(pp => pp.id === partnerId);
@@ -1315,26 +1266,24 @@ function toggleRest(id) {
 
 function addPlayer() {
     if (isEventLocked()) return;
-    // 既に未確定行があれば追加しない
-    if (document.querySelector('.live-pending-row')) return;
-    // 使用済み名を除外
-    const usedNames = new Set(Object.values(state.playerNames));
+    // 譌｢縺ｫ譛ｪ遒ｺ螳夊｡後′縺ゅｌ縺ｰ霑ｽ蜉縺励↑縺・    if (document.querySelector('.live-pending-row')) return;
+    // 菴ｿ逕ｨ貂医∩蜷阪ｒ髯､螟・    const usedNames = new Set(Object.values(state.playerNames));
     const available = (state.roster || []).filter(r => !usedNames.has(r.name));
-    if (!available.length) { showToast('名簿の全員が参加済みです'); return; }
-    const opts = `<option value="">--- 選手を選択 ---</option>` +
+    if (!available.length) { showToast('蜷咲ｰｿ縺ｮ蜈ｨ蜩｡縺悟盾蜉貂医∩縺ｧ縺・); return; }
+    const opts = `<option value="">--- 驕ｸ謇九ｒ驕ｸ謚・---</option>` +
         available.map(r => {
-            const label = r.clubName ? `${_esc(r.name)}（${_esc(r.clubName)}）` : _esc(r.name);
+            const label = r.clubName ? `${_esc(r.name)}・・{_esc(r.clubName)}・荏 : _esc(r.name);
             return `<option value="${_esc(r.pid)}">${label}</option>`;
         }).join('');
     const row = document.createElement('div');
     row.className = 'live-pending-row';
     row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e8f5e9;border-radius:10px;margin-top:8px;';
     row.innerHTML = `
-        <select style="flex:1;padding:9px;border:2px solid #2e7d32;border-radius:8px;font-size:14px;">${opts}</select>
+        <select style="flex:1;padding:9px;border:2px solid #2e7d32;border-radius:8px;font-size:0.875rem;">${opts}</select>
         <button type="button" onclick="confirmLiveAdd(this)"
-            style="padding:9px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:13px;white-space:nowrap;">✓ 決定</button>
+            style="padding:9px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.8125rem;white-space:nowrap;">笨・豎ｺ螳・/button>
         <button type="button" onclick="this.closest('.live-pending-row').remove()"
-            style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:14px;">×</button>`;
+            style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">ﾃ・/button>`;
     const addBtn = document.querySelector('#liveSetup .player-add-btn');
     addBtn.parentNode.insertBefore(row, addBtn);
 }
@@ -1343,7 +1292,7 @@ function confirmLiveAdd(btn) {
     const row = btn.closest('.live-pending-row');
     const sel = row.querySelector('select');
     const pid = sel.value;
-    if (!pid) { showToast('選手を選択してください'); return; }
+    if (!pid) { showToast('驕ｸ謇九ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞'); return; }
     const rp = (state.roster || []).find(r => r.pid === pid);
     if (!rp) return;
     const newId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
@@ -1351,10 +1300,9 @@ function confirmLiveAdd(btn) {
     state.playerNames[newId] = rp.name;
     if (!state.playerClubs) state.playerClubs = {};
     if (rp.clubName) state.playerClubs[newId] = rp.clubName;
-    // pid を保存
-    const player = state.players.find(p => p.id === newId);
+    // pid 繧剃ｿ晏ｭ・    const player = state.players.find(p => p.id === newId);
     if (player) player.pid = rp.pid;
-    // TrueSkill初期値をrosterから引き継ぎ
+    // TrueSkill蛻晄悄蛟､繧池oster縺九ｉ蠑輔″邯吶℃
     state.tsMap[newId] = { mu: rp.mu ?? 25.0, sigma: rp.sigma ?? (25/3) };
     row.remove();
     renderPlayerList();
@@ -1369,15 +1317,14 @@ function changeCourts(delta) {
 }
 
 // =====================================================================
-// TrueSkill計算
-// =====================================================================
+// TrueSkill險育ｮ・// =====================================================================
 const TS_BETA = (25.0/3) / 2;   // 4.167
 const TS_TAU  = (25.0/3) / 100; // 0.0833
 
 function tsNormPhi(x) { return 0.5 * (1 + erf(x / Math.sqrt(2))); }
 function tsNormPdf(x) { return Math.exp(-x*x/2) / Math.sqrt(2*Math.PI); }
 function erf(x) {
-    // 精度の高いerf近似
+    // 邊ｾ蠎ｦ縺ｮ鬮倥＞erf霑台ｼｼ
     const t = 1 / (1 + 0.3275911 * Math.abs(x));
     const y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t * Math.exp(-x*x);
     return x >= 0 ? y : -y;
@@ -1398,7 +1345,7 @@ function tsTeamMu(ids) {
 }
 
 function updateTrueSkill(team1ids, team2ids, score1, score2) {
-    if (score1 === 0 && score2 === 0) return; // 未入力はスキップ
+    if (score1 === 0 && score2 === 0) return; // 譛ｪ蜈･蜉帙・繧ｹ繧ｭ繝・・
 
     const getTs = id => state.tsMap[id] || { mu:25, sigma:25/3 };
     const mu1  = team1ids.reduce((s,id) => s+getTs(id).mu, 0);
@@ -1434,13 +1381,12 @@ function updateTrueSkill(team1ids, team2ids, score1, score2) {
 }
 
 // =====================================================================
-// スケジューリングアルゴリズム
+// 繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｪ繝ｳ繧ｰ繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝
 // =====================================================================
-// 選手番号表示フラグ
+// 驕ｸ謇狗分蜿ｷ陦ｨ遉ｺ繝輔Λ繧ｰ
 let showPlayerNum = false;
 
-// .team ボックスの実際の幅をピクセルで計算
-function calcTeamBoxWidth() {
+// .team 繝懊ャ繧ｯ繧ｹ縺ｮ螳滄圀縺ｮ蟷・ｒ繝斐け繧ｻ繝ｫ縺ｧ險育ｮ・function calcTeamBoxWidth() {
     const isWide = window.innerWidth > window.innerHeight;
     const cols   = isWide ? 3 : 1;
     const gap    = isWide ? 8 * (cols - 1) : 0;
@@ -1449,36 +1395,34 @@ function calcTeamBoxWidth() {
     return (cardW - 16) * 0.40;
 }
 
-// 文字種別に実効幅を計算（全角=1.0 / ASCII=0.6 / スペース=0.35）
-function effectiveLen(name) {
+// 譁・ｭ礼ｨｮ蛻･縺ｫ螳溷柑蟷・ｒ險育ｮ暦ｼ亥・隗・1.0 / ASCII=0.6 / 繧ｹ繝壹・繧ｹ=0.35・・function effectiveLen(name) {
     let w = 0;
     for (const ch of name) {
-        if (ch === ' ' || ch === '　') { w += 0.35; continue; }
+        if (ch === ' ' || ch === '縲') { w += 0.35; continue; }
         w += ch.charCodeAt(0) >= 0x3000 ? 1.0 : 0.6;
     }
     return Math.max(w, 0.5);
 }
 
 function getPlayerDisplayName(id) {
-    const name   = state.playerNames[id] || ('選手' + id);
+    const name   = state.playerNames[id] || ('驕ｸ謇・ + id);
     const viewer = document.body.classList.contains('viewer-mode');
     const teamW  = calcTeamBoxWidth();
 
-    // 選手番号バッジ分を差し引いた使用可能幅
-    const badgeW    = showPlayerNum ? 28 : 0;
+    // 驕ｸ謇狗分蜿ｷ繝舌ャ繧ｸ蛻・ｒ蟾ｮ縺怜ｼ輔＞縺滉ｽｿ逕ｨ蜿ｯ閭ｽ蟷・    const badgeW    = showPlayerNum ? 28 : 0;
     const available = teamW - badgeW - 4;
 
-    // 文字の実効幅からフォントサイズを算出
+    // 譁・ｭ励・螳溷柑蟷・°繧峨ヵ繧ｩ繝ｳ繝医し繧､繧ｺ繧堤ｮ怜・
     const eLen = effectiveLen(name);
     let fontSize = Math.floor(available / eLen);
 
-    // 上限：viewer は +/- ボタンがなく余白大 → 最大36px / 管理者は26px
+    // 荳企剞・嘛iewer 縺ｯ +/- 繝懊ち繝ｳ縺後↑縺丈ｽ咏區螟ｧ 竊・譛螟ｧ36px / 邂｡逅・・・26px
     const maxFs = viewer ? 36 : 26;
     fontSize = Math.max(10, Math.min(maxFs, fontSize));
 
     const fs = fontSize + 'px';
     if (showPlayerNum) {
-        return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
+        return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:0.6875rem;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
     }
     return `<span style="white-space:nowrap;font-size:${fs};">${name}</span>`;
 }
@@ -1490,22 +1434,20 @@ function updatePlayerNumDisplay() {
     renderMatchContainer();
 }
 
-// コート名（数字 or アルファベット）
-const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
+// 繧ｳ繝ｼ繝亥錐・域焚蟄・or 繧｢繝ｫ繝輔ぃ繝吶ャ繝茨ｼ・const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 function getCourtName(ci) {
     const useAlpha = document.getElementById('courtNameToggle')?.checked;
-    return useAlpha ? (COURT_ALPHA[ci] || (ci+1)) + ' コート'
-                    : '第 ' + (ci+1) + ' コート';
+    return useAlpha ? (COURT_ALPHA[ci] || (ci+1)) + ' 繧ｳ繝ｼ繝・
+                    : '隨ｬ ' + (ci+1) + ' 繧ｳ繝ｼ繝・;
 }
-// コート名HTML（大文字＋小文字に分けて目立たせる）
-function getCourtNameHTML(ci) {
+// 繧ｳ繝ｼ繝亥錐HTML・亥､ｧ譁・ｭ暦ｼ句ｰ乗枚蟄励↓蛻・￠縺ｦ逶ｮ遶九◆縺帙ｋ・・function getCourtNameHTML(ci) {
     const useAlpha = document.getElementById('courtNameToggle')?.checked;
     if (useAlpha) {
         const letter = COURT_ALPHA[ci] || (ci + 1);
-        return `<span class="court-label"><span class="court-label-big">${letter}</span><span class="court-label-small">コート</span></span>`;
+        return `<span class="court-label"><span class="court-label-big">${letter}</span><span class="court-label-small">繧ｳ繝ｼ繝・/span></span>`;
     } else {
         const num = ci + 1;
-        return `<span class="court-label"><span class="court-label-small">第</span><span class="court-label-big">${num}</span><span class="court-label-small">コート</span></span>`;
+        return `<span class="court-label"><span class="court-label-small">隨ｬ</span><span class="court-label-big">${num}</span><span class="court-label-small">繧ｳ繝ｼ繝・/span></span>`;
     }
 }
 function updateCourtNames() {
@@ -1518,8 +1460,7 @@ function loadCourtNameSetting() {
     const toggle = document.getElementById('courtNameToggle');
     if (!toggle) return;
     toggle.checked = !!state.courtNameAlpha;
-    // 選手番号表示の復元
-    showPlayerNum = !!state.showPlayerNum;
+    // 驕ｸ謇狗分蜿ｷ陦ｨ遉ｺ縺ｮ蠕ｩ蜈・    showPlayerNum = !!state.showPlayerNum;
     const numToggle = document.getElementById('playerNumToggle');
     if (numToggle) numToggle.checked = showPlayerNum;
 }
@@ -1532,7 +1473,7 @@ function shuffle(arr) {
     return arr;
 }
 
-// 参加後の出場対象ラウンド数（not-joined以外）をhistoryから算出
+// 蜿ょ刈蠕後・蜃ｺ蝣ｴ蟇ｾ雎｡繝ｩ繧ｦ繝ｳ繝画焚・・ot-joined莉･螟厄ｼ峨ｒhistory縺九ｉ邂怜・
 function getEligibleRounds(id) {
     const player = state.players.find(p => p.id === id);
     const joinedRound = player?.joinedRound || 0;
@@ -1543,10 +1484,7 @@ function getEligibleRounds(id) {
 }
 
 // =====================================================================
-// 実効出場率（途中参加・手動休憩を平均値で仮想補填）
-// not-joined / rest ラウンド → そのラウンドの平均出場率分を仮想出場として加算
-// bench（アルゴリズムで選外）→ 補填しない（選ばれなかった優先度は通常通り保持）
-// =====================================================================
+// 螳溷柑蜃ｺ蝣ｴ邇・ｼ磯比ｸｭ蜿ょ刈繝ｻ謇句虚莨第・繧貞ｹｳ蝮・､縺ｧ莉ｮ諠ｳ陬懷｡ｫ・・// not-joined / rest 繝ｩ繧ｦ繝ｳ繝・竊・縺昴・繝ｩ繧ｦ繝ｳ繝峨・蟷ｳ蝮・・蝣ｴ邇・・繧剃ｻｮ諠ｳ蜃ｺ蝣ｴ縺ｨ縺励※蜉邂・// bench・医い繝ｫ繧ｴ繝ｪ繧ｺ繝縺ｧ驕ｸ螟厄ｼ俄・ 陬懷｡ｫ縺励↑縺・ｼ磯∈縺ｰ繧後↑縺九▲縺溷━蜈亥ｺｦ縺ｯ騾壼ｸｸ騾壹ｊ菫晄戟・・// =====================================================================
 function getAdjustedPlayRatio(p) {
     const totalRounds = state.schedule.length;
     if (totalRounds === 0) return 0;
@@ -1555,8 +1493,7 @@ function getAdjustedPlayRatio(p) {
         if (!rd.playerStates) continue;
         const st = rd.playerStates[p.id];
         if (st === 'not-joined' || st === 'rest') {
-            // そのラウンドの参加者数 / アクティブ人数 = 平均出場率
-            const vals = Object.values(rd.playerStates);
+            // 縺昴・繝ｩ繧ｦ繝ｳ繝峨・蜿ょ刈閠・焚 / 繧｢繧ｯ繝・ぅ繝紋ｺｺ謨ｰ = 蟷ｳ蝮・・蝣ｴ邇・            const vals = Object.values(rd.playerStates);
             const playing = vals.filter(s => s === 'play').length;
             const active  = vals.filter(s => s !== 'not-joined').length;
             if (active > 0) effectivePlays += playing / active;
@@ -1565,8 +1502,7 @@ function getAdjustedPlayRatio(p) {
     return effectivePlays / totalRounds;
 }
 
-// 次ラウンド後の実効出場率（scoreRound / evaluateBalanceScore 内での選出案評価用）
-function getAdjustedPlayRatioNext(p, willPlay) {
+// 谺｡繝ｩ繧ｦ繝ｳ繝牙ｾ後・螳溷柑蜃ｺ蝣ｴ邇・ｼ・coreRound / evaluateBalanceScore 蜀・〒縺ｮ驕ｸ蜃ｺ譯郁ｩ穂ｾ｡逕ｨ・・function getAdjustedPlayRatioNext(p, willPlay) {
     let effectivePlays = p.playCount + (willPlay ? 1 : 0);
     for (const rd of state.schedule) {
         if (!rd.playerStates) continue;
@@ -1578,24 +1514,20 @@ function getAdjustedPlayRatioNext(p, willPlay) {
             if (active > 0) effectivePlays += playing / active;
         }
     }
-    // 次ラウンド終了後の総ラウンド数で割る
-    return effectivePlays / (state.schedule.length + 1);
+    // 谺｡繝ｩ繧ｦ繝ｳ繝臥ｵゆｺ・ｾ後・邱上Λ繧ｦ繝ｳ繝画焚縺ｧ蜑ｲ繧・    return effectivePlays / (state.schedule.length + 1);
 }
 
 function selectRoundPlayers() {
     const active = state.players.filter(p => !p.resting);
-    // 必ず4の倍数人数（1コート=4人のため）
-    const maxMust = Math.min(active.length, state.courts * 4);
+    // 蠢・★4縺ｮ蛟肴焚莠ｺ謨ｰ・・繧ｳ繝ｼ繝・4莠ｺ縺ｮ縺溘ａ・・    const maxMust = Math.min(active.length, state.courts * 4);
     const must = Math.floor(maxMust / 4) * 4;
-    if (must < 4) return []; // 4人未満は試合不可
+    if (must < 4) return []; // 4莠ｺ譛ｪ貅縺ｯ隧ｦ蜷井ｸ榊庄
     if (active.length <= must) return active.map(p => p.id);
 
-    // 実効出場率 = (実出場 + 仮想出場) / 総ラウンド数（低いほど優先）
-    const eps = 1e-9;
+    // 螳溷柑蜃ｺ蝣ｴ邇・= (螳溷・蝣ｴ + 莉ｮ諠ｳ蜃ｺ蝣ｴ) / 邱上Λ繧ｦ繝ｳ繝画焚・井ｽ弱＞縺ｻ縺ｩ蜆ｪ蜈茨ｼ・    const eps = 1e-9;
     const playRatio = p => getAdjustedPlayRatio(p);
 
-    // 出場率昇順 → lastRound昇順で全員をソート
-    const sorted = shuffle([...active]);
+    // 蜃ｺ蝣ｴ邇・・鬆・竊・lastRound譏・・〒蜈ｨ蜩｡繧偵た繝ｼ繝・    const sorted = shuffle([...active]);
     sorted.sort((a, b) => {
         const dr = playRatio(a) - playRatio(b);
         return Math.abs(dr) > eps ? dr : a.lastRound - b.lastRound;
@@ -1606,36 +1538,33 @@ function selectRoundPlayers() {
         if (selected.size >= must) break;
         if (selected.has(p.id)) continue;
         selected.add(p.id);
-        // ペア固定の相方も一緒に選出
+        // 繝壹い蝗ｺ螳壹・逶ｸ譁ｹ繧ゆｸ邱偵↓驕ｸ蜃ｺ
         const partnerId = getFixedPartnerId(p.id);
         if (partnerId != null && !selected.has(partnerId)) {
             const partner = active.find(pp => pp.id === partnerId);
             if (partner) selected.add(partnerId);
         }
     }
-    // ペア連動で must を超えた場合、ペアでない末尾を削除して4の倍数に調整
+    // 繝壹い騾｣蜍輔〒 must 繧定ｶ・∴縺溷ｴ蜷医√・繧｢縺ｧ縺ｪ縺・忰蟆ｾ繧貞炎髯､縺励※4縺ｮ蛟肴焚縺ｫ隱ｿ謨ｴ
     let result = [...selected];
     while (result.length > must) {
-        // 末尾からペアでない選手を除外
-        for (let i = result.length - 1; i >= 0; i--) {
+        // 譛ｫ蟆ｾ縺九ｉ繝壹い縺ｧ縺ｪ縺・∈謇九ｒ髯､螟・        for (let i = result.length - 1; i >= 0; i--) {
             if (getFixedPartnerId(result[i]) == null) {
                 result.splice(i, 1);
                 break;
             }
         }
         if (result.length > must && result.length % 4 !== 0) {
-            result.pop(); // 安全弁
-        }
+            result.pop(); // 螳牙・蠑・        }
         if (result.length <= must) break;
     }
-    // 4の倍数に切り捨て
+    // 4縺ｮ蛟肴焚縺ｫ蛻・ｊ謐ｨ縺ｦ
     const final = Math.floor(result.length / 4) * 4;
     return result.slice(0, final);
 }
 
 // =====================================================================
-// ランダムマッチ統合最適化
-// 選出・ペア・コート割当を一括生成し、総合スコアで最良を選ぶ
+// 繝ｩ繝ｳ繝繝繝槭ャ繝∫ｵｱ蜷域怙驕ｩ蛹・// 驕ｸ蜃ｺ繝ｻ繝壹い繝ｻ繧ｳ繝ｼ繝亥牡蠖薙ｒ荳諡ｬ逕滓・縺励∫ｷ丞粋繧ｹ繧ｳ繧｢縺ｧ譛濶ｯ繧帝∈縺ｶ
 // =====================================================================
 function generateRoundRandom() {
     const active = state.players.filter(p => !p.resting);
@@ -1646,11 +1575,11 @@ function generateRoundRandom() {
     const eps = 1e-9;
     const playRatio = p => getAdjustedPlayRatio(p);
 
-    // --- 選出候補を生成する関数 ---
+    // --- 驕ｸ蜃ｺ蛟呵｣懊ｒ逕滓・縺吶ｋ髢｢謨ｰ ---
     function generateSelection() {
         if (active.length <= must) return active.map(p => p.id);
 
-        // playRatioでソート → 同率グループを抽出
+        // playRatio縺ｧ繧ｽ繝ｼ繝・竊・蜷檎紫繧ｰ繝ｫ繝ｼ繝励ｒ謚ｽ蜃ｺ
         const shuffled = shuffle([...active]);
         shuffled.sort((a, b) => playRatio(a) - playRatio(b));
 
@@ -1664,7 +1593,7 @@ function generateRoundRandom() {
             gi = gj;
         }
 
-        // 確定枠と選択枠に分離
+        // 遒ｺ螳壽棧縺ｨ驕ｸ謚樊棧縺ｫ蛻・屬
         const locked = [];
         let choiceGroup = [];
         let need = must;
@@ -1681,7 +1610,7 @@ function generateRoundRandom() {
         }
         if (need <= 0) return adjustForPairsRandom(locked, active, must);
 
-        // 選択枠からシャッフルでneed人をピック
+        // 驕ｸ謚樊棧縺九ｉ繧ｷ繝｣繝・ヵ繝ｫ縺ｧneed莠ｺ繧偵ヴ繝・け
         const choiceIds = shuffle(choiceGroup.map(p => p.id));
         const pick = [];
         const pickSet = new Set(locked);
@@ -1699,12 +1628,12 @@ function generateRoundRandom() {
         return adjustForPairsRandom([...locked, ...pick], active, must);
     }
 
-    // --- 1ラウンド案の総合スコア計算 ---
+    // --- 1繝ｩ繧ｦ繝ｳ繝画｡医・邱丞粋繧ｹ繧ｳ繧｢險育ｮ・---
     // courts = [[[id,id],[id,id]], ...], selectedIds = [id,...]
     function scoreRound(courts, selectedIds) {
         let score = 0;
 
-        // ① 出場回数均等（次ラウンド後の実効出場率分散）×800
+        // 竭 蜃ｺ蝣ｴ蝗樊焚蝮・ｭ会ｼ域ｬ｡繝ｩ繧ｦ繝ｳ繝牙ｾ後・螳溷柑蜃ｺ蝣ｴ邇・・謨｣・嘉・00
         const nextRatios = active.map(p => {
             const willPlay = selectedIds.includes(p.id);
             return getAdjustedPlayRatioNext(p, willPlay);
@@ -1713,7 +1642,7 @@ function generateRoundRandom() {
         const playVar = nextRatios.reduce((s, v) => s + (v - avg) * (v - avg), 0);
         score += playVar * 800;
 
-        // ② ペア重複 ×100
+        // 竭｡ 繝壹い驥崎､・ﾃ・00
         let pairDup = 0;
         courts.forEach(([t1, t2]) => {
             pairDup += (state.pairMatrix[t1[0]]?.[t1[1]] || 0);
@@ -1721,7 +1650,7 @@ function generateRoundRandom() {
         });
         score += pairDup * 100;
 
-        // ③ 対戦相手重複 ×30
+        // 竭｢ 蟇ｾ謌ｦ逶ｸ謇矩㍾隍・ﾃ・0
         let oppDup = 0;
         courts.forEach(([t1, t2]) => {
             t1.forEach(a => t2.forEach(b => {
@@ -1730,10 +1659,7 @@ function generateRoundRandom() {
         });
         score += oppDup * 30;
 
-        // ④ 同コート頻度：2乗ペナルティ（繰り返しに指数的コスト）
-        // + ⑦ 未遭遇ペアボーナス（初対面に報酬）
-        // ※ コート内ペアのみ評価（別コート同士は同コートにならないため除外）
-        let coQuad = 0;
+        // 竭｣ 蜷後さ繝ｼ繝磯ｻ蠎ｦ・・荵励・繝翫Ν繝・ぅ・育ｹｰ繧願ｿ斐＠縺ｫ謖・焚逧・さ繧ｹ繝茨ｼ・        // + 竭ｦ 譛ｪ驕ｭ驕・・繧｢繝懊・繝翫せ・亥・蟇ｾ髱｢縺ｫ蝣ｱ驟ｬ・・        // 窶ｻ 繧ｳ繝ｼ繝亥・繝壹い縺ｮ縺ｿ隧穂ｾ｡・亥挨繧ｳ繝ｼ繝亥酔螢ｫ縺ｯ蜷後さ繝ｼ繝医↓縺ｪ繧峨↑縺・◆繧・勁螟厄ｼ・        let coQuad = 0;
         let newPairs = 0;
         courts.forEach(([t1, t2]) => {
             const group = [...t1, ...t2];
@@ -1741,16 +1667,12 @@ function generateRoundRandom() {
                 for (let j = i + 1; j < group.length; j++) {
                     const co = (state.pairMatrix[group[i]]?.[group[j]] || 0)
                              + (state.oppMatrix[group[i]]?.[group[j]] || 0);
-                    coQuad += co * co;       // 2乗ペナルティ
-                    if (co === 0) newPairs++; // 初対面カウント
-                }
+                    coQuad += co * co;       // 2荵励・繝翫Ν繝・ぅ
+                    if (co === 0) newPairs++; // 蛻晏ｯｾ髱｢繧ｫ繧ｦ繝ｳ繝・                }
             }
         });
-        score += coQuad * 200;    // 2乗×200（1回:200, 2回:800, 3回:1800）
-        score -= newPairs * 300;  // 初対面ボーナス（スコアを下げる）
-
-        // ⑤ 連続休みペナルティ（軽量化：streak1は軽く、streak3+のみ強い）
-        const bench = active.filter(p => !selectedIds.includes(p.id));
+        score += coQuad * 200;    // 2荵療・00・・蝗・200, 2蝗・800, 3蝗・1800・・        score -= newPairs * 300;  // 蛻晏ｯｾ髱｢繝懊・繝翫せ・医せ繧ｳ繧｢繧剃ｸ九￡繧具ｼ・
+        // 竭､ 騾｣邯壻ｼ代∩繝壹リ繝ｫ繝・ぅ・郁ｻｽ驥丞喧・嘖treak1縺ｯ霆ｽ縺上《treak3+縺ｮ縺ｿ蠑ｷ縺・ｼ・        const bench = active.filter(p => !selectedIds.includes(p.id));
         bench.forEach(p => {
             const rs = getRestStreak(p.id);
             if (rs >= 3) score += 200;
@@ -1758,7 +1680,7 @@ function generateRoundRandom() {
             else if (rs === 1) score += 30;
         });
 
-        // ⑥ 固定ペア違反
+        // 竭･ 蝗ｺ螳壹・繧｢驕募渚
         for (const fp of getFixedPairs()) {
             if (!selectedIds.includes(fp[0]) || !selectedIds.includes(fp[1])) continue;
             const sameGroup = courts.some(([t1, t2]) => {
@@ -1771,13 +1693,13 @@ function generateRoundRandom() {
         return score;
     }
 
-    // --- メイン：複数ラウンド案を生成し最良を選ぶ ---
+    // --- 繝｡繧､繝ｳ・夊､・焚繝ｩ繧ｦ繝ｳ繝画｡医ｒ逕滓・縺玲怙濶ｯ繧帝∈縺ｶ ---
     const ATTEMPTS = 200;
-    const _deadline = performance.now() + 80; // 80ms タイムボックス
+    const _deadline = performance.now() + 80; // 80ms 繧ｿ繧､繝繝懊ャ繧ｯ繧ｹ
     let bestCourts = null, bestIds = null, bestScore = Infinity;
 
     for (let t = 0; t < ATTEMPTS; t++) {
-        if (t % 20 === 0 && performance.now() > _deadline) break; // 時間超過で打ち切り
+        if (t % 20 === 0 && performance.now() > _deadline) break; // 譎る俣雜・℃縺ｧ謇薙■蛻・ｊ
         const ids = generateSelection();
         if (!ids || ids.length < 4) continue;
 
@@ -1793,15 +1715,13 @@ function generateRoundRandom() {
             bestCourts = courts;
             bestIds = ids;
         }
-        if (sc <= 0) break; // スコア0以下（初対面ボーナスで負も含む）で最適解確定
-    }
+        if (sc <= 0) break; // 繧ｹ繧ｳ繧｢0莉･荳具ｼ亥・蟇ｾ髱｢繝懊・繝翫せ縺ｧ雋繧ょ性繧・峨〒譛驕ｩ隗｣遒ｺ螳・    }
 
     if (!bestCourts) return null;
     return { courts: bestCourts, selectedIds: bestIds };
 }
 
-// ペア連動調整＆4の倍数化
-function adjustForPairsRandom(ids, active, must) {
+// 繝壹い騾｣蜍戊ｪｿ謨ｴ・・縺ｮ蛟肴焚蛹・function adjustForPairsRandom(ids, active, must) {
     const result = new Set(ids);
     for (const id of ids) {
         const partnerId = getFixedPartnerId(id);
@@ -1828,28 +1748,27 @@ function adjustForPairsRandom(ids, active, must) {
 }
 
 // =====================================================================
-// レーティングマッチ用ロジック
-// 優先順位: ①出場回数均等 ②μ近い4人を1コートに ③その中でチーム均衡ペア ④対戦履歴回避
+// 繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ繝槭ャ繝∫畑繝ｭ繧ｸ繝・け
+// 蜆ｪ蜈磯・ｽ・ 竭蜃ｺ蝣ｴ蝗樊焚蝮・ｭ・竭｡ﾎｼ霑代＞4莠ｺ繧・繧ｳ繝ｼ繝医↓ 竭｢縺昴・荳ｭ縺ｧ繝√・繝蝮・｡｡繝壹い 竭｣蟇ｾ謌ｦ螻･豁ｴ蝗樣∩
 // =====================================================================
 
 function generateCourtsRating(ids) {
     const courtCount = ids.length / 4;
 
-    // μ値に差がない場合（初期状態など）はランダムロジックを使用
+    // ﾎｼ蛟､縺ｫ蟾ｮ縺後↑縺・ｴ蜷茨ｼ亥・譛溽憾諷九↑縺ｩ・峨・繝ｩ繝ｳ繝繝繝ｭ繧ｸ繝・け繧剃ｽｿ逕ｨ
     const mus = ids.map(i => state.tsMap[i]?.mu || 25);
     const muRange = Math.max(...mus) - Math.min(...mus);
     if (muRange < 1.0) {
-        // μ差が小さい→ランダムロジックで重複回避を優先
-        const pairs = makePairsRandom(ids);
+        // ﾎｼ蟾ｮ縺悟ｰ上＆縺・・繝ｩ繝ｳ繝繝繝ｭ繧ｸ繝・け縺ｧ驥崎､・屓驕ｿ繧貞━蜈・        const pairs = makePairsRandom(ids);
         if (!pairs) return null;
         return assignCourtsRandom(pairs);
     }
 
-    // ② μ値が近い4人を1コートグループとして抽出
+    // 竭｡ ﾎｼ蛟､縺瑚ｿ代＞4莠ｺ繧・繧ｳ繝ｼ繝医げ繝ｫ繝ｼ繝励→縺励※謚ｽ蜃ｺ
     const bestGroups = findBestCourtGroups(ids, courtCount);
     if (!bestGroups) return null;
 
-    // 各グループ内で ③チーム均衡ペア + ④対戦履歴回避
+    // 蜷・げ繝ｫ繝ｼ繝怜・縺ｧ 竭｢繝√・繝蝮・｡｡繝壹い + 竭｣蟇ｾ謌ｦ螻･豁ｴ蝗樣∩
     const courts = bestGroups.map(group => makeBestPairInGroup(group));
     return courts;
 }
@@ -1857,13 +1776,11 @@ function generateCourtsRating(ids) {
 function findBestCourtGroups(ids, courtCount) {
     const sorted = [...ids].sort((a, b) => (state.tsMap[a]?.mu||25) - (state.tsMap[b]?.mu||25));
 
-    // 全体μ幅（正規化用）
-    const muMin = state.tsMap[sorted[0]]?.mu || 25;
+    // 蜈ｨ菴鳶ｼ蟷・ｼ域ｭ｣隕丞喧逕ｨ・・    const muMin = state.tsMap[sorted[0]]?.mu || 25;
     const muMax = state.tsMap[sorted[sorted.length-1]]?.mu || 25;
     const totalMuRange = Math.max(muMax - muMin, 1);
 
-    // 現在の最大ペア重複数（動的重み用）
-    let maxPair = 0;
+    // 迴ｾ蝨ｨ縺ｮ譛螟ｧ繝壹い驥崎､・焚・亥虚逧・㍾縺ｿ逕ｨ・・    let maxPair = 0;
     for (let i = 0; i < ids.length; i++)
         for (let j = i+1; j < ids.length; j++)
             maxPair = Math.max(maxPair, state.pairMatrix[ids[i]]?.[ids[j]] || 0);
@@ -1871,15 +1788,14 @@ function findBestCourtGroups(ids, courtCount) {
     let best = null;
     let bestScore = Infinity;
 
-    // 固定ペアがidsに含まれるものを取得
-    const activeFP = getFixedPairs().filter(fp => ids.includes(fp[0]) && ids.includes(fp[1]));
+    // 蝗ｺ螳壹・繧｢縺景ds縺ｫ蜷ｫ縺ｾ繧後ｋ繧ゅ・繧貞叙蠕・    const activeFP = getFixedPairs().filter(fp => ids.includes(fp[0]) && ids.includes(fp[1]));
 
     function bt(remaining, groups) {
         if (remaining.length === 0) {
-            // 固定ペアが同じグループに入っているか検証
+            // 蝗ｺ螳壹・繧｢縺悟酔縺倥げ繝ｫ繝ｼ繝励↓蜈･縺｣縺ｦ縺・ｋ縺区､懆ｨｼ
             for (const fp of activeFP) {
                 const inSame = groups.some(g => g.includes(fp[0]) && g.includes(fp[1]));
-                if (!inSame) return; // 違反 → この解を棄却
+                if (!inSame) return; // 驕募渚 竊・縺薙・隗｣繧呈｣・唆
             }
             const muScore = groups.reduce((s, g) => {
                 const mus = g.map(i => state.tsMap[i]?.mu || 25);
@@ -1900,37 +1816,33 @@ function findBestCourtGroups(ids, courtCount) {
                         os += state.oppMatrix[g[i]]?.[g[j]] || 0;
                 return s + os;
             }, 0);
-            // 同コート共演回数の2乗ペナルティ＋初対面ボーナス（コート内全6ペア）
-            // muScore優先を壊さない小係数（μ差0.3 → 3.0 vs co=2全6ペア → 2.4）
-            const coQuadScore = groups.reduce((s, g) => {
+            // 蜷後さ繝ｼ繝亥・貍泌屓謨ｰ縺ｮ2荵励・繝翫Ν繝・ぅ・句・蟇ｾ髱｢繝懊・繝翫せ・医さ繝ｼ繝亥・蜈ｨ6繝壹い・・            // muScore蜆ｪ蜈医ｒ螢翫＆縺ｪ縺・ｰ丈ｿよ焚・夷ｼ蟾ｮ0.3 竊・3.0 vs co=2蜈ｨ6繝壹い 竊・2.4・・            const coQuadScore = groups.reduce((s, g) => {
                 let cs = 0;
                 for (let i = 0; i < g.length; i++)
                     for (let j = i + 1; j < g.length; j++) {
                         const co = (state.pairMatrix[g[i]]?.[g[j]] || 0)
                                  + (state.oppMatrix[g[i]]?.[g[j]] || 0);
-                        cs += co * co * 0.1;   // 1回:0.1, 2回:0.4, 3回:0.9
-                        if (co === 0) cs -= 0.15; // 初対面ボーナス
+                        cs += co * co * 0.1;   // 1蝗・0.1, 2蝗・0.4, 3蝗・0.9
+                        if (co === 0) cs -= 0.15; // 蛻晏ｯｾ髱｢繝懊・繝翫せ
                     }
                 return s + cs;
             }, 0);
             const score = muScore * 10 + pairScore * pairWeight + oppScore * 0.5 + coQuadScore;
             if (score < bestScore) { bestScore = score; best = groups.map(g => [...g]); }
-            // 早期終了: coQuadScoreが負になりうるため閾値を-5に設定
-            // （μ完全一致＋全ペア初対面でも-2.7程度止まりのため-5は安全圏）
-            if (bestScore < -5) return;
+            // 譌ｩ譛溽ｵゆｺ・ coQuadScore縺瑚ｲ縺ｫ縺ｪ繧翫≧繧九◆繧・明蛟､繧・5縺ｫ險ｭ螳・            // ・夷ｼ螳悟・荳閾ｴ・句・繝壹い蛻晏ｯｾ髱｢縺ｧ繧・2.7遞句ｺｦ豁｢縺ｾ繧翫・縺溘ａ-5縺ｯ螳牙・蝨擾ｼ・            if (bestScore < -5) return;
             return;
         }
 
         const first = remaining[0];
         const rest = remaining.slice(1);
 
-        // firstが固定ペアの一方なら、相方を必ずtrioに含める
+        // first縺悟崋螳壹・繧｢縺ｮ荳譁ｹ縺ｪ繧峨∫嶌譁ｹ繧貞ｿ・★trio縺ｫ蜷ｫ繧√ｋ
         const fpPartner = activeFP.find(fp => fp[0] === first || fp[1] === first);
         const mustInclude = fpPartner ? (fpPartner[0] === first ? fpPartner[1] : fpPartner[0]) : null;
 
         let combos;
         if (mustInclude != null && rest.includes(mustInclude)) {
-            // mustInclude を必ず含む3人の組み合わせを生成
+            // mustInclude 繧貞ｿ・★蜷ｫ繧3莠ｺ縺ｮ邨・∩蜷医ｏ縺帙ｒ逕滓・
             const others = rest.filter(x => x !== mustInclude);
             combos = getCombinations(others, 2).map(c => [mustInclude, ...c]);
         } else {
@@ -1951,11 +1863,10 @@ function findBestCourtGroups(ids, courtCount) {
             const group = [first, ...trio];
             const newRemaining = rest.filter(x => !trio.includes(x));
             bt(newRemaining, [...groups, group]);
-            if (bestScore < -5) return; // -5以下で最適解確定（0.01より安全な閾値）
-        }
+            if (bestScore < -5) return; // -5莉･荳九〒譛驕ｩ隗｣遒ｺ螳夲ｼ・.01繧医ｊ螳牙・縺ｪ髢ｾ蛟､・・        }
     }
 
-    // 起点をシャッフルして毎回異なる探索順にする
+    // 襍ｷ轤ｹ繧偵す繝｣繝・ヵ繝ｫ縺励※豈主屓逡ｰ縺ｪ繧区爾邏｢鬆・↓縺吶ｋ
     const shuffled = shuffle([...sorted]);
     bt(shuffled, []);
     return best;
@@ -1973,8 +1884,7 @@ function getCombinations(arr, k) {
 function makeBestPairInGroup(group) {
     const [a, b, c, d] = group;
 
-    // 固定ペアが含まれるか確認
-    const fixedInGroup = [];
+    // 蝗ｺ螳壹・繧｢縺悟性縺ｾ繧後ｋ縺狗｢ｺ隱・    const fixedInGroup = [];
     for (const pair of getFixedPairs()) {
         const inGroup = group.includes(pair[0]) && group.includes(pair[1]);
         if (inGroup) fixedInGroup.push(pair);
@@ -1982,7 +1892,7 @@ function makeBestPairInGroup(group) {
 
     let options;
     if (fixedInGroup.length > 0) {
-        // 固定ペアを含む組み合わせのみ許可
+        // 蝗ｺ螳壹・繧｢繧貞性繧邨・∩蜷医ｏ縺帙・縺ｿ險ｱ蜿ｯ
         const allOpts = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
         options = allOpts.filter(([t1, t2]) => {
             return fixedInGroup.every(fp => {
@@ -2007,11 +1917,9 @@ function makeBestPairInGroup(group) {
 }
 
 // =====================================================================
-// ランダムマッチ用ロジック（μ考慮なし）
-// 優先: ペア重複なし > 対戦相手重複なし > 出場間隔均等
-// =====================================================================
+// 繝ｩ繝ｳ繝繝繝槭ャ繝∫畑繝ｭ繧ｸ繝・け・夷ｼ閠・・縺ｪ縺暦ｼ・// 蜆ｪ蜈・ 繝壹い驥崎､・↑縺・> 蟇ｾ謌ｦ逶ｸ謇矩㍾隍・↑縺・> 蜃ｺ蝣ｴ髢馴囈蝮・ｭ・// =====================================================================
 function makePairsRandom(ids, attempts = 200) {
-    // 固定ペアを先に抽出
+    // 蝗ｺ螳壹・繧｢繧貞・縺ｫ謚ｽ蜃ｺ
     const fixedResult = [];
     const remaining = [];
     const usedInFixed = new Set();
@@ -2044,8 +1952,8 @@ function makePairsRandom(ids, attempts = 200) {
 }
 
 function findZeroDupPairing(ids) {
-    // 全ての出発組み合わせを試す真の全探索
-    // n=8: 105通り、n=12: 10395通り
+    // 蜈ｨ縺ｦ縺ｮ蜃ｺ逋ｺ邨・∩蜷医ｏ縺帙ｒ隧ｦ縺咏悄縺ｮ蜈ｨ謗｢邏｢
+    // n=8: 105騾壹ｊ縲］=12: 10395騾壹ｊ
     let found = null;
 
     function bt(avail) {
@@ -2065,8 +1973,7 @@ function findZeroDupPairing(ids) {
         }
     }
 
-    // 先頭に置く要素を全パターンで試す
-    for (let s = 0; s < ids.length && !found; s++) {
+    // 蜈磯ｭ縺ｫ鄂ｮ縺剰ｦ∫ｴ繧貞・繝代ち繝ｼ繝ｳ縺ｧ隧ｦ縺・    for (let s = 0; s < ids.length && !found; s++) {
         const reordered = [ids[s], ...ids.filter((_, i) => i !== s)];
         bt(reordered);
     }
@@ -2077,7 +1984,7 @@ function btPairsRandom(avail) {
     if (avail.length === 0) return [];
     const p1 = avail[0];
     const rest = avail.slice(1);
-    // pairMatrix昇順でソート（同値はランダム）してバックトラック
+    // pairMatrix譏・・〒繧ｽ繝ｼ繝茨ｼ亥酔蛟､縺ｯ繝ｩ繝ｳ繝繝・峨＠縺ｦ繝舌ャ繧ｯ繝医Λ繝・け
     const cands = [...rest].sort((a, b) => {
         const diff = (state.pairMatrix[p1]?.[a] || 0) - (state.pairMatrix[p1]?.[b] || 0);
         return diff !== 0 ? diff : Math.random() - 0.5;
@@ -2120,24 +2027,16 @@ function assignCourtsRandom(pairs, attempts = 20) {
 }
 
 // =====================================================================
-// バランスマッチ用ロジック（スコア評価型）
-// 選出・ペア・対戦を単一タスクで総合最適化（山登り法）
-// =====================================================================
+// 繝舌Λ繝ｳ繧ｹ繝槭ャ繝∫畑繝ｭ繧ｸ繝・け・医せ繧ｳ繧｢隧穂ｾ｡蝙具ｼ・// 驕ｸ蜃ｺ繝ｻ繝壹い繝ｻ蟇ｾ謌ｦ繧貞腰荳繧ｿ繧ｹ繧ｯ縺ｧ邱丞粋譛驕ｩ蛹厄ｼ亥ｱｱ逋ｻ繧頑ｳ包ｼ・// =====================================================================
 const BALANCE_WEIGHTS = {
-    CPLAY:        50,   // 出場回数分散（(count-avg)²）
-    CPAIR:        100,  // ペア重複（過去ペア回数）
-    COPP:         30,   // 対戦重複（過去対戦回数）
-    REST2:        100,  // 2連続休み
-    REST3:        200,  // 3連続以上休み
-    PLAY3:        20,   // 3連続以上出場
-    CPAIR_DIFF:   5,    // ペア内μ差のチーム間差ペナルティ
-    COSAME_QUAD:  50,   // 同コート共演回数の2乗ペナルティ（1回:50, 2回:200, 3回:450）
-    COSAME_NEW:  -50,   // 同コート初対面ボーナス（コート内6ペア対象）
-};
+    CPLAY:        50,   // 蜃ｺ蝣ｴ蝗樊焚蛻・淵・・count-avg)ﾂｲ・・    CPAIR:        100,  // 繝壹い驥崎､・ｼ磯℃蜴ｻ繝壹い蝗樊焚・・    COPP:         30,   // 蟇ｾ謌ｦ驥崎､・ｼ磯℃蜴ｻ蟇ｾ謌ｦ蝗樊焚・・    REST2:        100,  // 2騾｣邯壻ｼ代∩
+    REST3:        200,  // 3騾｣邯壻ｻ･荳贋ｼ代∩
+    PLAY3:        20,   // 3騾｣邯壻ｻ･荳雁・蝣ｴ
+    CPAIR_DIFF:   5,    // 繝壹い蜀・ｼ蟾ｮ縺ｮ繝√・繝髢灘ｷｮ繝壹リ繝ｫ繝・ぅ
+    COSAME_QUAD:  50,   // 蜷後さ繝ｼ繝亥・貍泌屓謨ｰ縺ｮ2荵励・繝翫Ν繝・ぅ・・蝗・50, 2蝗・200, 3蝗・450・・    COSAME_NEW:  -50,   // 蜷後さ繝ｼ繝亥・蟇ｾ髱｢繝懊・繝翫せ・医さ繝ｼ繝亥・6繝壹い蟇ｾ雎｡・・};
 const BALANCE_ITERATIONS = 1500;
 
-// 連続休み数（直近ラウンドから遡って rest が続く数）
-function getRestStreak(id) {
+// 騾｣邯壻ｼ代∩謨ｰ・育峩霑代Λ繧ｦ繝ｳ繝峨°繧蛾■縺｣縺ｦ rest 縺檎ｶ壹￥謨ｰ・・function getRestStreak(id) {
     let streak = 0;
     for (let i = state.schedule.length - 1; i >= 0; i--) {
         const rd = state.schedule[i];
@@ -2149,7 +2048,7 @@ function getRestStreak(id) {
     return streak;
 }
 
-// 連続出場数
+// 騾｣邯壼・蝣ｴ謨ｰ
 function getPlayStreak(id) {
     let streak = 0;
     for (let i = state.schedule.length - 1; i >= 0; i--) {
@@ -2161,29 +2060,25 @@ function getPlayStreak(id) {
     return streak;
 }
 
-// 配置案のスコア評価（低いほど良い）
-// assignment = { courts: [[id,id,id,id], ...], bench: [id,...] }
+// 驟咲ｽｮ譯医・繧ｹ繧ｳ繧｢隧穂ｾ｡・井ｽ弱＞縺ｻ縺ｩ濶ｯ縺・ｼ・// assignment = { courts: [[id,id,id,id], ...], bench: [id,...] }
 function evaluateBalanceScore(assignment, active, courtCount) {
     const W = BALANCE_WEIGHTS;
     const playingIds = assignment.courts.flat();
 
-    // ① 出場回数均等化（次ラウンド後の実効出場率分散）
-    const nextCounts = active.map(p => {
+    // 竭 蜃ｺ蝣ｴ蝗樊焚蝮・ｭ牙喧・域ｬ｡繝ｩ繧ｦ繝ｳ繝牙ｾ後・螳溷柑蜃ｺ蝣ｴ邇・・謨｣・・    const nextCounts = active.map(p => {
         const willPlay = playingIds.includes(p.id);
         return getAdjustedPlayRatioNext(p, willPlay);
     });
     const avg = nextCounts.reduce((s, v) => s + v, 0) / nextCounts.length;
-    // 参加人数/コート数 が 2未満（bench枠が1以下）の場合は CPLAY を 20倍
-    const ratio = courtCount > 0 ? active.length / courtCount : Infinity;
+    // 蜿ょ刈莠ｺ謨ｰ/繧ｳ繝ｼ繝域焚 縺・2譛ｪ貅・・ench譫縺・莉･荳具ｼ峨・蝣ｴ蜷医・ CPLAY 繧・20蛟・    const ratio = courtCount > 0 ? active.length / courtCount : Infinity;
     const cplayMul = ratio < 2 ? 20 : 1;
     const Cplay = nextCounts.reduce((s, v) => s + (v - avg) * (v - avg), 0) * W.CPLAY * cplayMul * nextCounts.length;
 
-    // ② ペア重複 / ③ 対戦重複 / 未対戦ボーナス（コート単位）
-    // ⑤ ペア内μ差ペナルティ
+    // 竭｡ 繝壹い驥崎､・/ 竭｢ 蟇ｾ謌ｦ驥崎､・/ 譛ｪ蟇ｾ謌ｦ繝懊・繝翫せ・医さ繝ｼ繝亥腰菴搾ｼ・    // 竭､ 繝壹い蜀・ｼ蟾ｮ繝壹リ繝ｫ繝・ぅ
     let Cpair = 0, Copp = 0, CpairDiff = 0;
     assignment.courts.forEach(group => {
         const [a, b, c, d] = group;
-        // 固定ペアを含む組み合わせのみ許可
+        // 蝗ｺ螳壹・繧｢繧貞性繧邨・∩蜷医ｏ縺帙・縺ｿ險ｱ蜿ｯ
         const fixedInGroup = getFixedPairs().filter(fp => group.includes(fp[0]) && group.includes(fp[1]));
         let allOpts = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
         if (fixedInGroup.length > 0) {
@@ -2201,19 +2096,16 @@ function evaluateBalanceScore(assignment, active, courtCount) {
             if (pd < bestPairDup) { bestPairDup = pd; bestT1 = t1; bestT2 = t2; }
         }
         Cpair += bestPairDup * W.CPAIR;
-        // 対戦重複（team1 × team2 の4組）
-        bestT1.forEach(x => bestT2.forEach(y => {
+        // 蟇ｾ謌ｦ驥崎､・ｼ・eam1 ﾃ・team2 縺ｮ4邨・ｼ・        bestT1.forEach(x => bestT2.forEach(y => {
             const c = state.oppMatrix[x]?.[y] || 0;
             Copp += c * W.COPP;
         }));
-        // ⑤ ペア内μ差 → 対戦チーム間のペア内差が近い方が良い
-        const diff1 = Math.abs((state.tsMap[bestT1[0]]?.mu||25) - (state.tsMap[bestT1[1]]?.mu||25));
+        // 竭､ 繝壹い蜀・ｼ蟾ｮ 竊・蟇ｾ謌ｦ繝√・繝髢薙・繝壹い蜀・ｷｮ縺瑚ｿ代＞譁ｹ縺瑚憶縺・        const diff1 = Math.abs((state.tsMap[bestT1[0]]?.mu||25) - (state.tsMap[bestT1[1]]?.mu||25));
         const diff2 = Math.abs((state.tsMap[bestT2[0]]?.mu||25) - (state.tsMap[bestT2[1]]?.mu||25));
         CpairDiff += Math.abs(diff1 - diff2) * (W.CPAIR_DIFF || 5);
     });
 
-    // ④' 同コート2乗ペナルティ＋初対面ボーナス（コート内全6ペア対象）
-    let CoSame = 0;
+    // 竭｣' 蜷後さ繝ｼ繝・荵励・繝翫Ν繝・ぅ・句・蟇ｾ髱｢繝懊・繝翫せ・医さ繝ｼ繝亥・蜈ｨ6繝壹い蟇ｾ雎｡・・    let CoSame = 0;
     assignment.courts.forEach(group => {
         for (let i = 0; i < group.length; i++) {
             for (let j = i + 1; j < group.length; j++) {
@@ -2225,16 +2117,15 @@ function evaluateBalanceScore(assignment, active, courtCount) {
         }
     });
 
-    // ⑥ 固定ペアが同じコートに入っていない場合の大きなペナルティ
+    // 竭･ 蝗ｺ螳壹・繧｢縺悟酔縺倥さ繝ｼ繝医↓蜈･縺｣縺ｦ縺・↑縺・ｴ蜷医・螟ｧ縺阪↑繝壹リ繝ｫ繝・ぅ
     let CfixedViolation = 0;
     for (const fp of getFixedPairs()) {
         if (!playingIds.includes(fp[0]) || !playingIds.includes(fp[1])) continue;
         const sameGroup = assignment.courts.some(g => g.includes(fp[0]) && g.includes(fp[1]));
-        if (!sameGroup) CfixedViolation += 100000; // 違反ペナルティ
+        if (!sameGroup) CfixedViolation += 100000; // 驕募渚繝壹リ繝ｫ繝・ぅ
     }
 
-    // ④ 休み・連投ペナルティ（benchに入ると休み扱い）
-    let Crest = 0;
+    // 竭｣ 莨代∩繝ｻ騾｣謚輔・繝翫Ν繝・ぅ・・ench縺ｫ蜈･繧九→莨代∩謇ｱ縺・ｼ・    let Crest = 0;
     assignment.bench.forEach(id => {
         const rs = getRestStreak(id);
         if (rs >= 2) Crest += W.REST3;
@@ -2248,12 +2139,11 @@ function evaluateBalanceScore(assignment, active, courtCount) {
     return Cplay + Cpair + Copp + CoSame + Crest + CpairDiff + CfixedViolation;
 }
 
-// 初期配置を生成
-function makeInitialBalanceAssignment(active, courtCount) {
+// 蛻晄悄驟咲ｽｮ繧堤函謌・function makeInitialBalanceAssignment(active, courtCount) {
     const ids = shuffle(active.map(p => p.id));
     const need = courtCount * 4;
 
-    // 固定ペアを先にコートに配置
+    // 蝗ｺ螳壹・繧｢繧貞・縺ｫ繧ｳ繝ｼ繝医↓驟咲ｽｮ
     const used = new Set();
     const courts = Array.from({ length: courtCount }, () => []);
     let ci = 0;
@@ -2265,8 +2155,7 @@ function makeInitialBalanceAssignment(active, courtCount) {
         used.add(fp[0]); used.add(fp[1]);
         if (courts[ci].length >= 4) ci++;
     }
-    // 残りの選手を埋める
-    const remaining = ids.filter(id => !used.has(id));
+    // 谿九ｊ縺ｮ驕ｸ謇九ｒ蝓九ａ繧・    const remaining = ids.filter(id => !used.has(id));
     let ri = 0;
     for (let c = 0; c < courtCount && ri < remaining.length; c++) {
         while (courts[c].length < 4 && ri < remaining.length) {
@@ -2278,14 +2167,12 @@ function makeInitialBalanceAssignment(active, courtCount) {
     return { courts, bench };
 }
 
-// 配置の深いコピー
+// 驟咲ｽｮ縺ｮ豺ｱ縺・さ繝斐・
 function cloneAssignment(a) {
     return { courts: a.courts.map(c => [...c]), bench: [...a.bench] };
 }
 
-// ランダムに2人をswap（コート間・コート↔bench）
-// 固定ペアは一緒に移動する
-function swapInAssignment(a) {
+// 繝ｩ繝ｳ繝繝縺ｫ2莠ｺ繧痴wap・医さ繝ｼ繝磯俣繝ｻ繧ｳ繝ｼ繝遺・bench・・// 蝗ｺ螳壹・繧｢縺ｯ荳邱偵↓遘ｻ蜍輔☆繧・function swapInAssignment(a) {
     const allSlots = [];
     a.courts.forEach((c, ci) => c.forEach((_, i) => allSlots.push({ type: 'court', ci, i })));
     a.bench.forEach((_, i) => allSlots.push({ type: 'bench', i }));
@@ -2302,8 +2189,7 @@ function swapInAssignment(a) {
     const id1 = getId(s1);
     const partner1 = getFixedPartnerId(id1);
 
-    // s2: 別のコート or ベンチからランダム選択
-    let s2;
+    // s2: 蛻･縺ｮ繧ｳ繝ｼ繝・or 繝吶Φ繝√°繧峨Λ繝ｳ繝繝驕ｸ謚・    let s2;
     let attempts = 0;
     do {
         s2 = allSlots[Math.floor(Math.random() * allSlots.length)];
@@ -2314,20 +2200,18 @@ function swapInAssignment(a) {
     const id2 = getId(s2);
     const partner2 = getFixedPartnerId(id2);
 
-    // 固定ペア同士のswapが複雑になる場合はスキップ
+    // 蝗ｺ螳壹・繧｢蜷悟｣ｫ縺ｮswap縺瑚､・尅縺ｫ縺ｪ繧句ｴ蜷医・繧ｹ繧ｭ繝・・
     if (partner1 != null && partner2 != null) return a;
 
     if (partner1 != null) {
-        // id1は固定ペア → partner1も一緒に移動
-        const sp1 = findSlot(partner1);
+        // id1縺ｯ蝗ｺ螳壹・繧｢ 竊・partner1繧ゆｸ邱偵↓遘ｻ蜍・        const sp1 = findSlot(partner1);
         if (!sp1) { setId(s1, id2); setId(s2, id1); return a; }
-        // s2側にもう1人のswap先が必要（s2と同じコート/ベンチから）
-        const s2group = s2.type === 'court' ? allSlots.filter(s => s.type === 'court' && s.ci === s2.ci && s !== s2) : allSlots.filter(s => s.type === 'bench' && s !== s2);
+        // s2蛛ｴ縺ｫ繧ゅ≧1莠ｺ縺ｮswap蜈医′蠢・ｦ・ｼ・2縺ｨ蜷後§繧ｳ繝ｼ繝・繝吶Φ繝√°繧会ｼ・        const s2group = s2.type === 'court' ? allSlots.filter(s => s.type === 'court' && s.ci === s2.ci && s !== s2) : allSlots.filter(s => s.type === 'bench' && s !== s2);
         const s3cands = s2group.filter(s => s !== s1 && s !== sp1 && getFixedPartnerId(getId(s)) == null);
-        if (s3cands.length === 0) { setId(s1, id2); setId(s2, id1); return a; } // fallback: 単純swap
+        if (s3cands.length === 0) { setId(s1, id2); setId(s2, id1); return a; } // fallback: 蜊倡ｴ敗wap
         const s3 = s3cands[Math.floor(Math.random() * s3cands.length)];
         const id3 = getId(s3);
-        // id1↔id2, partner1↔id3
+        // id1竊琶d2, partner1竊琶d3
         setId(s1, id2); setId(s2, id1);
         setId(sp1, id3); setId(s3, partner1);
     } else if (partner2 != null) {
@@ -2341,30 +2225,27 @@ function swapInAssignment(a) {
         setId(s1, id2); setId(s2, id1);
         setId(sp2, id3); setId(s3, partner2);
     } else {
-        // どちらもペアなし → 通常swap
+        // 縺ｩ縺｡繧峨ｂ繝壹い縺ｪ縺・竊・騾壼ｸｸswap
         setId(s1, id2); setId(s2, id1);
     }
     return a;
 }
 
 function generateCourtsBalance(active, courtCount) {
-    // 必要人数が足りない場合
-    if (active.length < 4) return null;
+    // 蠢・ｦ∽ｺｺ謨ｰ縺瑚ｶｳ繧翫↑縺・ｴ蜷・    if (active.length < 4) return null;
     const maxCourts = Math.min(courtCount, Math.floor(active.length / 4));
     if (maxCourts < 1) return null;
 
-    // 初期解
+    // 蛻晄悄隗｣
     let current = makeInitialBalanceAssignment(active, maxCourts);
     let currentScore = evaluateBalanceScore(current, active, maxCourts);
     let best = cloneAssignment(current);
     let bestScore = currentScore;
 
-    // 山登り + 簡易SA（悪化を一定確率で受容）
-    // bench空 かつ 1コートの場合はSAをスキップ（コート内スワップはスコア不変のため無意味）
-    const needSA = best.bench.length > 0 || maxCourts > 1;
-    const _balanceDeadline = performance.now() + 80; // 80ms タイムボックス
+    // 螻ｱ逋ｻ繧・+ 邁｡譏鉄A・域が蛹悶ｒ荳螳夂｢ｺ邇・〒蜿怜ｮｹ・・    // bench遨ｺ 縺九▽ 1繧ｳ繝ｼ繝医・蝣ｴ蜷医・SA繧偵せ繧ｭ繝・・・医さ繝ｼ繝亥・繧ｹ繝ｯ繝・・縺ｯ繧ｹ繧ｳ繧｢荳榊､峨・縺溘ａ辟｡諢丞袖・・    const needSA = best.bench.length > 0 || maxCourts > 1;
+    const _balanceDeadline = performance.now() + 80; // 80ms 繧ｿ繧､繝繝懊ャ繧ｯ繧ｹ
     for (let iter = 0; needSA && iter < BALANCE_ITERATIONS; iter++) {
-        if (iter % 100 === 0 && performance.now() > _balanceDeadline) break; // 時間超過で打ち切り
+        if (iter % 100 === 0 && performance.now() > _balanceDeadline) break; // 譎る俣雜・℃縺ｧ謇薙■蛻・ｊ
         const trial = cloneAssignment(current);
         swapInAssignment(trial);
         const trialScore = evaluateBalanceScore(trial, active, maxCourts);
@@ -2383,23 +2264,21 @@ function generateCourtsBalance(active, courtCount) {
         }
     }
 
-    // 最良解から各コートのペア分けを確定
-    const selectedIds = best.courts.flat();
+    // 譛濶ｯ隗｣縺九ｉ蜷・さ繝ｼ繝医・繝壹い蛻・￠繧堤｢ｺ螳・    const selectedIds = best.courts.flat();
     const courts = best.courts.map(group => makeBestPairInGroup(group));
     return { courts, selectedIds };
 }
 
 // =====================================================================
 function generateNextRound() {
-    if (isEventLocked()) { showToast('このイベントは終了しています'); return; }
-    // 参加者未登録チェック
+    if (isEventLocked()) { showToast('縺薙・繧､繝吶Φ繝医・邨ゆｺ・＠縺ｦ縺・∪縺・); return; }
+    // 蜿ょ刈閠・悴逋ｻ骭ｲ繝√ぉ繝・け
     if (!state.players || state.players.length === 0) {
-        alert('⚙️設定タブで参加者を追加してください。');
+        alert('笞呻ｸ剰ｨｭ螳壹ち繝悶〒蜿ょ刈閠・ｒ霑ｽ蜉縺励※縺上□縺輔＞縲・);
         showStep('step-setup', document.getElementById('btn-setup'));
         return;
     }
-    // 初回組合せ作成時にliveSetupへ切り替え
-    if (state.schedule.length === 0) {
+    // 蛻晏屓邨・粋縺帑ｽ懈・譎ゅ↓liveSetup縺ｸ蛻・ｊ譖ｿ縺・    if (state.schedule.length === 0) {
         showLiveSetup();
         renderPlayerList();
         document.getElementById('disp-courts-live').textContent = state.courts;
@@ -2407,7 +2286,7 @@ function generateNextRound() {
 
     const active = state.players.filter(p => !p.resting);
     if (active.length < 4) {
-        alert('出場できる参加者が4人以上必要です（現在' + active.length + '人）');
+        alert('蜃ｺ蝣ｴ縺ｧ縺阪ｋ蜿ょ刈閠・′4莠ｺ莉･荳雁ｿ・ｦ√〒縺呻ｼ育樟蝨ｨ' + active.length + '莠ｺ・・);
         return;
     }
 
@@ -2416,43 +2295,39 @@ function generateNextRound() {
     let courts;
 
     if (state.matchingRule === 'rating') {
-        // レーティングマッチ: μ近接グループ先行方式
-        ids = selectRoundPlayers();
-        if (!ids || ids.length < 4) { alert('出場選手の選出に失敗しました（4人未満）。\n固定ペアの設定や休憩状態を確認してください。'); return; }
+        // 繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ繝槭ャ繝・ ﾎｼ霑第磁繧ｰ繝ｫ繝ｼ繝怜・陦梧婿蠑・        ids = selectRoundPlayers();
+        if (!ids || ids.length < 4) { alert('蜃ｺ蝣ｴ驕ｸ謇九・驕ｸ蜃ｺ縺ｫ螟ｱ謨励＠縺ｾ縺励◆・・莠ｺ譛ｪ貅・峨・n蝗ｺ螳壹・繧｢縺ｮ險ｭ螳壹ｄ莨第・迥ｶ諷九ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・); return; }
         courts = generateCourtsRating(ids);
-        if (!courts) { alert('コート割り当てに失敗しました'); return; }
+        if (!courts) { alert('繧ｳ繝ｼ繝亥牡繧雁ｽ薙※縺ｫ螟ｱ謨励＠縺ｾ縺励◆'); return; }
     } else if (state.matchingRule === 'balance') {
-        // バランスマッチ: 選出・ペア・対戦を総合最適化
-        const result = generateCourtsBalance(active, state.courts);
-        if (!result) { alert('バランスマッチの組合せ生成に失敗しました'); return; }
+        // 繝舌Λ繝ｳ繧ｹ繝槭ャ繝・ 驕ｸ蜃ｺ繝ｻ繝壹い繝ｻ蟇ｾ謌ｦ繧堤ｷ丞粋譛驕ｩ蛹・        const result = generateCourtsBalance(active, state.courts);
+        if (!result) { alert('繝舌Λ繝ｳ繧ｹ繝槭ャ繝√・邨・粋縺帷函謌舌↓螟ｱ謨励＠縺ｾ縺励◆'); return; }
         ids = result.selectedIds;
         courts = result.courts;
     } else {
-        // ランダムマッチ: 選出・ペア・対戦を統合最適化
-        const result = generateRoundRandom();
-        if (!result) { alert('ランダムマッチの組合せ生成に失敗しました'); return; }
+        // 繝ｩ繝ｳ繝繝繝槭ャ繝・ 驕ｸ蜃ｺ繝ｻ繝壹い繝ｻ蟇ｾ謌ｦ繧堤ｵｱ蜷域怙驕ｩ蛹・        const result = generateRoundRandom();
+        if (!result) { alert('繝ｩ繝ｳ繝繝繝槭ャ繝√・邨・粋縺帷函謌舌↓螟ｱ謨励＠縺ｾ縺励◆'); return; }
         ids = result.selectedIds;
         courts = result.courts;
     }
 
-    // scheduleに {team1, team2, physicalIndex} 形式で保存
-    const courtsFormatted = courts.map(([t1, t2], i) => ({ team1: t1, team2: t2, physicalIndex: i }));
+    // schedule縺ｫ {team1, team2, physicalIndex} 蠖｢蠑上〒菫晏ｭ・    const courtsFormatted = courts.map(([t1, t2], i) => ({ team1: t1, team2: t2, physicalIndex: i }));
 
-    // pairMatrix・oppMatrix更新
+    // pairMatrix繝ｻoppMatrix譖ｴ譁ｰ
     courtsFormatted.forEach(({ team1, team2 }) => {
-        // ペアの更新
+        // 繝壹い縺ｮ譖ｴ譁ｰ
         [[team1[0], team1[1]], [team2[0], team2[1]]].forEach(([a, b]) => {
             state.pairMatrix[a][b] = (state.pairMatrix[a][b] || 0) + 1;
             state.pairMatrix[b][a] = (state.pairMatrix[b][a] || 0) + 1;
         });
-        // 対戦相手の更新
+        // 蟇ｾ謌ｦ逶ｸ謇九・譖ｴ譁ｰ
         team1.forEach(a => team2.forEach(b => {
             state.oppMatrix[a][b] = (state.oppMatrix[a][b] || 0) + 1;
             state.oppMatrix[b][a] = (state.oppMatrix[b][a] || 0) + 1;
         }));
     });
 
-    // このラウンドの全選手状態を記録
+    // 縺薙・繝ｩ繧ｦ繝ｳ繝峨・蜈ｨ驕ｸ謇狗憾諷九ｒ險倬鹸
     const playerStates = {};
     state.players.forEach(p => {
         if (ids.includes(p.id)) {
@@ -2464,7 +2339,7 @@ function generateNextRound() {
         }
     });
 
-    // play_count更新
+    // play_count譖ｴ譁ｰ
     ids.forEach(id => {
         const p = state.players.find(p => p.id === id);
         if (p) { p.playCount++; p.lastRound = roundNum; }
@@ -2473,27 +2348,26 @@ function generateNextRound() {
     state.schedule.push({ round: roundNum, courts: courtsFormatted, playerStates });
     state.roundCount = roundNum;
 
-    // 自動組合せ: 出場選手を「試合中」フラグに設定
-    if (state.autoMatch) {
+    // 閾ｪ蜍慕ｵ・粋縺・ 蜃ｺ蝣ｴ驕ｸ謇九ｒ縲瑚ｩｦ蜷井ｸｭ縲阪ヵ繝ｩ繧ｰ縺ｫ險ｭ螳・    if (state.autoMatch) {
         ids.forEach(id => {
             const p = state.players.find(pp => pp.id === id);
             if (p) p.isOnCourt = true;
         });
     }
 
-    // 初回組合せ作成でイベント状態を「開催中」に変更
+    // 蛻晏屓邨・粋縺帑ｽ懈・縺ｧ繧､繝吶Φ繝育憾諷九ｒ縲碁幕蛯ｬ荳ｭ縲阪↓螟画峩
     if (roundNum === 1 && _sessionId && window._fbSetEventStatus) {
-        window._fbSetEventStatus(_sessionId, '開催中');
+        window._fbSetEventStatus(_sessionId, '髢句ぎ荳ｭ');
     }
 
     saveState();
     renderMatchContainer();
 
-    // 順次モード: 初回生成後にプールを事前生成
+    // 鬆・ｬ｡繝｢繝ｼ繝・ 蛻晏屓逕滓・蠕後↓繝励・繝ｫ繧剃ｺ句燕逕滓・
     if (state.seqMatch && state.matchPool.length === 0) {
         setTimeout(() => generatePoolBatch(), 50);
     }
-    // 最新ラウンドまでスクロール後に開く
+    // 譛譁ｰ繝ｩ繧ｦ繝ｳ繝峨∪縺ｧ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蠕後↓髢九￥
     setTimeout(() => {
         const blocks = document.querySelectorAll('.round-block');
         const last = blocks[blocks.length - 1];
@@ -2505,14 +2379,12 @@ function generateNextRound() {
 }
 
 // =====================================================================
-// 自動/順次組合せ
-// =====================================================================
+// 閾ｪ蜍・鬆・ｬ｡邨・粋縺・// =====================================================================
 
-// 「次の試合を作る」ボタンのハンドラ（モード対応）
-function onNextRoundBtn() {
+// 縲梧ｬ｡縺ｮ隧ｦ蜷医ｒ菴懊ｋ縲阪・繧ｿ繝ｳ縺ｮ繝上Φ繝峨Λ・医Δ繝ｼ繝牙ｯｾ蠢懶ｼ・function onNextRoundBtn() {
     if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
-        // 自動ON + 順次ON + 2試合目以降:
-        // 「終了済みで新ラウンドにまだ割り当てられていない空きコート」がなければブロック
+        // 閾ｪ蜍桧N + 鬆・ｬ｡ON + 2隧ｦ蜷育岼莉･髯・
+        // 縲檎ｵゆｺ・ｸ医∩縺ｧ譁ｰ繝ｩ繧ｦ繝ｳ繝峨↓縺ｾ縺蜑ｲ繧雁ｽ薙※繧峨ｌ縺ｦ縺・↑縺・ｩｺ縺阪さ繝ｼ繝医阪′縺ｪ縺代ｌ縺ｰ繝悶Ο繝・け
         const inProgressPhy = new Set();
         state.schedule.forEach(rd => {
             rd.courts.forEach((ct, ci) => {
@@ -2523,42 +2395,38 @@ function onNextRoundBtn() {
                 }
             });
         });
-        // 現在構築中のラウンドで既に割り当て済みの物理コート
-        const lastRd = state.schedule[state.schedule.length - 1];
+        // 迴ｾ蝨ｨ讒狗ｯ我ｸｭ縺ｮ繝ｩ繧ｦ繝ｳ繝峨〒譌｢縺ｫ蜑ｲ繧雁ｽ薙※貂医∩縺ｮ迚ｩ逅・さ繝ｼ繝・        const lastRd = state.schedule[state.schedule.length - 1];
         const assignedInNew = new Set();
         if (lastRd && lastRd.courts.length < state.courts) {
             lastRd.courts.forEach((ct, ci) => {
                 assignedInNew.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
             });
         }
-        // 進行中でも割り当て済みでもない空きコートが1つでもあるか確認
-        let hasFreeCourt = false;
+        // 騾ｲ陦御ｸｭ縺ｧ繧ょ牡繧雁ｽ薙※貂医∩縺ｧ繧ゅ↑縺・ｩｺ縺阪さ繝ｼ繝医′1縺､縺ｧ繧ゅ≠繧九°遒ｺ隱・        let hasFreeCourt = false;
         for (let i = 0; i < (state.courts || 2); i++) {
             if (!inProgressPhy.has(i) && !assignedInNew.has(i)) { hasFreeCourt = true; break; }
         }
         if (!hasFreeCourt) {
-            showToast('⚠️ 終了済みのコートがありません。試合が終わってから作成してください');
+            showToast('笞・・邨ゆｺ・ｸ医∩縺ｮ繧ｳ繝ｼ繝医′縺ゅｊ縺ｾ縺帙ｓ縲りｩｦ蜷医′邨ゅｏ縺｣縺ｦ縺九ｉ菴懈・縺励※縺上□縺輔＞');
             return;
         }
         assignNextPoolMatch();
     } else if (state.seqMatch && state.schedule.length > 0) {
-        // 順次モード（自動OFF）・2試合目以降 → プールから1コートずつ投入
+        // 鬆・ｬ｡繝｢繝ｼ繝会ｼ郁・蜍桧FF・峨・2隧ｦ蜷育岼莉･髯・竊・繝励・繝ｫ縺九ｉ1繧ｳ繝ｼ繝医★縺､謚募・
         assignNextPoolMatch();
     } else {
-        // 初回 or 一括モード → 全コートまとめて生成
+        // 蛻晏屓 or 荳諡ｬ繝｢繝ｼ繝・竊・蜈ｨ繧ｳ繝ｼ繝医∪縺ｨ繧√※逕滓・
         generateNextRound();
     }
 }
 
-// 自動組合せ トグル変更
+// 閾ｪ蜍慕ｵ・粋縺・繝医げ繝ｫ螟画峩
 function onAutoMatchChange() {
     state.autoMatch = document.getElementById('autoMatchToggle').checked;
     if (state.autoMatch) {
-        // 自動ONにしたとき: isOnCourt再計算
-        _recalcIsOnCourt();
+        // 閾ｪ蜍桧N縺ｫ縺励◆縺ｨ縺・ isOnCourt蜀崎ｨ育ｮ・        _recalcIsOnCourt();
     } else {
-        // 自動OFFにしても順次はそのまま維持。isOnCourtのみ再計算
-        if (!state.seqMatch) {
+        // 閾ｪ蜍桧FF縺ｫ縺励※繧る・ｬ｡縺ｯ縺昴・縺ｾ縺ｾ邯ｭ謖√ＪsOnCourt縺ｮ縺ｿ蜀崎ｨ育ｮ・        if (!state.seqMatch) {
             state.matchPool = [];
             state.players.forEach(p => { p.isOnCourt = false; });
         }
@@ -2567,11 +2435,11 @@ function onAutoMatchChange() {
     saveState();
 }
 
-// 順次組合せ トグル変更
+// 鬆・ｬ｡邨・粋縺・繝医げ繝ｫ螟画峩
 function onSeqMatchChange() {
     state.seqMatch = document.getElementById('seqMatchToggle').checked;
     if (state.seqMatch) {
-        // 順次ONにしたとき: isOnCourt再計算 → プール生成
+        // 鬆・ｬ｡ON縺ｫ縺励◆縺ｨ縺・ isOnCourt蜀崎ｨ育ｮ・竊・繝励・繝ｫ逕滓・
         _recalcIsOnCourt();
         state.matchPool = [];
         generatePoolBatch();
@@ -2583,8 +2451,7 @@ function onSeqMatchChange() {
     saveState();
 }
 
-// isOnCourt を現在のスケジュールから再計算
-function _recalcIsOnCourt() {
+// isOnCourt 繧堤樟蝨ｨ縺ｮ繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ縺九ｉ蜀崎ｨ育ｮ・function _recalcIsOnCourt() {
     state.players.forEach(p => { p.isOnCourt = false; });
     state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
@@ -2599,10 +2466,9 @@ function _recalcIsOnCourt() {
     });
 }
 
-// 自動組合せUIの状態更新
+// 閾ｪ蜍慕ｵ・粋縺婉I縺ｮ迥ｶ諷区峩譁ｰ
 // =====================================================================
-// コートQRコード
-// =====================================================================
+// 繧ｳ繝ｼ繝・R繧ｳ繝ｼ繝・// =====================================================================
 function renderCourtQRCodes() {
     if (!_sessionId || !isAdmin) return;
     const card = document.getElementById('courtQrCard');
@@ -2619,7 +2485,7 @@ function renderCourtQRCodes() {
 
     for (let i = 0; i < courtCount; i++) {
         const url = baseUrl + i;
-        const label = state.courtNameAlpha ? (ALPHA[i] || (i+1)) + 'コート' : '第' + (i+1) + 'コート';
+        const label = state.courtNameAlpha ? (ALPHA[i] || (i+1)) + '繧ｳ繝ｼ繝・ : '隨ｬ' + (i+1) + '繧ｳ繝ｼ繝・;
 
         const col = document.createElement('div');
         col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
@@ -2630,20 +2496,19 @@ function renderCourtQRCodes() {
 
         const lbl = document.createElement('div');
         lbl.textContent = label;
-        lbl.style.cssText = 'font-size:13px;font-weight:bold;color:#333;';
+        lbl.style.cssText = 'font-size:0.8125rem;font-weight:bold;color:#333;';
         col.appendChild(lbl);
 
         const link = document.createElement('a');
         link.href = url;
         link.target = '_blank';
-        link.textContent = '開く';
-        link.style.cssText = 'font-size:11px;color:#1565c0;';
+        link.textContent = '髢九￥';
+        link.style.cssText = 'font-size:0.6875rem;color:#1565c0;';
         col.appendChild(link);
 
         wrap.appendChild(col);
 
-        // QRコード生成
-        new QRCode(qrDiv, {
+        // QR繧ｳ繝ｼ繝臥函謌・        new QRCode(qrDiv, {
             text: url,
             width: 140,
             height: 140,
@@ -2657,8 +2522,7 @@ function renderCourtQRCodes() {
 function changeMatchGames(delta) {
     let cur = parseInt(state.matchGames) || 3;
     cur = Math.max(1, Math.min(7, cur + delta));
-    if (cur % 2 === 0) cur += delta > 0 ? 1 : -1; // 奇数を維持
-    cur = Math.max(1, Math.min(7, cur));
+    if (cur % 2 === 0) cur += delta > 0 ? 1 : -1; // 螂・焚繧堤ｶｭ謖・    cur = Math.max(1, Math.min(7, cur));
     state.matchGames = cur;
     _setMatchGamesUI(cur);
     saveState();
@@ -2669,14 +2533,14 @@ function updateMatchGamesUI() {
 }
 
 function _setMatchGamesUI(g) {
-    const desc = g + 'ゲームマッチ（' + Math.ceil(g / 2) + 'ゲーム先取）';
+    const desc = g + '繧ｲ繝ｼ繝繝槭ャ繝・ｼ・ + Math.ceil(g / 2) + '繧ｲ繝ｼ繝蜈亥叙・・;
     document.querySelectorAll('.match-games-val').forEach(el => { el.textContent = g; });
     document.querySelectorAll('.match-games-desc-txt').forEach(el => { el.textContent = desc; });
 }
 
-// ─────────────────────────────────────────────────────────
-// Gemini TTS アナウンス
-// ─────────────────────────────────────────────────────────
+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// Gemini TTS 繧｢繝翫え繝ｳ繧ｹ
+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 function saveGeminiKey(val) {
     state.geminiApiKey = val.trim();
     saveState();
@@ -2711,7 +2575,7 @@ function updateGeminiKeyUI() {
 
 async function announceMatch(roundNum, courtIdx, physIdx, btn) {
     const apiKey = state.geminiApiKey;
-    if (!apiKey) { alert('APIキーが設定されていません。QRパネルで入力してください。'); return; }
+    if (!apiKey) { alert('API繧ｭ繝ｼ縺瑚ｨｭ螳壹＆繧後※縺・∪縺帙ｓ縲２R繝代ロ繝ｫ縺ｧ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・); return; }
 
     const rd = state.schedule.find(r => r.round === roundNum);
     if (!rd) return;
@@ -2721,12 +2585,11 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
     const ALPHA = ['A','B','C','D','E','F','G','H'];
     const useAlpha = !!state.courtNameAlpha;
     const courtName = useAlpha
-        ? (ALPHA[physIdx] || (physIdx + 1)) + 'コート'
-        : '第' + (physIdx + 1) + 'コート';
+        ? (ALPHA[physIdx] || (physIdx + 1)) + '繧ｳ繝ｼ繝・
+        : '隨ｬ' + (physIdx + 1) + '繧ｳ繝ｼ繝・;
 
     function playerText(id) {
-        // kana優先順: state.playerKana → roster直引き(pid経由) → 表示名（漢字）
-        // state.playerKanaは旧イベントでは空のため、rosterのkanaをpid経由で直接参照する
+        // kana蜆ｪ蜈磯・ state.playerKana 竊・roster逶ｴ蠑輔″(pid邨檎罰) 竊・陦ｨ遉ｺ蜷搾ｼ域ｼ｢蟄暦ｼ・        // state.playerKana縺ｯ譌ｧ繧､繝吶Φ繝医〒縺ｯ遨ｺ縺ｮ縺溘ａ縲〉oster縺ｮkana繧恥id邨檎罰縺ｧ逶ｴ謗･蜿ら・縺吶ｋ
         let kana = state.playerKana?.[id];
         if (!kana) {
             const pl = state.players.find(p => p.id === id);
@@ -2735,21 +2598,21 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
                 if (rp?.kana) kana = rp.kana;
             }
         }
-        if (!kana) kana = state.playerNames[id] || ('選手' + id);
-        const numPart = state.showPlayerNum ? id + '番、' : '';
+        if (!kana) kana = state.playerNames[id] || ('驕ｸ謇・ + id);
+        const numPart = state.showPlayerNum ? id + '逡ｪ縲・ : '';
         return numPart + kana;
     }
 
-    const t1 = ct.team1.map(playerText).join('　');
-    const t2 = ct.team2.map(playerText).join('　');
+    const t1 = ct.team1.map(playerText).join('縲');
+    const t2 = ct.team2.map(playerText).join('縲');
 
-    // コートが1面のみの場合はコート名を省略
+    // 繧ｳ繝ｼ繝医′1髱｢縺ｮ縺ｿ縺ｮ蝣ｴ蜷医・繧ｳ繝ｼ繝亥錐繧堤怐逡･
     const totalCourts = state.courts || 1;
     const text = totalCourts <= 1
-        ? `次の試合のご案内です！${t1}！対！${t2}！の試合を開始します！`
-        : `次の試合のご案内です！${courtName}にて、${t1}！対！${t2}！の試合を開始します！選手の方は${courtName}へお集まりください！`;
+        ? `谺｡縺ｮ隧ｦ蜷医・縺疲｡亥・縺ｧ縺呻ｼ・{t1}・∝ｯｾ・・{t2}・√・隧ｦ蜷医ｒ髢句ｧ九＠縺ｾ縺呻ｼ～
+        : `谺｡縺ｮ隧ｦ蜷医・縺疲｡亥・縺ｧ縺呻ｼ・{courtName}縺ｫ縺ｦ縲・{t1}・∝ｯｾ・・{t2}・√・隧ｦ蜷医ｒ髢句ｧ九＠縺ｾ縺呻ｼ・∈謇九・譁ｹ縺ｯ${courtName}縺ｸ縺企寔縺ｾ繧翫￥縺縺輔＞・～;
 
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    if (btn) { btn.disabled = true; btn.textContent = '竢ｳ'; }
     try {
         const res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-tts:generateContent?key=${apiKey}`,
@@ -2776,9 +2639,9 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         }
         const data = await res.json();
         const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!b64) throw new Error('音声データが取得できませんでした');
+        if (!b64) throw new Error('髻ｳ螢ｰ繝・・繧ｿ縺悟叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆');
 
-        // base64 PCM (LINEAR16, 24kHz) → Web Audio
+        // base64 PCM (LINEAR16, 24kHz) 竊・Web Audio
         const raw   = atob(b64);
         const bytes = new Uint8Array(raw.length);
         for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
@@ -2793,19 +2656,19 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
         src.buffer   = buf;
         src.connect(ctx.destination);
         src.start();
-        // 再生成功 → ボタンを「アナウンス済み」に、announcedCourtsに記録
+        // 蜀咲函謌仙粥 竊・繝懊ち繝ｳ繧偵後い繝翫え繝ｳ繧ｹ貂医∩縲阪↓縲∥nnouncedCourts縺ｫ險倬鹸
         if (!state.announcedCourts) state.announcedCourts = {};
         state.announcedCourts[`r${roundNum}c${courtIdx}`] = Date.now();
         saveState();
         if (btn) {
             btn.disabled = false;
-            btn.textContent = '✅ アナウンス済み';
+            btn.textContent = '笨・繧｢繝翫え繝ｳ繧ｹ貂医∩';
             btn.classList.add('announced');
         }
     } catch(e) {
         console.error('announceMatch error:', e);
-        alert('アナウンス失敗: ' + e.message);
-        if (btn) { btn.disabled = false; btn.textContent = '📢 アナウンス'; }
+        alert('繧｢繝翫え繝ｳ繧ｹ螟ｱ謨・ ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = '討 繧｢繝翫え繝ｳ繧ｹ'; }
     }
 }
 
@@ -2815,7 +2678,7 @@ function toggleQrPanel() {
     if (!body) return;
     const isOpen = body.style.display !== 'none';
     body.style.display = isOpen ? 'none' : '';
-    btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    btn.textContent = isOpen ? '笆ｼ 髢九￥' : '笆ｲ 髢峨§繧・;
     if (!isOpen) {
         updateMatchGamesUI();
         updateGeminiKeyUI();
@@ -2829,7 +2692,7 @@ function toggleDisplayPanel() {
     if (!body) return;
     const isOpen = body.style.display !== 'none';
     body.style.display = isOpen ? 'none' : '';
-    btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    btn.textContent = isOpen ? '笆ｼ 髢九￥' : '笆ｲ 髢峨§繧・;
     if (!isOpen) renderDisplayPanelQR();
 }
 
@@ -2850,39 +2713,37 @@ function renderDisplayPanelQR() {
 
 function updateAutoMatchUI() {
     const seqWrap = document.getElementById('seqMatchWrap');
-    // 順次ONは自動ON/OFFに関わらず常に操作可能
+    // 鬆・ｬ｡ON縺ｯ閾ｪ蜍桧N/OFF縺ｫ髢｢繧上ｉ縺壼ｸｸ縺ｫ謫堺ｽ懷庄閭ｽ
     if (seqWrap) seqWrap.classList.add('enabled');
     updatePoolStatus();
 }
 
-// プールステータス表示更新
+// 繝励・繝ｫ繧ｹ繝・・繧ｿ繧ｹ陦ｨ遉ｺ譖ｴ譁ｰ
 function updatePoolStatus() {
     const bar = document.getElementById('poolStatusBar');
     if (!bar) return;
     if (state.seqMatch) {
         bar.style.display = '';
-        bar.textContent = `🗂 プール: ${state.matchPool.length} 試合待機中`;
+        bar.textContent = `翌 繝励・繝ｫ: ${state.matchPool.length} 隧ｦ蜷亥ｾ・ｩ滉ｸｭ`;
     } else if (state.autoMatch) {
         bar.style.display = '';
-        bar.textContent = '⚡ 自動組合せ: 全コート終了で次のラウンドを自動生成';
+        bar.textContent = '笞｡ 閾ｪ蜍慕ｵ・粋縺・ 蜈ｨ繧ｳ繝ｼ繝育ｵゆｺ・〒谺｡縺ｮ繝ｩ繧ｦ繝ｳ繝峨ｒ閾ｪ蜍慕函謌・;
     } else {
         bar.style.display = 'none';
     }
 }
 
-// コート終了ボタン（自動ON共通）
-function markCourtDone(roundNum, courtIndex) {
+// 繧ｳ繝ｼ繝育ｵゆｺ・・繧ｿ繝ｳ・郁・蜍桧N蜈ｱ騾夲ｼ・function markCourtDone(roundNum, courtIndex) {
     if (isEventLocked()) return;
     const mid = `r${roundNum}c${courtIndex}`;
     if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
     state.scores[mid].done = true;
 
-    // 物理コートindexを取得（physicalIndex がなければ配列indexをそのまま使用）
-    const rd = state.schedule.find(r => r.round === roundNum);
+    // 迚ｩ逅・さ繝ｼ繝・ndex繧貞叙蠕暦ｼ・hysicalIndex 縺後↑縺代ｌ縺ｰ驟榊・index繧偵◎縺ｮ縺ｾ縺ｾ菴ｿ逕ｨ・・    const rd = state.schedule.find(r => r.round === roundNum);
     const ct = rd ? rd.courts[courtIndex] : null;
     const physicalIndex = ct ? (ct.physicalIndex ?? courtIndex) : courtIndex;
 
-    // isOnCourt を解放
+    // isOnCourt 繧定ｧ｣謾ｾ
     if (ct) {
         [...ct.team1, ...ct.team2].forEach(id => {
             const p = state.players.find(pp => pp.id === id);
@@ -2894,20 +2755,17 @@ function markCourtDone(roundNum, courtIndex) {
     renderMatchContainer();
 
     if (state.seqMatch) {
-        // 順次モード: 物理コートindexを渡してプールから次を投入
+        // 鬆・ｬ｡繝｢繝ｼ繝・ 迚ｩ逅・さ繝ｼ繝・ndex繧呈ｸ｡縺励※繝励・繝ｫ縺九ｉ谺｡繧呈兜蜈･
         assignNextPoolMatch(physicalIndex);
     } else if (state.autoMatch) {
-        // 自動ON・一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
-        if (rd) {
+        // 閾ｪ蜍桧N繝ｻ荳諡ｬ繝｢繝ｼ繝・ 蜷後§繝ｩ繧ｦ繝ｳ繝峨・蜈ｨ繧ｳ繝ｼ繝医′邨ゆｺ・＠縺溘ｉ谺｡繝ｩ繧ｦ繝ｳ繝峨ｒ閾ｪ蜍慕函謌・        if (rd) {
             const allDone = rd.courts.every((ct, ci) => state.scores[`r${roundNum}c${ci}`]?.done);
             if (allDone) generateNextRound();
         }
     }
-    // 自動OFF・順次OFFの場合は手動で「次の試合を作る」ボタンを押す
-}
+    // 閾ｪ蜍桧FF繝ｻ鬆・ｬ｡OFF縺ｮ蝣ｴ蜷医・謇句虚縺ｧ縲梧ｬ｡縺ｮ隧ｦ蜷医ｒ菴懊ｋ縲阪・繧ｿ繝ｳ繧呈款縺・}
 
-// コート試合開始ボタン（呼び出し中 → 試合中）
-function markCourtStarted(roundNum, courtIndex) {
+// 繧ｳ繝ｼ繝郁ｩｦ蜷磯幕蟋九・繧ｿ繝ｳ・亥他縺ｳ蜃ｺ縺嶺ｸｭ 竊・隧ｦ蜷井ｸｭ・・function markCourtStarted(roundNum, courtIndex) {
     if (isEventLocked()) return;
     const mid = `r${roundNum}c${courtIndex}`;
     if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
@@ -2916,21 +2774,20 @@ function markCourtStarted(roundNum, courtIndex) {
     renderMatchContainer();
 }
 
-// ラウンド終了ボタン（一括モード）
-function markRoundDone(e, roundNum) {
+// 繝ｩ繧ｦ繝ｳ繝臥ｵゆｺ・・繧ｿ繝ｳ・井ｸ諡ｬ繝｢繝ｼ繝会ｼ・function markRoundDone(e, roundNum) {
     e.stopPropagation();
     if (isEventLocked()) return;
     const rd = state.schedule.find(r => r.round === roundNum);
     if (!rd) return;
 
-    // 全コートをdone
+    // 蜈ｨ繧ｳ繝ｼ繝医ｒdone
     rd.courts.forEach((ct, ci) => {
         const mid = `r${roundNum}c${ci}`;
         if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
         state.scores[mid].done = true;
     });
 
-    // isOnCourt 解放
+    // isOnCourt 隗｣謾ｾ
     rd.courts.forEach(ct => {
         [...ct.team1, ...ct.team2].forEach(id => {
             const p = state.players.find(pp => pp.id === id);
@@ -2940,36 +2797,33 @@ function markRoundDone(e, roundNum) {
 
     saveState();
     renderMatchContainer();
-    // 次のラウンドを自動生成
-    generateNextRound();
+    // 谺｡縺ｮ繝ｩ繧ｦ繝ｳ繝峨ｒ閾ｪ蜍慕函謌・    generateNextRound();
 }
 
-// スコアが入ったコートを検出して自動で次を投入（現在は明示ボタン方式のため予備）
-function checkAutoAdvance() {
+// 繧ｹ繧ｳ繧｢縺悟・縺｣縺溘さ繝ｼ繝医ｒ讀懷・縺励※閾ｪ蜍輔〒谺｡繧呈兜蜈･・育樟蝨ｨ縺ｯ譏守､ｺ繝懊ち繝ｳ譁ｹ蠑上・縺溘ａ莠亥ｙ・・function checkAutoAdvance() {
     if (!state.autoMatch && !state.seqMatch) return;
 
     if (state.seqMatch) {
-        // 順次モード: isOnCourtがtrueのコートのスコアが入ったら次を投入
+        // 鬆・ｬ｡繝｢繝ｼ繝・ isOnCourt縺荊rue縺ｮ繧ｳ繝ｼ繝医・繧ｹ繧ｳ繧｢縺悟・縺｣縺溘ｉ谺｡繧呈兜蜈･
         let needAssign = false;
         state.schedule.forEach(rd => {
             rd.courts.forEach((ct, ci) => {
                 const sc = state.scores[`r${rd.round}c${ci}`];
-                if (!sc || (sc.s1 === 0 && sc.s2 === 0)) return; // まだ終わっていない
-                const allIds = [...ct.team1, ...ct.team2];
+                if (!sc || (sc.s1 === 0 && sc.s2 === 0)) return; // 縺ｾ縺邨ゅｏ縺｣縺ｦ縺・↑縺・                const allIds = [...ct.team1, ...ct.team2];
                 const players = allIds.map(id => state.players.find(p => p.id === id));
                 if (players.some(p => p && p.isOnCourt)) {
-                    // このコートが終了 → プレイヤーを解放
+                    // 縺薙・繧ｳ繝ｼ繝医′邨ゆｺ・竊・繝励Ξ繧､繝､繝ｼ繧定ｧ｣謾ｾ
                     players.forEach(p => { if (p) p.isOnCourt = false; });
                     needAssign = true;
                 }
             });
         });
         if (needAssign) {
-            // プールから次の試合を割り当て
+            // 繝励・繝ｫ縺九ｉ谺｡縺ｮ隧ｦ蜷医ｒ蜑ｲ繧雁ｽ薙※
             assignNextPoolMatch();
         }
     } else {
-        // 一括モード: 最新ラウンドの全コートが終わったら次のラウンドを生成
+        // 荳諡ｬ繝｢繝ｼ繝・ 譛譁ｰ繝ｩ繧ｦ繝ｳ繝峨・蜈ｨ繧ｳ繝ｼ繝医′邨ゅｏ縺｣縺溘ｉ谺｡縺ｮ繝ｩ繧ｦ繝ｳ繝峨ｒ逕滓・
         if (state.schedule.length === 0) return;
         const latestRd = state.schedule[state.schedule.length - 1];
         const allDone = latestRd.courts.every((ct, ci) => {
@@ -2977,7 +2831,7 @@ function checkAutoAdvance() {
             return sc && !(sc.s1 === 0 && sc.s2 === 0);
         });
         if (!allDone) return;
-        // isOnCourt で二重起動を防止
+        // isOnCourt 縺ｧ莠碁㍾襍ｷ蜍輔ｒ髦ｲ豁｢
         const anyOnCourt = latestRd.courts.some(ct =>
             [...ct.team1, ...ct.team2].some(id => {
                 const p = state.players.find(pp => pp.id === id);
@@ -2985,8 +2839,7 @@ function checkAutoAdvance() {
             })
         );
         if (anyOnCourt) {
-            // 全コート完了の初回検出 → 解放して次ラウンド生成
-            latestRd.courts.forEach(ct => {
+            // 蜈ｨ繧ｳ繝ｼ繝亥ｮ御ｺ・・蛻晏屓讀懷・ 竊・隗｣謾ｾ縺励※谺｡繝ｩ繧ｦ繝ｳ繝臥函謌・            latestRd.courts.forEach(ct => {
                 [...ct.team1, ...ct.team2].forEach(id => {
                     const p = state.players.find(pp => pp.id === id);
                     if (p) p.isOnCourt = false;
@@ -2997,16 +2850,14 @@ function checkAutoAdvance() {
     }
 }
 
-let _poolGenerating = false; // 二重生成防止フラグ
+let _poolGenerating = false; // 莠碁㍾逕滓・髦ｲ豁｢繝輔Λ繧ｰ
 
-// プール用バッチ生成（1ラウンド分をプールに積む）
-function generatePoolBatch() {
+// 繝励・繝ｫ逕ｨ繝舌ャ繝∫函謌撰ｼ・繝ｩ繧ｦ繝ｳ繝牙・繧偵・繝ｼ繝ｫ縺ｫ遨阪・・・function generatePoolBatch() {
     if (isEventLocked()) return false;
     if (_poolGenerating) return false;
     _poolGenerating = true;
 
-    // isOnCourt の選手を一時的に休憩扱いにして生成対象から除外
-    const tempResting = [];
+    // isOnCourt 縺ｮ驕ｸ謇九ｒ荳譎ら噪縺ｫ莨第・謇ｱ縺・↓縺励※逕滓・蟇ｾ雎｡縺九ｉ髯､螟・    const tempResting = [];
     state.players.forEach(p => {
         if (p.isOnCourt && !p.resting) {
             p.resting = true;
@@ -3041,7 +2892,7 @@ function generatePoolBatch() {
             courts = result.courts;
         }
     } catch(e) {
-        console.error('プール生成エラー:', e);
+        console.error('繝励・繝ｫ逕滓・繧ｨ繝ｩ繝ｼ:', e);
         restore();
         return false;
     }
@@ -3051,8 +2902,7 @@ function generatePoolBatch() {
 
     const courtsFormatted = courts.map(([t1, t2]) => ({ team1: t1, team2: t2 }));
 
-    // pairMatrix・oppMatrix を更新（generateNextRound と同じタイミング）
-    courtsFormatted.forEach(({ team1, team2 }) => {
+    // pairMatrix繝ｻoppMatrix 繧呈峩譁ｰ・・enerateNextRound 縺ｨ蜷後§繧ｿ繧､繝溘Φ繧ｰ・・    courtsFormatted.forEach(({ team1, team2 }) => {
         [[team1[0], team1[1]], [team2[0], team2[1]]].forEach(([a, b]) => {
             state.pairMatrix[a][b] = (state.pairMatrix[a][b] || 0) + 1;
             state.pairMatrix[b][a] = (state.pairMatrix[b][a] || 0) + 1;
@@ -3063,31 +2913,30 @@ function generatePoolBatch() {
         }));
     });
 
-    // playCount 更新
+    // playCount 譖ｴ譁ｰ
     const allIds = [...new Set(courtsFormatted.flatMap(c => [...c.team1, ...c.team2]))];
     allIds.forEach(id => {
         const p = state.players.find(pp => pp.id === id);
         if (p) p.playCount++;
     });
 
-    // プールに追加
+    // 繝励・繝ｫ縺ｫ霑ｽ蜉
     courtsFormatted.forEach(c => state.matchPool.push({ team1: c.team1, team2: c.team2 }));
 
     updatePoolStatus();
     return true;
 }
 
-// プールから次の1試合を取り出してスケジュールに追加
+// 繝励・繝ｫ縺九ｉ谺｡縺ｮ1隧ｦ蜷医ｒ蜿悶ｊ蜃ｺ縺励※繧ｹ繧ｱ繧ｸ繝･繝ｼ繝ｫ縺ｫ霑ｽ蜉
 function assignNextPoolMatch(fromPhysicalIndex) {
     if (isEventLocked()) return;
 
-    // physicalIndex が未指定の場合 → 直近ラウンドで未割り当ての物理コートを順番に選ぶ
+    // physicalIndex 縺梧悴謖・ｮ壹・蝣ｴ蜷・竊・逶ｴ霑代Λ繧ｦ繝ｳ繝峨〒譛ｪ蜑ｲ繧雁ｽ薙※縺ｮ迚ｩ逅・さ繝ｼ繝医ｒ鬆・分縺ｫ驕ｸ縺ｶ
     if (fromPhysicalIndex === undefined) {
         const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
         const canAdd = lastRd && lastRd.courts.length < state.courts;
 
-        // 現在進行中（スコアあり・未終了）の物理コートを特定
-        const inProgressPhy = new Set();
+        // 迴ｾ蝨ｨ騾ｲ陦御ｸｭ・医せ繧ｳ繧｢縺ゅｊ繝ｻ譛ｪ邨ゆｺ・ｼ峨・迚ｩ逅・さ繝ｼ繝医ｒ迚ｹ螳・        const inProgressPhy = new Set();
         state.schedule.forEach(rd => {
             rd.courts.forEach((ct, ci) => {
                 const mid = `r${rd.round}c${ci}`;
@@ -3100,24 +2949,22 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         });
 
         if (canAdd) {
-            // 既存ラウンドに追加 → そのラウンドで未使用 かつ 進行中でない物理コートを先頭から選ぶ
+            // 譌｢蟄倥Λ繧ｦ繝ｳ繝峨↓霑ｽ蜉 竊・縺昴・繝ｩ繧ｦ繝ｳ繝峨〒譛ｪ菴ｿ逕ｨ 縺九▽ 騾ｲ陦御ｸｭ縺ｧ縺ｪ縺・黄逅・さ繝ｼ繝医ｒ蜈磯ｭ縺九ｉ驕ｸ縺ｶ
             const usedPhy = new Set(lastRd.courts.map((ct, ci) =>
                 ct.physicalIndex !== undefined ? ct.physicalIndex : ci));
             fromPhysicalIndex = -1;
-            // まず進行中を避けて選ぶ
+            // 縺ｾ縺夐ｲ陦御ｸｭ繧帝∩縺代※驕ｸ縺ｶ
             for (let i = 0; i < (state.courts || 2); i++) {
                 if (!usedPhy.has(i) && !inProgressPhy.has(i)) { fromPhysicalIndex = i; break; }
             }
-            // 全コートが進行中の場合はフォールバック（進行中も含めて選ぶ）
-            if (fromPhysicalIndex < 0) {
+            // 蜈ｨ繧ｳ繝ｼ繝医′騾ｲ陦御ｸｭ縺ｮ蝣ｴ蜷医・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ・磯ｲ陦御ｸｭ繧ょ性繧√※驕ｸ縺ｶ・・            if (fromPhysicalIndex < 0) {
                 for (let i = 0; i < (state.courts || 2); i++) {
                     if (!usedPhy.has(i)) { fromPhysicalIndex = i; break; }
                 }
             }
             if (fromPhysicalIndex < 0) fromPhysicalIndex = 0;
         } else {
-            // 新しいラウンドを開始 → 進行中でない最初のコートから
-            fromPhysicalIndex = -1;
+            // 譁ｰ縺励＞繝ｩ繧ｦ繝ｳ繝峨ｒ髢句ｧ・竊・騾ｲ陦御ｸｭ縺ｧ縺ｪ縺・怙蛻昴・繧ｳ繝ｼ繝医°繧・            fromPhysicalIndex = -1;
             for (let i = 0; i < (state.courts || 2); i++) {
                 if (!inProgressPhy.has(i)) { fromPhysicalIndex = i; break; }
             }
@@ -3125,10 +2972,10 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         }
     }
 
-    // プールが空なら補充
+    // 繝励・繝ｫ縺檎ｩｺ縺ｪ繧芽｣懷・
     if (state.matchPool.length === 0) {
         if (!generatePoolBatch()) {
-            showToast('⚠️ 次の組合せの生成に失敗しました');
+            showToast('笞・・谺｡縺ｮ邨・粋縺帙・逕滓・縺ｫ螟ｱ謨励＠縺ｾ縺励◆');
             return;
         }
     }
@@ -3137,14 +2984,13 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     const nextMatch = state.matchPool.shift();
     const playIds = [...nextMatch.team1, ...nextMatch.team2];
 
-    // 最新ラウンドがまだコート数に満ちていなければ、そこに追加する
-    // （physicalIndex は表示名のためだけに使用し、同一コートの再使用を妨げない）
-    const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
+    // 譛譁ｰ繝ｩ繧ｦ繝ｳ繝峨′縺ｾ縺繧ｳ繝ｼ繝域焚縺ｫ貅縺｡縺ｦ縺・↑縺代ｌ縺ｰ縲√◎縺薙↓霑ｽ蜉縺吶ｋ
+    // ・・hysicalIndex 縺ｯ陦ｨ遉ｺ蜷阪・縺溘ａ縺縺代↓菴ｿ逕ｨ縺励∝酔荳繧ｳ繝ｼ繝医・蜀堺ｽｿ逕ｨ繧貞ｦｨ縺偵↑縺・ｼ・    const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
     const canAddToLast = lastRd && lastRd.courts.length < state.courts;
 
     let newMid;
     if (canAddToLast) {
-        // 既存ラウンドに追加
+        // 譌｢蟄倥Λ繧ｦ繝ｳ繝峨↓霑ｽ蜉
         lastRd.courts.push({ team1: nextMatch.team1, team2: nextMatch.team2, physicalIndex: fromPhysicalIndex });
         if (!lastRd.playerStates) lastRd.playerStates = {};
         playIds.forEach(id => { lastRd.playerStates[id] = 'play'; });
@@ -3154,7 +3000,7 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         });
         newMid = `r${lastRd.round}c${lastRd.courts.length - 1}`;
     } else {
-        // 新ラウンドを作成
+        // 譁ｰ繝ｩ繧ｦ繝ｳ繝峨ｒ菴懈・
         const roundNum = state.roundCount + 1;
         const playerStates = {};
         state.players.forEach(p => {
@@ -3170,12 +3016,11 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         state.roundCount = roundNum;
         newMid = `r${roundNum}c0`;
     }
-    // 新試合のステータスを「呼び出し中」で初期化
-    if (!state.scores) state.scores = {};
+    // 譁ｰ隧ｦ蜷医・繧ｹ繝・・繧ｿ繧ｹ繧偵悟他縺ｳ蜃ｺ縺嶺ｸｭ縲阪〒蛻晄悄蛹・    if (!state.scores) state.scores = {};
     if (!state.scores[newMid]) state.scores[newMid] = { s1: 0, s2: 0 };
     state.scores[newMid].status = 'calling';
 
-    // プールが空になったら次バッチを非同期で補充
+    // 繝励・繝ｫ縺檎ｩｺ縺ｫ縺ｪ縺｣縺溘ｉ谺｡繝舌ャ繝√ｒ髱槫酔譛溘〒陬懷・
     if (state.matchPool.length === 0) {
         setTimeout(() => {
             generatePoolBatch();
@@ -3196,14 +3041,13 @@ function assignNextPoolMatch(fromPhysicalIndex) {
 }
 
 // =====================================================================
-// 組合せ描画
+// 邨・粋縺帶緒逕ｻ
 // =====================================================================
 function renderMatchContainer() {
     const container = document.getElementById('matchContainer');
     container.innerHTML = '';
 
-    // 閲覧モードは降順（最新が先頭）、管理者モードは昇順
-    const scheduleOrdered = isAdmin
+    // 髢ｲ隕ｧ繝｢繝ｼ繝峨・髯埼・ｼ域怙譁ｰ縺悟・鬆ｭ・峨∫ｮ｡逅・・Δ繝ｼ繝峨・譏・・    const scheduleOrdered = isAdmin
         ? state.schedule
         : [...state.schedule].reverse();
 
@@ -3212,16 +3056,13 @@ function renderMatchContainer() {
         block.className = 'round-block';
         block.dataset.round = rd.round;
 
-        // ラウンド全コートの終了状態
-        const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
+        // 繝ｩ繧ｦ繝ｳ繝牙・繧ｳ繝ｼ繝医・邨ゆｺ・憾諷・        const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
         const autoOrSeq = state.autoMatch || state.seqMatch;
         const roundDoneBadge = (isRoundDone && autoOrSeq)
-            ? `<span class="round-done-badge">✓ 全終了</span>` : '';
+            ? `<span class="round-done-badge">笨・蜈ｨ邨ゆｺ・/span>` : '';
 
-        // 自動展開の判定
-        // イベント終了済み: 全ラウンドを展開
-        // 自動/順次ONの場合: 終了していないラウンドをすべて展開（終了済みは折り畳み）
-        // 両方OFFの場合: 管理者→最新のみ、閲覧者→最新2件
+        // 閾ｪ蜍募ｱ暮幕縺ｮ蛻､螳・        // 繧､繝吶Φ繝育ｵゆｺ・ｸ医∩: 蜈ｨ繝ｩ繧ｦ繝ｳ繝峨ｒ螻暮幕
+        // 閾ｪ蜍・鬆・ｬ｡ON縺ｮ蝣ｴ蜷・ 邨ゆｺ・＠縺ｦ縺・↑縺・Λ繧ｦ繝ｳ繝峨ｒ縺吶∋縺ｦ螻暮幕・育ｵゆｺ・ｸ医∩縺ｯ謚倥ｊ逡ｳ縺ｿ・・        // 荳｡譁ｹOFF縺ｮ蝣ｴ蜷・ 邂｡逅・・・譛譁ｰ縺ｮ縺ｿ縲・夢隕ｧ閠・・譛譁ｰ2莉ｶ
         let isOpen;
         if (isEventLocked()) {
             isOpen = true;
@@ -3236,19 +3077,17 @@ function renderMatchContainer() {
         block.innerHTML = `
             <div class="round-toggle${isOpen ? ' open' : ''}" onclick="toggleRound(this)">
                 <span class="round-label">
-                    第 ${rd.round} 試合
-                    <span class="round-badge">${rd.courts.length}コート</span>
+                    隨ｬ ${rd.round} 隧ｦ蜷・                    <span class="round-badge">${rd.courts.length}繧ｳ繝ｼ繝・/span>
                 </span>
                 <span style="display:flex;align-items:center;gap:8px;">
                     ${roundDoneBadge}
-                    ${isAdmin ? `<button class="round-del-btn" onclick="deleteRound(event,${rd.round})">🗑</button>` : ''}
-                    <span class="arrow">▼</span>
+                    ${isAdmin ? `<button class="round-del-btn" onclick="deleteRound(event,${rd.round})">卵</button>` : ''}
+                    <span class="arrow">笆ｼ</span>
                 </span>
             </div>
             <div class="round-body${isOpen ? ' open' : ''}">
                 ${(() => {
-                    // physicalIndex でソートして表示（コートA→B→C の順を維持）
-                    const displayCourts = rd.courts
+                    // physicalIndex 縺ｧ繧ｽ繝ｼ繝医＠縺ｦ陦ｨ遉ｺ・医さ繝ｼ繝・竊達竊辰 縺ｮ鬆・ｒ邯ｭ謖・ｼ・                    const displayCourts = rd.courts
                         .map((ct, arrayIdx) => ({ ct, arrayIdx, physIdx: ct.physicalIndex ?? arrayIdx }))
                         .sort((a, b) => a.physIdx - b.physIdx);
 
@@ -3259,15 +3098,14 @@ function renderMatchContainer() {
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
 
-                    // 自動/順次ON かつ終了済みコート → カード型（グレーアウト）
-                    if (autoOrSeq && courtDone) {
+                    // 閾ｪ蜍・鬆・ｬ｡ON 縺九▽邨ゆｺ・ｸ医∩繧ｳ繝ｼ繝・竊・繧ｫ繝ｼ繝牙梛・医げ繝ｬ繝ｼ繧｢繧ｦ繝茨ｼ・                    if (autoOrSeq && courtDone) {
                         return `
                         <div class="match-card match-card-done-wrap">
                             <div class="match-header-row match-header-done" onclick="this.closest('.match-card-done-wrap').classList.toggle('expanded')">
                                 ${getCourtNameHTML(physIdx)}
                                 <span style="display:flex;align-items:center;gap:6px;">
-                                    <span style="font-size:12px;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
-                                    <span class="done-arrow" style="font-size:11px;color:#cfd8dc;">▼</span>
+                                    <span style="font-size:0.75rem;font-weight:bold;color:#a5d6a7;">笨・邨ゆｺ・/span>
+                                    <span class="done-arrow" style="font-size:0.6875rem;color:#cfd8dc;">笆ｼ</span>
                                 </span>
                             </div>
                             <div class="match-content" style="opacity:0.5;">
@@ -3282,27 +3120,25 @@ function renderMatchContainer() {
                         </div>`;
                     }
 
-                    // 通常表示（未終了コート）
-                    // status が未設定の場合はスコアで後方互換判定
-                    const courtStatus = sc.status
+                    // 騾壼ｸｸ陦ｨ遉ｺ・域悴邨ゆｺ・さ繝ｼ繝茨ｼ・                    // status 縺梧悴險ｭ螳壹・蝣ｴ蜷医・繧ｹ繧ｳ繧｢縺ｧ蠕梧婿莠呈鋤蛻､螳・                    const courtStatus = sc.status
                         || ((sc.s1 > 0 || sc.s2 > 0) ? 'playing' : 'calling');
                     const isCalling = courtStatus === 'calling';
 
                     const showCourtDoneBtn = isAdmin && !isEventLocked() && autoOrSeq && !courtDone;
                     const courtDoneBtn = showCourtDoneBtn
                         ? isCalling
-                            ? `<button class="court-done-btn court-start-btn" onclick="markCourtStarted(${rd.round},${arrayIdx})">▶ 試合開始</button>`
-                            : `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">✓ 試合終了</button>`
+                            ? `<button class="court-done-btn court-start-btn" onclick="markCourtStarted(${rd.round},${arrayIdx})">笆ｶ 隧ｦ蜷磯幕蟋・/button>`
+                            : `<button class="court-done-btn" onclick="markCourtDone(${rd.round},${arrayIdx})">笨・隧ｦ蜷育ｵゆｺ・/button>`
                         : '';
-                    // ステータスバッジ
+                    // 繧ｹ繝・・繧ｿ繧ｹ繝舌ャ繧ｸ
                     const statusBadge = showCourtDoneBtn
                         ? isCalling
-                            ? `<span style="font-size:11px;font-weight:bold;color:#ff9800;white-space:nowrap;">📢 呼び出し中</span>`
-                            : `<span style="font-size:11px;font-weight:bold;color:#4caf50;white-space:nowrap;">🏸 試合中</span>`
+                            ? `<span style="font-size:0.6875rem;font-weight:bold;color:#ff9800;white-space:nowrap;">討 蜻ｼ縺ｳ蜃ｺ縺嶺ｸｭ</span>`
+                            : `<span style="font-size:0.6875rem;font-weight:bold;color:#4caf50;white-space:nowrap;">昇 隧ｦ蜷井ｸｭ</span>`
                         : '';
-                    // APIキーが設定済み かつ 試合未終了の場合のみアナウンスボタンを表示
+                    // API繧ｭ繝ｼ縺瑚ｨｭ螳壽ｸ医∩ 縺九▽ 隧ｦ蜷域悴邨ゆｺ・・蝣ｴ蜷医・縺ｿ繧｢繝翫え繝ｳ繧ｹ繝懊ち繝ｳ繧定｡ｨ遉ｺ
                     const announceBtn = isAdmin && state.geminiApiKey && !courtDone
-                        ? `<button class="announce-btn" onclick="announceMatch(${rd.round},${arrayIdx},${physIdx},this)">📢 アナウンス</button>`
+                        ? `<button class="announce-btn" onclick="announceMatch(${rd.round},${arrayIdx},${physIdx},this)">討 繧｢繝翫え繝ｳ繧ｹ</button>`
                         : '';
                     return `
                     <div class="match-card">
@@ -3348,13 +3184,12 @@ function updateMatchNames() {
 }
 
 // =====================================================================
-// スコア操作
-// =====================================================================
+// 繧ｹ繧ｳ繧｢謫堺ｽ・// =====================================================================
 document.addEventListener('click', e => {
     const teamEl = e.target.closest('.team');
     if (!teamEl) return;
-    if (!isAdmin) return; // 閲覧モードはスコア変更不可
-    if (isEventLocked()) return; // 終了イベントは変更不可
+    if (!isAdmin) return; // 髢ｲ隕ｧ繝｢繝ｼ繝峨・繧ｹ繧ｳ繧｢螟画峩荳榊庄
+    if (isEventLocked()) return; // 邨ゆｺ・う繝吶Φ繝医・螟画峩荳榊庄
     const row = teamEl.closest('.match-row');
     const isLeft = teamEl.classList.contains('left-side');
     const scoreEl = row.querySelector(isLeft ? '.s1' : '.s2');
@@ -3365,11 +3200,11 @@ document.addEventListener('click', e => {
 });
 
 function deleteRound(e, roundNum) {
-    e.stopPropagation(); // アコーディオンが開閉しないように
-    if (isEventLocked()) { showToast('このイベントは終了しています'); return; }
-    if (!confirm(`第${roundNum}試合を削除しますか？\nスコアも消去されます。`)) return;
+    e.stopPropagation(); // 繧｢繧ｳ繝ｼ繝・ぅ繧ｪ繝ｳ縺碁幕髢峨＠縺ｪ縺・ｈ縺・↓
+    if (isEventLocked()) { showToast('縺薙・繧､繝吶Φ繝医・邨ゆｺ・＠縺ｦ縺・∪縺・); return; }
+    if (!confirm(`隨ｬ${roundNum}隧ｦ蜷医ｒ蜑企勁縺励∪縺吶°・歃n繧ｹ繧ｳ繧｢繧よｶ亥悉縺輔ｌ縺ｾ縺吶Ａ)) return;
 
-    // スコアを削除
+    // 繧ｹ繧ｳ繧｢繧貞炎髯､
     const rdDel = state.schedule.find(r => r.round === roundNum);
     if (rdDel) {
         rdDel.courts.forEach((ct, ci) => {
@@ -3377,17 +3212,15 @@ function deleteRound(e, roundNum) {
         });
     }
 
-    // scheduleから削除
+    // schedule縺九ｉ蜑企勁
     state.schedule = state.schedule.filter(r => r.round !== roundNum);
 
-    // ラウンド番号を詰め直す（1,3,4 → 1,2,3）
-    state.schedule.sort((a, b) => a.round - b.round);
+    // 繝ｩ繧ｦ繝ｳ繝臥分蜿ｷ繧定ｩｰ繧∫峩縺呻ｼ・,3,4 竊・1,2,3・・    state.schedule.sort((a, b) => a.round - b.round);
     const newScores = {};
     state.schedule.forEach((rd, idx) => {
         const oldNum = rd.round;
         const newNum = idx + 1;
-        // スコアキーをリマップ
-        rd.courts.forEach((ct, ci) => {
+        // 繧ｹ繧ｳ繧｢繧ｭ繝ｼ繧偵Μ繝槭ャ繝・        rd.courts.forEach((ct, ci) => {
             const oldKey = `r${oldNum}c${ci}`;
             const newKey = `r${newNum}c${ci}`;
             if (state.scores[oldKey] != null) {
@@ -3399,8 +3232,7 @@ function deleteRound(e, roundNum) {
     state.scores = newScores;
     state.roundCount = state.schedule.length;
 
-    // playCount / lastRound を再計算
-    state.players.forEach(p => {
+    // playCount / lastRound 繧貞・險育ｮ・    state.players.forEach(p => {
         p.playCount = 0;
         p.lastRound = -1;
     });
@@ -3413,11 +3245,9 @@ function deleteRound(e, roundNum) {
         });
     });
 
-    // 残った試合結果からレートを再計算
-    recalcAllTrueSkill();
+    // 谿九▲縺溯ｩｦ蜷育ｵ先棡縺九ｉ繝ｬ繝ｼ繝医ｒ蜀崎ｨ育ｮ・    recalcAllTrueSkill();
 
-    // isOnCourt を残ったスケジュールから再計算（削除ラウンドの選手を解放）
-    state.players.forEach(p => { p.isOnCourt = false; });
+    // isOnCourt 繧呈ｮ九▲縺溘せ繧ｱ繧ｸ繝･繝ｼ繝ｫ縺九ｉ蜀崎ｨ育ｮ暦ｼ亥炎髯､繝ｩ繧ｦ繝ｳ繝峨・驕ｸ謇九ｒ隗｣謾ｾ・・    state.players.forEach(p => { p.isOnCourt = false; });
     state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const sc = state.scores[`r${rd.round}c${ci}`];
@@ -3430,16 +3260,14 @@ function deleteRound(e, roundNum) {
         });
     });
 
-    // プールをクリア（削除により状態が変わったため再生成が必要）
-    state.matchPool = [];
+    // 繝励・繝ｫ繧偵け繝ｪ繧｢・亥炎髯､縺ｫ繧医ｊ迥ｶ諷九′螟峨ｏ縺｣縺溘◆繧∝・逕滓・縺悟ｿ・ｦ・ｼ・    state.matchPool = [];
     saveState();
 
     if (state.schedule.length === 0) {
-        // 最後の1ラウンドを削除 → イベント状態を準備中に戻し、設定画面へ切り替え
-        if (_sessionId && window._fbSetEventStatus) {
-            window._fbSetEventStatus(_sessionId, '準備中');
+        // 譛蠕後・1繝ｩ繧ｦ繝ｳ繝峨ｒ蜑企勁 竊・繧､繝吶Φ繝育憾諷九ｒ貅門ｙ荳ｭ縺ｫ謌ｻ縺励∬ｨｭ螳夂判髱｢縺ｸ蛻・ｊ譖ｿ縺・        if (_sessionId && window._fbSetEventStatus) {
+            window._fbSetEventStatus(_sessionId, '貅門ｙ荳ｭ');
         }
-        renderMatchContainer(); // 組合せ画面をクリア
+        renderMatchContainer(); // 邨・粋縺帷判髱｢繧偵け繝ｪ繧｢
         document.getElementById('initialSetup').style.display = 'block';
         document.getElementById('liveSetup').style.display = 'none';
         _rebuildEntryPlayers();
@@ -3447,8 +3275,7 @@ function deleteRound(e, roundNum) {
         showStep('step-setup', document.getElementById('btn-setup'));
     } else {
         renderMatchContainer();
-        // 順次モードON時: プールを再生成（案①）
-        if (state.autoMatch && state.seqMatch) {
+        // 鬆・ｬ｡繝｢繝ｼ繝碓N譎・ 繝励・繝ｫ繧貞・逕滓・・域｡遺蔵・・        if (state.autoMatch && state.seqMatch) {
             setTimeout(() => generatePoolBatch(), 100);
         }
     }
@@ -3468,11 +3295,11 @@ function saveScores() {
 }
 
 function recalcAllTrueSkill() {
-    // 全プレイヤーのTrueSkillを初期値にリセット
+    // 蜈ｨ繝励Ξ繧､繝､繝ｼ縺ｮTrueSkill繧貞・譛溷､縺ｫ繝ｪ繧ｻ繝・ヨ
     state.players.forEach(p => {
         state.tsMap[p.id] = { mu: 25.0, sigma: 25.0 / 3 };
     });
-    // 全試合結果を時系列順に再適用
+    // 蜈ｨ隧ｦ蜷育ｵ先棡繧呈凾邉ｻ蛻鈴・↓蜀埼←逕ｨ
     state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const mid = `r${rd.round}c${ci}`;
@@ -3484,7 +3311,7 @@ function recalcAllTrueSkill() {
 }
 
 // =====================================================================
-// アコーディオン
+// 繧｢繧ｳ繝ｼ繝・ぅ繧ｪ繝ｳ
 // =====================================================================
 function toggleRound(el) {
     const isOpen = el.classList.contains('open');
@@ -3494,7 +3321,7 @@ function toggleRound(el) {
     });
     if (!isOpen) {
         openRound(el);
-        // 閲覧モード：クリックした試合の直前（1つ下の古い試合）も自動展開
+        // 髢ｲ隕ｧ繝｢繝ｼ繝会ｼ壹け繝ｪ繝・け縺励◆隧ｦ蜷医・逶ｴ蜑搾ｼ・縺､荳九・蜿､縺・ｩｦ蜷茨ｼ峨ｂ閾ｪ蜍募ｱ暮幕
         if (!isAdmin) {
             const nextBlock = el.closest('.round-block')?.nextElementSibling;
             if (nextBlock?.classList.contains('round-block')) {
@@ -3533,27 +3360,24 @@ function updateRoundStatus() {
 }
 
 // =====================================================================
-// 順位計算
-// =====================================================================
+// 鬆・ｽ崎ｨ育ｮ・// =====================================================================
 function calcRank() {
-    // state.roster から年齢マップを生成（名前→age）
-    const ageMap = {};
+    // state.roster 縺九ｉ蟷ｴ鮨｢繝槭ャ繝励ｒ逕滓・・亥錐蜑坂・age・・    const ageMap = {};
     (state.roster || []).forEach(r => { if (r.name) ageMap[r.name] = parseInt(r.age) || 0; });
 
     const stats = {};
     state.players.forEach(p => {
-        const name = state.playerNames[p.id] || ('選手' + p.id);
+        const name = state.playerNames[p.id] || ('驕ｸ謇・ + p.id);
         const clubName = getPlayerClubName(p.id);
 
-        // 出場回数: scheduleを直接走査してカウント（最も正確）
-        let appearedCount = 0;
+        // 蜃ｺ蝣ｴ蝗樊焚: schedule繧堤峩謗･襍ｰ譟ｻ縺励※繧ｫ繧ｦ繝ｳ繝茨ｼ域怙繧よｭ｣遒ｺ・・        let appearedCount = 0;
         state.schedule.forEach(rd => {
             rd.courts.forEach(ct => {
                 if (ct.team1.includes(p.id) || ct.team2.includes(p.id)) appearedCount++;
             });
         });
 
-        // 出場可能ラウンド数 = 参加後のラウンド数 - 休憩回数
+        // 蜃ｺ蝣ｴ蜿ｯ閭ｽ繝ｩ繧ｦ繝ｳ繝画焚 = 蜿ょ刈蠕後・繝ｩ繧ｦ繝ｳ繝画焚 - 莨第・蝗樊焚
         const joinedRound = p.joinedRound || 0;
         const restCount = p.restCount || 0;
         const eligibleRounds = Math.max(0, (state.roundCount - joinedRound) - restCount);
@@ -3565,9 +3389,7 @@ function calcRank() {
         };
     });
 
-    // state.schedule と state.scores から直接集計（DOM非依存）
-    // 自動/順次ON時は終了コートが .match-row として描画されないため DOM 読み取りは使わない
-    state.schedule.forEach(rd => {
+    // state.schedule 縺ｨ state.scores 縺九ｉ逶ｴ謗･髮・ｨ茨ｼ・OM髱樔ｾ晏ｭ假ｼ・    // 閾ｪ蜍・鬆・ｬ｡ON譎ゅ・邨ゆｺ・さ繝ｼ繝医′ .match-row 縺ｨ縺励※謠冗判縺輔ｌ縺ｪ縺・◆繧・DOM 隱ｭ縺ｿ蜿悶ｊ縺ｯ菴ｿ繧上↑縺・    state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const mid = `r${rd.round}c${ci}`;
             const sc = state.scores[mid];
@@ -3592,16 +3414,15 @@ function calcRank() {
         });
     });
 
-    // レーティング情報を各statsに追加
+    // 繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ諠・ｱ繧貞推stats縺ｫ霑ｽ蜉
     Object.keys(stats).forEach(id => {
         const ts = state.tsMap[id] || { mu: 25, sigma: 25/3 };
-        stats[id].rate = ts.mu;  // μ値（初期値=25）
-        stats[id].mu   = ts.mu;
+        stats[id].rate = ts.mu;  // ﾎｼ蛟､・亥・譛溷､=25・・        stats[id].mu   = ts.mu;
         stats[id].sigma = ts.sigma;
     });
 
     const arr = Object.values(stats).sort((a, b) => {
-        // 優先順位: 勝率 > 得失ゲーム差 > 年齢
+        // 蜆ｪ蜈磯・ｽ・ 蜍晉紫 > 蠕怜､ｱ繧ｲ繝ｼ繝蟾ｮ > 蟷ｴ鮨｢
         const wrA = a.played ? a.wins / a.played : -1;
         const wrB = b.played ? b.wins / b.played : -1;
         if (wrB !== wrA) return wrB - wrA;
@@ -3609,23 +3430,23 @@ function calcRank() {
         return b.age - a.age;
     });
 
-    let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th></tr>';
+    let h = '<tr><th>鬆・/th><th style="text-align:left;">豌丞錐</th><th>蜍晉紫</th><th>隧ｦ</th><th>蜍・/th><th>雋</th><th>蟾ｮ</th></tr>';
     arr.forEach((r, i) => {
         const wr = r.played ? (r.wins / r.played * 100).toFixed(0) + '%' : '-';
         const rank = i + 1;
         const rc = i === 0 ? ' class="rank-1"' : i === 1 ? ' class="rank-2"' : i === 2 ? ' class="rank-3"' : '';
         const intv = r.appearedCount ? (r.eligibleRounds / r.appearedCount).toFixed(1) : '-';
-        const intvLabel = r.eligibleRounds > 0 ? `間隔${intv}R` : '-';
+        const intvLabel = r.eligibleRounds > 0 ? `髢馴囈${intv}R` : '-';
         const muDisp = r.mu.toFixed(1);
         const sigmaDisp = r.sigma.toFixed(2);
         const clubHtml = r.clubName
-            ? `<span style="font-size:11px;color:#666;font-weight:normal;margin-left:3px;">(${r.clubName})</span>`
+            ? `<span style="font-size:0.6875rem;color:#666;font-weight:normal;margin-left:3px;">(${r.clubName})</span>`
             : '';
         h += `<tr${rc}>
-            <td style="font-size:17px;font-weight:bold;">${rank}</td>
+            <td style="font-size:1.0625rem;font-weight:bold;">${rank}</td>
             <td class="name-cell">
                 <span class="name-text">${r.name}</span>${clubHtml}
-                <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span><span>μ:${muDisp}</span><span>σ:${sigmaDisp}</span></div>
+                <div class="stats-mini"><span>蜃ｺ蝣ｴ${r.appearedCount}蝗・/span><span>${intvLabel}</span><span>ﾎｼ:${muDisp}</span><span>ﾏ・${sigmaDisp}</span></div>
             </td>
             <td>${wr}</td><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td>
             <td style="font-weight:bold;">${r.diff > 0 ? '+' + r.diff : r.diff}</td>
@@ -3635,16 +3456,14 @@ function calcRank() {
 }
 
 // =====================================================================
-// メール報告
-// =====================================================================
+// 繝｡繝ｼ繝ｫ蝣ｱ蜻・// =====================================================================
 function buildReportCSV() {
-    // state.roster から年齢マップを生成（名前→age）
-    const ageMap = {};
+    // state.roster 縺九ｉ蟷ｴ鮨｢繝槭ャ繝励ｒ逕滓・・亥錐蜑坂・age・・    const ageMap = {};
     (state.roster || []).forEach(r => { if (r.name) ageMap[r.name] = parseInt(r.age) || 0; });
 
     const statsMap = {};
     state.players.forEach(p => {
-        const name = state.playerNames[p.id] || ('選手' + p.id);
+        const name = state.playerNames[p.id] || ('驕ｸ謇・ + p.id);
         let appearedCount = 0;
         state.schedule.forEach(rd => {
             rd.courts.forEach(ct => {
@@ -3656,8 +3475,7 @@ function buildReportCSV() {
             age: ageMap[name] || 0, appearedCount, eligibleRounds };
     });
 
-    // state.schedule と state.scores から直接集計（DOM非依存）
-    state.schedule.forEach(rd => {
+    // state.schedule 縺ｨ state.scores 縺九ｉ逶ｴ謗･髮・ｨ茨ｼ・OM髱樔ｾ晏ｭ假ｼ・    state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const mid = `r${rd.round}c${ci}`;
             const sc = state.scores[mid];
@@ -3693,18 +3511,17 @@ function buildReportCSV() {
     const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
     const dateTag = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
 
-    // 大会作成日時
-    let createdStr = '';
+    // 螟ｧ莨壻ｽ懈・譌･譎・    let createdStr = '';
     if (state.createdAt) {
         const cd = new Date(state.createdAt);
         createdStr = `${cd.getFullYear()}/${String(cd.getMonth()+1).padStart(2,'0')}/${String(cd.getDate()).padStart(2,'0')} ${String(cd.getHours()).padStart(2,'0')}:${String(cd.getMinutes()).padStart(2,'0')}`;
     }
 
     let csv = '';
-    if (createdStr) csv += `大会作成日時,${createdStr}\n`;
-    csv += '【順位表】\n';
-    csv += 'マッチング方式,' + (state.matchingRule === 'rating' ? 'レーティングマッチ' : 'ランダムマッチ') + '\n';
-    csv += '順位,氏名,勝率,試合数,勝,負,得失差,出場回数,間隔,μ,σ\n';
+    if (createdStr) csv += `螟ｧ莨壻ｽ懈・譌･譎・${createdStr}\n`;
+    csv += '縲宣・ｽ崎｡ｨ縲曾n';
+    csv += '繝槭ャ繝√Φ繧ｰ譁ｹ蠑・' + (state.matchingRule === 'rating' ? '繝ｬ繝ｼ繝・ぅ繝ｳ繧ｰ繝槭ャ繝・ : '繝ｩ繝ｳ繝繝繝槭ャ繝・) + '\n';
+    csv += '鬆・ｽ・豌丞錐,蜍晉紫,隧ｦ蜷域焚,蜍・雋,蠕怜､ｱ蟾ｮ,蜃ｺ蝣ｴ蝗樊焚,髢馴囈,ﾎｼ,ﾏソn';
     arr.forEach((r, i) => {
         const rank = i + 1;
         const wr = r.played ? (r.wins / r.played * 100).toFixed(1) : '0.0';
@@ -3716,11 +3533,10 @@ function buildReportCSV() {
         csv += `${rank},"${r.name}",${wr}%,${r.played},${r.wins},${r.losses},${r.diff > 0 ? '+'+r.diff : r.diff},${r.appearedCount},${intv},${mu},${gamma}\n`;
     });
 
-    csv += '\n【試合結果】\n';
-    csv += '試合番号,コート番号,チーム1選手1,R前,チーム1選手2,R前,チームR前,スコア1,スコア2,チーム2選手1,R前,チーム2選手2,R前,チームR前\n';
+    csv += '\n縲占ｩｦ蜷育ｵ先棡縲曾n';
+    csv += '隧ｦ蜷育分蜿ｷ,繧ｳ繝ｼ繝育分蜿ｷ,繝√・繝1驕ｸ謇・,R蜑・繝√・繝1驕ｸ謇・,R蜑・繝√・繝R蜑・繧ｹ繧ｳ繧｢1,繧ｹ繧ｳ繧｢2,繝√・繝2驕ｸ謇・,R蜑・繝√・繝2驕ｸ謇・,R蜑・繝√・繝R蜑構n';
 
-    // 試合ごとのレートを時系列で再計算
-    const tsSnapshot = {};
+    // 隧ｦ蜷医＃縺ｨ縺ｮ繝ｬ繝ｼ繝医ｒ譎らｳｻ蛻励〒蜀崎ｨ育ｮ・    const tsSnapshot = {};
     state.players.forEach(p => { tsSnapshot[p.id] = { mu: 25.0, sigma: 25.0 / 3 }; });
 
     const getMu = (id, snap) => (snap[id]?.mu || 25).toFixed(1);
@@ -3751,9 +3567,9 @@ function buildReportCSV() {
         rd.courts.forEach((ct, ci) => {
             const mid = `r${rd.round}c${ci}`;
             const sc = state.scores[mid] || {s1: 0, s2: 0};
-            const [a1, a2] = ct.team1.map(id => state.playerNames[id] || ('選手'+id));
-            const [b1, b2] = ct.team2.map(id => state.playerNames[id] || ('選手'+id));
-            // 試合前のレートを記録
+            const [a1, a2] = ct.team1.map(id => state.playerNames[id] || ('驕ｸ謇・+id));
+            const [b1, b2] = ct.team2.map(id => state.playerNames[id] || ('驕ｸ謇・+id));
+            // 隧ｦ蜷亥燕縺ｮ繝ｬ繝ｼ繝医ｒ險倬鹸
             const r1 = getMu(ct.team1[0], tsSnapshot);
             const r2 = getMu(ct.team1[1], tsSnapshot);
             const r3 = getMu(ct.team2[0], tsSnapshot);
@@ -3761,13 +3577,13 @@ function buildReportCSV() {
             const teamR1 = (parseFloat(r1)+parseFloat(r2)).toFixed(1);
             const teamR2 = (parseFloat(r3)+parseFloat(r4)).toFixed(1);
             csv += `${rd.round},${ci+1},"${a1}",${r1},"${a2||''}",${r2},${teamR1},${sc.s1},${sc.s2},"${b1}",${r3},"${b2||''}",${r4},${teamR2}\n`;
-            // 試合後にスナップショットを更新
+            // 隧ｦ蜷亥ｾ後↓繧ｹ繝翫ャ繝励す繝ｧ繝・ヨ繧呈峩譁ｰ
             updateSnap(ct.team1, ct.team2, sc.s1, sc.s2, tsSnapshot);
         });
     });
 
-    csv += `\n送信日時,${dateStr} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}\n`;
-    csv += `総試合数,${state.roundCount}\n`;
+    csv += `\n騾∽ｿ｡譌･譎・${dateStr} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}\n`;
+    csv += `邱剰ｩｦ蜷域焚,${state.roundCount}\n`;
 
     return { csv, dateTag };
 }
@@ -3792,26 +3608,24 @@ function downloadReport() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     const status = document.getElementById('reportStatus');
-    status.textContent = '✅ CSVファイルをダウンロードしました！';
+    status.textContent = '笨・CSV繝輔ぃ繧､繝ｫ繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺励◆・・;
     status.style.color = '#1565c0';
 }
 
 // =====================================================================
-// 期間集計
-// =====================================================================
+// 譛滄俣髮・ｨ・// =====================================================================
 function togglePeriodPanel() {
     const panel = document.getElementById('periodPanel');
     const wasHidden = panel.style.display === 'none';
     panel.style.display = wasHidden ? 'block' : 'none';
-    // 初回表示時にデフォルト値を設定
-    if (wasHidden) {
+    // 蛻晏屓陦ｨ遉ｺ譎ゅ↓繝・ヵ繧ｩ繝ｫ繝亥､繧定ｨｭ螳・    if (wasHidden) {
         const prefixEl = document.getElementById('periodPrefix');
         if (!prefixEl.value) {
-            // 現在のイベント名（日付なし）を初期値に
+            // 迴ｾ蝨ｨ縺ｮ繧､繝吶Φ繝亥錐・域律莉倥↑縺暦ｼ峨ｒ蛻晄悄蛟､縺ｫ
             const bar = document.getElementById('eventInfoBar');
             if (bar && bar.dataset.evName) prefixEl.value = bar.dataset.evName;
         }
-        // 期間が未入力なら今年の1/1～12/31
+        // 譛滄俣縺梧悴蜈･蜉帙↑繧我ｻ雁ｹｴ縺ｮ1/1・・2/31
         const p1 = document.getElementById('period1');
         const p2 = document.getElementById('period2');
         if (!p1.value && !p2.value) {
@@ -3834,7 +3648,7 @@ function setPeriodFiscal() {
     const now = new Date();
     const m = now.getMonth() + 1; // 1-12
     const y = now.getFullYear();
-    // 4月以降なら今年度、1〜3月なら前年度
+    // 4譛井ｻ･髯阪↑繧我ｻ雁ｹｴ蠎ｦ縲・縲・譛医↑繧牙燕蟷ｴ蠎ｦ
     const startY = m >= 4 ? y : y - 1;
     const endY   = startY + 1;
     document.getElementById('period1').value = `${startY}-04-01`;
@@ -3849,10 +3663,10 @@ async function calcPeriodStats() {
     const status    = document.getElementById('periodStatus');
     const resultDiv = document.getElementById('periodResult');
 
-    if (!prefix) { alert('イベント名を入力してください'); return; }
-    if (!window._fbQueryPrefix) { alert('Firebase が初期化されていません'); return; }
+    if (!prefix) { alert('繧､繝吶Φ繝亥錐繧貞・蜉帙＠縺ｦ縺上□縺輔＞'); return; }
+    if (!window._fbQueryPrefix) { alert('Firebase 縺悟・譛溷喧縺輔ｌ縺ｦ縺・∪縺帙ｓ'); return; }
 
-    status.textContent = '⏳ データを取得中...';
+    status.textContent = '竢ｳ 繝・・繧ｿ繧貞叙蠕嶺ｸｭ...';
     status.style.color = '#e65100';
     resultDiv.innerHTML = '';
 
@@ -3860,14 +3674,13 @@ async function calcPeriodStats() {
         const { results: sessions, excludedNoDate } = await window._fbQueryPrefix(prefix, date1str, date2str);
 
         if (!sessions || sessions.length === 0) {
-            const note = excludedNoDate > 0 ? `（作成日時不明のセッション${excludedNoDate}件は除外）` : '';
-            status.textContent = `該当するセッションが見つかりませんでした。${note}`;
+            const note = excludedNoDate > 0 ? `・井ｽ懈・譌･譎ゆｸ肴・縺ｮ繧ｻ繝・す繝ｧ繝ｳ${excludedNoDate}莉ｶ縺ｯ髯､螟厄ｼ荏 : '';
+            status.textContent = `隧ｲ蠖薙☆繧九そ繝・す繝ｧ繝ｳ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆縲・{note}`;
             status.style.color = '#c62828';
             return;
         }
 
-        // 選手名をキーに複数セッション横断で集計
-        const statsMap = {};
+        // 驕ｸ謇句錐繧偵く繝ｼ縺ｫ隍・焚繧ｻ繝・す繝ｧ繝ｳ讓ｪ譁ｭ縺ｧ髮・ｨ・        const statsMap = {};
         sessions.forEach(({ data }) => {
             const schedule    = data.schedule    || [];
             const scores      = data.scores      || {};
@@ -3881,7 +3694,7 @@ async function calcPeriodStats() {
 
                     const process = (ids, myScore, oppScore) => {
                         (ids || []).forEach(id => {
-                            const name = playerNames[id] || ('選手' + id);
+                            const name = playerNames[id] || ('驕ｸ謇・ + id);
                             if (!statsMap[name]) statsMap[name] = { wins: 0, losses: 0, played: 0, diff: 0 };
                             statsMap[name].played++;
                             statsMap[name].diff += (myScore - oppScore);
@@ -3906,17 +3719,17 @@ async function calcPeriodStats() {
             });
 
         if (arr.length === 0) {
-            status.textContent = 'スコアが入力されたデータがありませんでした。';
+            status.textContent = '繧ｹ繧ｳ繧｢縺悟・蜉帙＆繧後◆繝・・繧ｿ縺後≠繧翫∪縺帙ｓ縺ｧ縺励◆縲・;
             return;
         }
 
-        let statusMsg = `✅ ${sessions.length}セッションを集計（${arr.length}名）`;
-        if (excludedNoDate > 0) statusMsg += `　※作成日時不明${excludedNoDate}件除外`;
+        let statusMsg = `笨・${sessions.length}繧ｻ繝・す繝ｧ繝ｳ繧帝寔險茨ｼ・{arr.length}蜷搾ｼ荏;
+        if (excludedNoDate > 0) statusMsg += `縲窶ｻ菴懈・譌･譎ゆｸ肴・${excludedNoDate}莉ｶ髯､螟冒;
         status.textContent = statusMsg;
         status.style.color = '#2e7d32';
 
-        let h = '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
-        h += '<tr style="background:#6a1b9a;color:#fff;"><th style="padding:6px 4px;">順</th><th style="padding:6px 4px;text-align:left;">氏名</th><th style="padding:6px 4px;">勝率</th><th style="padding:6px 4px;">試</th><th style="padding:6px 4px;">勝</th><th style="padding:6px 4px;">負</th><th style="padding:6px 4px;">差</th></tr>';
+        let h = '<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">';
+        h += '<tr style="background:#6a1b9a;color:#fff;"><th style="padding:6px 4px;">鬆・/th><th style="padding:6px 4px;text-align:left;">豌丞錐</th><th style="padding:6px 4px;">蜍晉紫</th><th style="padding:6px 4px;">隧ｦ</th><th style="padding:6px 4px;">蜍・/th><th style="padding:6px 4px;">雋</th><th style="padding:6px 4px;">蟾ｮ</th></tr>';
         arr.forEach((r, i) => {
             const wr = (r.wins / r.played * 100).toFixed(0) + '%';
             const bg = i === 0 ? '#fff9c4' : i === 1 ? '#f5f5f5' : i === 2 ? '#fbe9e7' : '#fff';
@@ -3934,29 +3747,28 @@ async function calcPeriodStats() {
         resultDiv.innerHTML = h;
 
     } catch(e) {
-        status.textContent = '❌ エラー: ' + e.message;
+        status.textContent = '笶・繧ｨ繝ｩ繝ｼ: ' + e.message;
         status.style.color = '#c62828';
     }
 }
 
 
 // =====================================================================
-// クラウド同期・管理者/閲覧者モード
-// =====================================================================
+// 繧ｯ繝ｩ繧ｦ繝牙酔譛溘・邂｡逅・・髢ｲ隕ｧ閠・Δ繝ｼ繝・// =====================================================================
 let isApplyingRemote = false;
 let isAdmin = false;
 let _sessionId = '';
 let _adminToken = '';
 
 // =====================================================================
-// セッションID履歴
+// 繧ｻ繝・す繝ｧ繝ｳID螻･豁ｴ
 // =====================================================================
 const SESSION_HISTORY_KEY = 'rr_session_history';
 const SESSION_HISTORY_MAX = 10;
 
 function saveSessionToHistory(sid, admin) {
     let hist = JSON.parse(localStorage.getItem(SESSION_HISTORY_KEY) || '[]');
-    // 同じIDが既にあれば削除して先頭に追加
+    // 蜷後§ID縺梧里縺ｫ縺ゅｌ縺ｰ蜑企勁縺励※蜈磯ｭ縺ｫ霑ｽ蜉
     hist = hist.filter(h => h.id !== sid);
     hist.unshift({ id: sid, isAdmin: admin, usedAt: new Date().toISOString() });
     if (hist.length > SESSION_HISTORY_MAX) hist = hist.slice(0, SESSION_HISTORY_MAX);
@@ -3970,35 +3782,33 @@ function renderSessionHistory() {
     const hist = JSON.parse(localStorage.getItem(SESSION_HISTORY_KEY) || '[]');
     if (hist.length === 0) { el.innerHTML = ''; return; }
 
-    let h = '<div style="font-size:12px;color:#888;margin-bottom:4px;">🕐 履歴</div>';
+    let h = '<div style="font-size:0.75rem;color:#888;margin-bottom:4px;">武 螻･豁ｴ</div>';
     h += '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">';
     hist.forEach(item => {
-        const icon  = item.isAdmin ? '🔑' : '👁';
+        const icon  = item.isAdmin ? '泊' : '早';
         const d     = new Date(item.usedAt);
         const label = `${d.getMonth()+1}/${d.getDate()}`;
         h += `<button onclick="selectHistoryId('${item.id.replace(/'/g,"\\'")}',${item.isAdmin})"`
-           + ` style="padding:5px 10px;font-size:13px;border:1px solid #90caf9;`
+           + ` style="padding:5px 10px;font-size:0.8125rem;border:1px solid #90caf9;`
            + `border-radius:16px;background:#e3f2fd;color:#1565c0;cursor:pointer;`
            + `display:flex;align-items:center;gap:4px;white-space:nowrap;">`
-           + `${icon} ${item.id} <span style="color:#aaa;font-size:11px;">${label}</span>`
+           + `${icon} ${item.id} <span style="color:#aaa;font-size:0.6875rem;">${label}</span>`
            + `</button>`;
     });
-    h += `<button onclick="clearSessionHistory()" title="履歴を消去"`
-       + ` style="padding:5px 8px;font-size:13px;border:1px solid #ffcdd2;`
-       + `border-radius:16px;background:#fff;color:#e57373;cursor:pointer;">🗑</button>`;
+    h += `<button onclick="clearSessionHistory()" title="螻･豁ｴ繧呈ｶ亥悉"`
+       + ` style="padding:5px 8px;font-size:0.8125rem;border:1px solid #ffcdd2;`
+       + `border-radius:16px;background:#fff;color:#e57373;cursor:pointer;">卵</button>`;
     h += '</div>';
     el.innerHTML = h;
 }
 
 function selectHistoryId(sid, wasAdmin) {
     document.getElementById('sessionIdInput').value = sid;
-    // wasAdmin=true の場合のみ保存済みトークンを使用、falseなら閲覧者として接続
-    const storedToken = wasAdmin ? (localStorage.getItem('rr_admin:' + sid) || '') : '';
+    // wasAdmin=true 縺ｮ蝣ｴ蜷医・縺ｿ菫晏ｭ俶ｸ医∩繝医・繧ｯ繝ｳ繧剃ｽｿ逕ｨ縲’alse縺ｪ繧蛾夢隕ｧ閠・→縺励※謗･邯・    const storedToken = wasAdmin ? (localStorage.getItem('rr_admin:' + sid) || '') : '';
     _sessionId  = sid;
     _adminToken = storedToken;
     isAdmin     = !!storedToken;
-    // 古いローカルデータをクリアし、Firebaseから正しいデータを受け取る
-    _resetState();
+    // 蜿､縺・Ο繝ｼ繧ｫ繝ｫ繝・・繧ｿ繧偵け繝ｪ繧｢縺励：irebase縺九ｉ豁｣縺励＞繝・・繧ｿ繧貞女縺大叙繧・    _resetState();
     _resetUI();
     if (storedToken) {
         window.location.hash = encodeURIComponent(sid) + ':' + storedToken;
@@ -4009,24 +3819,22 @@ function selectHistoryId(sid, wasAdmin) {
     localStorage.setItem('rr_session_id', sid);
     saveSessionToHistory(sid, isAdmin);
     updateAdminUI();
-    updateSyncStatus('🟡 接続中...', '#e65100');
+    updateSyncStatus('泯 謗･邯壻ｸｭ...', '#e65100');
     if (window._fbStart) window._fbStart(sid);
-    // QRカード表示（管理者のみ）
-    if (isAdmin) {
+    // QR繧ｫ繝ｼ繝芽｡ｨ遉ｺ・育ｮ｡逅・・・縺ｿ・・    if (isAdmin) {
         const qrCard = document.getElementById('courtQrCard');
         if (qrCard) qrCard.style.display = '';
     }
 }
 
 function clearSessionHistory() {
-    if (!confirm('ID履歴をすべて削除しますか？')) return;
+    if (!confirm('ID螻･豁ｴ繧偵☆縺ｹ縺ｦ蜑企勁縺励∪縺吶°・・)) return;
     localStorage.removeItem(SESSION_HISTORY_KEY);
     renderSessionHistory();
 }
 
 function createSession() {
-    // IDの生成・Firebase接続は「▶ 試合開始」まで行わない
-    _sessionId  = '';
+    // ID縺ｮ逕滓・繝ｻFirebase謗･邯壹・縲娯霧 隧ｦ蜷磯幕蟋九阪∪縺ｧ陦後ｏ縺ｪ縺・    _sessionId  = '';
     _adminToken = '';
     isAdmin     = true;
     window.location.hash = '';
@@ -4035,69 +3843,67 @@ function createSession() {
     document.getElementById('sessionUrlBtns').style.display = 'none';
     _resetState();
     _resetUI();
-    // 管理者UIを表示（同期なし状態）
-    document.body.classList.remove('viewer-mode');
+    // 邂｡逅・・I繧定｡ｨ遉ｺ・亥酔譛溘↑縺礼憾諷具ｼ・    document.body.classList.remove('viewer-mode');
     const ind = document.getElementById('modeIndicator');
-    if (ind) { ind.style.display = ''; ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
-    updateSyncStatus('⚪ 未接続（試合開始でIDを作成）', '#888');
+    if (ind) { ind.style.display = ''; ind.textContent = '笞呻ｸ・邂｡逅・・; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
+    updateSyncStatus('笞ｪ 譛ｪ謗･邯夲ｼ郁ｩｦ蜷磯幕蟋九〒ID繧剃ｽ懈・・・, '#888');
 }
 
 function joinSession() {
     const raw = (document.getElementById('sessionIdInput').value || '').trim().replace(/:/g, '');
-    if (!raw || raw.length < 3) { alert('同期IDを入力してください'); return; }
+    if (!raw || raw.length < 3) { alert('蜷梧悄ID繧貞・蜉帙＠縺ｦ縺上□縺輔＞'); return; }
     _sessionId  = raw;
     _adminToken = '';
     isAdmin     = false;
     window.location.hash = encodeURIComponent(raw);
     localStorage.setItem('rr_session_id', raw);
     saveSessionToHistory(raw, false);
-    // 古いローカルデータをクリアし、Firebaseから正しいデータを受け取る
-    _resetState();
+    // 蜿､縺・Ο繝ｼ繧ｫ繝ｫ繝・・繧ｿ繧偵け繝ｪ繧｢縺励：irebase縺九ｉ豁｣縺励＞繝・・繧ｿ繧貞女縺大叙繧・    _resetState();
     _resetUI();
     updateAdminUI();
-    updateSyncStatus('🟡 接続中...', '#e65100');
+    updateSyncStatus('泯 謗･邯壻ｸｭ...', '#e65100');
     if (window._fbStart) window._fbStart(raw);
 }
 
 function updateAdminUI() {
     const ind = document.getElementById('modeIndicator');
-    const locked = currentEventStatus === '終了';
+    const locked = currentEventStatus === '邨ゆｺ・;
     if (isAdmin && !locked) {
         document.body.classList.remove('viewer-mode');
-        if (ind) { ind.style.display = ''; ind.textContent = '⚙️ 管理者'; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
+        if (ind) { ind.style.display = ''; ind.textContent = '笞呻ｸ・邂｡逅・・; ind.style.background = '#fff3e0'; ind.style.color = '#e65100'; }
         const urlBtns = document.getElementById('sessionUrlBtns');
         if (urlBtns) urlBtns.style.display = 'flex';
     } else if (isAdmin && locked) {
         document.body.classList.add('viewer-mode');
-        if (ind) { ind.style.display = ''; ind.textContent = '🏁 終了（閲覧のみ）'; ind.style.background = '#f5f5f5'; ind.style.color = '#757575'; }
+        if (ind) { ind.style.display = ''; ind.textContent = '潤 邨ゆｺ・ｼ磯夢隕ｧ縺ｮ縺ｿ・・; ind.style.background = '#f5f5f5'; ind.style.color = '#757575'; }
     } else if (_sessionId) {
         document.body.classList.add('viewer-mode');
-        if (ind) { ind.style.display = ''; ind.textContent = '👁 閲覧モード'; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
+        if (ind) { ind.style.display = ''; ind.textContent = '早 髢ｲ隕ｧ繝｢繝ｼ繝・; ind.style.background = '#e8f5e9'; ind.style.color = '#2e7d32'; }
     }
-    // 閲覧者モードは「①設定」→「①参加者」に変更
+    // 髢ｲ隕ｧ閠・Δ繝ｼ繝峨・縲娯蔵險ｭ螳壹坂・縲娯蔵蜿ょ刈閠・阪↓螟画峩
     const btnSetup = document.getElementById('btn-setup');
     if (btnSetup) {
         btnSetup.innerHTML = isAdmin
-            ? '<span class="step-icon">⚙️</span>①設定'
-            : '<span class="step-icon">👥</span>①参加者';
+            ? '<span class="step-icon">笞呻ｸ・/span>竭險ｭ螳・
+            : '<span class="step-icon">則</span>竭蜿ょ刈閠・;
     }
 }
 
 function copyAdminUrl() {
     const url = location.origin + location.pathname + '#' + encodeURIComponent(_sessionId) + ':' + _adminToken;
-    _copyToClipboard(url, '🔑 管理者URLをコピーしました。\n自分だけが使えるURLです。大切に保存してください。\n\n' + url);
+    _copyToClipboard(url, '泊 邂｡逅・・RL繧偵さ繝斐・縺励∪縺励◆縲・n閾ｪ蛻・□縺代′菴ｿ縺医ｋURL縺ｧ縺吶ょ､ｧ蛻・↓菫晏ｭ倥＠縺ｦ縺上□縺輔＞縲・n\n' + url);
 }
 
 function copyViewerUrl() {
     const url = location.origin + location.pathname + '#' + encodeURIComponent(_sessionId);
-    _copyToClipboard(url, '👥 参加者URLをコピーしました。\nLINEで参加者に送ってください。\n\n' + url);
+    _copyToClipboard(url, '則 蜿ょ刈閠・RL繧偵さ繝斐・縺励∪縺励◆縲・nLINE縺ｧ蜿ょ刈閠・↓騾√▲縺ｦ縺上□縺輔＞縲・n\n' + url);
 }
 
 function _copyToClipboard(url, msg) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => alert('✅ ' + msg)).catch(() => prompt('URLをコピーしてください:', url));
+        navigator.clipboard.writeText(url).then(() => alert('笨・' + msg)).catch(() => prompt('URL繧偵さ繝斐・縺励※縺上□縺輔＞:', url));
     } else {
-        prompt('URLをコピーしてください:', url);
+        prompt('URL繧偵さ繝斐・縺励※縺上□縺輔＞:', url);
     }
 }
 
@@ -4114,7 +3920,7 @@ window.updateSyncStatus = updateSyncStatus;
 
 function _escH(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-let currentEventStatus = '準備中'; // イベント状態をグローバルで保持
+let currentEventStatus = '貅門ｙ荳ｭ'; // 繧､繝吶Φ繝育憾諷九ｒ繧ｰ繝ｭ繝ｼ繝舌Ν縺ｧ菫晄戟
 
 function updateEventInfo(ev) {
     const bar = document.getElementById('eventInfoBar');
@@ -4125,35 +3931,33 @@ function updateEventInfo(ev) {
     const date    = rawDate.length === 8
         ? rawDate.slice(0,4) + '/' + rawDate.slice(4,6) + '/' + rawDate.slice(6,8)
         : rawDate;
-    const status = ev.status || '準備中';
+    const status = ev.status || '貅門ｙ荳ｭ';
     const stMap = {
-        '開催中': { bg:'#e8f5e9', color:'#2e7d32', border:'1px solid #a5d6a7' },
-        '終了':   { bg:'#f5f5f5', color:'#9e9e9e', border:'1px solid #e0e0e0' },
-        '準備中': { bg:'#fff3e0', color:'#e65100', border:'1px solid #ffcc80' },
+        '髢句ぎ荳ｭ': { bg:'#e8f5e9', color:'#2e7d32', border:'1px solid #a5d6a7' },
+        '邨ゆｺ・:   { bg:'#f5f5f5', color:'#9e9e9e', border:'1px solid #e0e0e0' },
+        '貅門ｙ荳ｭ': { bg:'#fff3e0', color:'#e65100', border:'1px solid #ffcc80' },
     };
-    const s = stMap[status] || stMap['準備中'];
-    const stBadge = `<span style="background:${s.bg};color:${s.color};border:${s.border};border-radius:12px;padding:1px 8px;font-size:11px;font-weight:bold;white-space:nowrap;">${status}</span>`;
+    const s = stMap[status] || stMap['貅門ｙ荳ｭ'];
+    const stBadge = `<span style="background:${s.bg};color:${s.color};border:${s.border};border-radius:12px;padding:1px 8px;font-size:0.6875rem;font-weight:bold;white-space:nowrap;">${status}</span>`;
     bar.style.display = 'block';
     bar.innerHTML = `<span style="font-weight:bold;color:#1565c0;">${_escH(name)}</span>`
                   + (date ? `&emsp;<span style="color:#555;">${_escH(date)}</span>` : '')
                   + `&emsp;${stBadge}`;
-    // dataset に保存（status のみ更新時に参照）
-    bar.dataset.evName = name;
+    // dataset 縺ｫ菫晏ｭ假ｼ・tatus 縺ｮ縺ｿ譖ｴ譁ｰ譎ゅ↓蜿ら・・・    bar.dataset.evName = name;
     bar.dataset.evDate = rawDate;
     bar.dataset.evStatus = status;
     currentEventStatus = status;
     if (typeof updateAdminUI === 'function') updateAdminUI();
-    // 「結果を確認する」は管理者なら常時表示、終了時は閲覧者にも表示
-    // 「期間集計」は終了時のみ表示
+    // 縲檎ｵ先棡繧堤｢ｺ隱阪☆繧九阪・邂｡逅・・↑繧牙ｸｸ譎り｡ｨ遉ｺ縲∫ｵゆｺ・凾縺ｯ髢ｲ隕ｧ閠・↓繧り｡ｨ遉ｺ
+    // 縲梧悄髢馴寔險医阪・邨ゆｺ・凾縺ｮ縺ｿ陦ｨ遉ｺ
     const btnPreview = document.getElementById('btn-preview-report');
     const btnPeriod  = document.getElementById('btn-period-agg');
-    if (btnPreview) btnPreview.style.display = (status === '終了' || isAdmin) ? '' : 'none';
-    if (btnPeriod)  btnPeriod.style.display  = status === '終了' ? '' : 'none';
+    if (btnPreview) btnPreview.style.display = (status === '邨ゆｺ・ || isAdmin) ? '' : 'none';
+    if (btnPeriod)  btnPeriod.style.display  = status === '邨ゆｺ・ ? '' : 'none';
 }
 window.updateEventInfo = updateEventInfo;
 
-// 後方互換：status のみ渡された場合
-function updateEventStatus(status) {
+// 蠕梧婿莠呈鋤・嘖tatus 縺ｮ縺ｿ貂｡縺輔ｌ縺溷ｴ蜷・function updateEventStatus(status) {
     const bar = document.getElementById('eventInfoBar');
     if (!status) { updateEventInfo(null); return; }
     if (bar && bar.dataset.evName) {
@@ -4166,9 +3970,7 @@ window._fbApply = function(remoteState) {
     if (isApplyingRemote) return;
     isApplyingRemote = true;
     try {
-        // Firebase は空配列/空オブジェクトを null として保存するため、
-        // 受信データで null になっているものを適切な空値に戻す
-        if (!Array.isArray(remoteState.players))    remoteState.players    = [];
+        // Firebase 縺ｯ遨ｺ驟榊・/遨ｺ繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ null 縺ｨ縺励※菫晏ｭ倥☆繧九◆繧√・        // 蜿嶺ｿ｡繝・・繧ｿ縺ｧ null 縺ｫ縺ｪ縺｣縺ｦ縺・ｋ繧ゅ・繧帝←蛻・↑遨ｺ蛟､縺ｫ謌ｻ縺・        if (!Array.isArray(remoteState.players))    remoteState.players    = [];
         if (!Array.isArray(remoteState.roster))     remoteState.roster     = [];
         if (!Array.isArray(remoteState.schedule))   remoteState.schedule   = [];
         if (!Array.isArray(remoteState.fixedPairs)) remoteState.fixedPairs = [];
@@ -4181,11 +3983,10 @@ window._fbApply = function(remoteState) {
         if (!remoteState.playerKana      || typeof remoteState.playerKana      !== 'object') remoteState.playerKana      = {};
         if (!remoteState.announcedCourts || typeof remoteState.announcedCourts !== 'object') remoteState.announcedCourts = {};
 
-        // コートページから done=true が書き込まれた場合に側面処理を実行（管理者のみ）
-        if (isAdmin && (state.autoMatch || state.seqMatch)) {
+        // 繧ｳ繝ｼ繝医・繝ｼ繧ｸ縺九ｉ done=true 縺梧嶌縺崎ｾｼ縺ｾ繧後◆蝣ｴ蜷医↓蛛ｴ髱｢蜃ｦ逅・ｒ螳溯｡鯉ｼ育ｮ｡逅・・・縺ｿ・・        if (isAdmin && (state.autoMatch || state.seqMatch)) {
             const prevScores = state.scores || {};
             const newScores  = remoteState.scores || {};
-            // 新たに done=true になったコートを検出
+            // 譁ｰ縺溘↓ done=true 縺ｫ縺ｪ縺｣縺溘さ繝ｼ繝医ｒ讀懷・
             const newlyDone = [];
             if (Array.isArray(remoteState.schedule)) {
                 remoteState.schedule.forEach(rd => {
@@ -4197,18 +3998,16 @@ window._fbApply = function(remoteState) {
                     });
                 });
             }
-            // 先に state を更新してから側面処理
-            Object.assign(state, remoteState);
+            // 蜈医↓ state 繧呈峩譁ｰ縺励※縺九ｉ蛛ｴ髱｢蜃ｦ逅・            Object.assign(state, remoteState);
             localStorage.setItem('rr_state_v2', JSON.stringify(state));
             newlyDone.forEach(({ rd, ct, ci }) => {
-                // isOnCourt を解放
+                // isOnCourt 繧定ｧ｣謾ｾ
                 [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
                     const p = state.players.find(pp => pp.id === id);
                     if (p) p.isOnCourt = false;
                 });
                 const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
-                // 少し遅延してから次の組合せを投入（renderの後）
-                if (state.seqMatch) {
+                // 蟆代＠驕・ｻｶ縺励※縺九ｉ谺｡縺ｮ邨・粋縺帙ｒ謚募・・・ender縺ｮ蠕鯉ｼ・                if (state.seqMatch) {
                     setTimeout(() => assignNextPoolMatch(physIdx), 300);
                 } else if (state.autoMatch) {
                     const allDone = (rd.courts || []).every((c, i) =>
@@ -4220,7 +4019,7 @@ window._fbApply = function(remoteState) {
             Object.assign(state, remoteState);
             localStorage.setItem('rr_state_v2', JSON.stringify(state));
         }
-        // スコアが動いたコート（試合開始）のannouncedCourtsを自動クリア
+        // 繧ｹ繧ｳ繧｢縺悟虚縺・◆繧ｳ繝ｼ繝茨ｼ郁ｩｦ蜷磯幕蟋具ｼ峨・announcedCourts繧定・蜍輔け繝ｪ繧｢
         if (state.announcedCourts) {
             let changed = false;
             Object.keys(state.announcedCourts).forEach(key => {
@@ -4233,26 +4032,22 @@ window._fbApply = function(remoteState) {
             if (changed) saveState();
         }
 
-        // QRカードをセッション接続後に表示
+        // QR繧ｫ繝ｼ繝峨ｒ繧ｻ繝・す繝ｧ繝ｳ謗･邯壼ｾ後↓陦ｨ遉ｺ
         if (isAdmin && _sessionId) {
             const qrCard = document.getElementById('courtQrCard');
             if (qrCard) qrCard.style.display = '';
             const dpCard = document.getElementById('displayPanelCard');
             if (dpCard) dpCard.style.display = '';
         }
-        // マッチングルールを同期
-        matchingRule = state.matchingRule || 'random';
+        // 繝槭ャ繝√Φ繧ｰ繝ｫ繝ｼ繝ｫ繧貞酔譛・        matchingRule = state.matchingRule || 'random';
         selectRule(matchingRule);
-        // コート名トグルを同期
-        const toggle = document.getElementById('courtNameToggle');
+        // 繧ｳ繝ｼ繝亥錐繝医げ繝ｫ繧貞酔譛・        const toggle = document.getElementById('courtNameToggle');
         if (toggle) toggle.checked = !!state.courtNameAlpha;
         localStorage.setItem('court_name_alpha', state.courtNameAlpha ? '1' : '0');
-        // 選手番号表示トグルを同期
-        showPlayerNum = !!state.showPlayerNum;
+        // 驕ｸ謇狗分蜿ｷ陦ｨ遉ｺ繝医げ繝ｫ繧貞酔譛・        showPlayerNum = !!state.showPlayerNum;
         const numToggle = document.getElementById('playerNumToggle');
         if (numToggle) numToggle.checked = showPlayerNum;
-        // 自動/順次トグルを同期
-        const autoToggle = document.getElementById('autoMatchToggle');
+        // 閾ｪ蜍・鬆・ｬ｡繝医げ繝ｫ繧貞酔譛・        const autoToggle = document.getElementById('autoMatchToggle');
         if (autoToggle) autoToggle.checked = !!state.autoMatch;
         const seqToggle = document.getElementById('seqMatchToggle');
         if (seqToggle) seqToggle.checked = !!state.seqMatch;
@@ -4260,7 +4055,7 @@ window._fbApply = function(remoteState) {
         updateMatchGamesUI();
         updateGeminiKeyUI();
         if (state.roundCount > 0) {
-            // 試合進行中
+            // 隧ｦ蜷磯ｲ陦御ｸｭ
             document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
             document.getElementById('disp-players').textContent = state.players.length;
@@ -4272,26 +4067,22 @@ window._fbApply = function(remoteState) {
             renderMatchContainer();
             renderPlayerList();
         } else if (Array.isArray(state.roster) && state.roster.length > 0 && (!Array.isArray(state.players) || state.players.length === 0)) {
-            // 名簿あり・エントリー未確定（参加者選択待ち）
-            setupCourts = state.courts || 2;
+            // 蜷咲ｰｿ縺ゅｊ繝ｻ繧ｨ繝ｳ繝医Μ繝ｼ譛ｪ遒ｺ螳夲ｼ亥盾蜉閠・∈謚槫ｾ・■・・            setupCourts = state.courts || 2;
             document.getElementById('disp-courts').textContent = setupCourts;
             document.getElementById('disp-courts-live').textContent = setupCourts;
             if (isAdmin) {
-                _rebuildEntryPlayers(); // roster変更時にentryPlayersをリセット（state.players=[]なら空になる）
-                showEntryMode();
+                _rebuildEntryPlayers(); // roster螟画峩譎ゅ↓entryPlayers繧偵Μ繧ｻ繝・ヨ・・tate.players=[]縺ｪ繧臥ｩｺ縺ｫ縺ｪ繧具ｼ・                showEntryMode();
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else {
                 document.getElementById('btn-match').classList.add('disabled');
                 document.getElementById('btn-rank').classList.add('disabled');
                 document.getElementById('matchContainer').innerHTML =
-                    '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が参加者を選択中です</div>';
+                    '<div style="padding:30px;text-align:center;color:#888;font-size:1rem;">竢ｳ 邂｡逅・・′蜿ょ刈閠・ｒ驕ｸ謚樔ｸｭ縺ｧ縺・/div>';
                 document.getElementById('rankBody').innerHTML = '';
                 showStep('step-match', document.getElementById('btn-match'));
             }
         } else if (Array.isArray(state.players) && state.players.length > 0) {
-            // エントリー確定済み・試合未開始（または途中）
-            _rebuildEntryPlayers(); // entryPlayersをstateから復元
-            document.getElementById('btn-match').classList.remove('disabled');
+            // 繧ｨ繝ｳ繝医Μ繝ｼ遒ｺ螳壽ｸ医∩繝ｻ隧ｦ蜷域悴髢句ｧ具ｼ医∪縺溘・騾比ｸｭ・・            _rebuildEntryPlayers(); // entryPlayers繧痴tate縺九ｉ蠕ｩ蜈・            document.getElementById('btn-match').classList.remove('disabled');
             document.getElementById('btn-rank').classList.remove('disabled');
             document.getElementById('disp-players').textContent = state.players.length;
             document.getElementById('disp-courts').textContent = state.courts;
@@ -4299,43 +4090,41 @@ window._fbApply = function(remoteState) {
             setupPlayers = state.players.length;
             setupCourts = state.courts;
             if (isAdmin && state.schedule.length === 0) {
-                // 準備中（参加者あり・試合なし）→エントリー画面を表示
+                // 貅門ｙ荳ｭ・亥盾蜉閠・≠繧翫・隧ｦ蜷医↑縺暦ｼ俄・繧ｨ繝ｳ繝医Μ繝ｼ逕ｻ髱｢繧定｡ｨ遉ｺ
                 showEntryMode();
                 renderEntryList();
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else {
                 showLiveSetup();
-                renderMatchContainer(); // roundCount=0でもschedule変化を閲覧側に反映
+                renderMatchContainer(); // roundCount=0縺ｧ繧Ｔchedule螟牙喧繧帝夢隕ｧ蛛ｴ縺ｫ蜿肴丐
                 renderPlayerList();
                 showStep('step-setup', document.getElementById('btn-setup'));
             }
         } else {
-            // 試合データなし（初期状態）
-            document.getElementById('btn-rank').classList.add('disabled');
+            // 隧ｦ蜷医ョ繝ｼ繧ｿ縺ｪ縺暦ｼ亥・譛溽憾諷具ｼ・            document.getElementById('btn-rank').classList.add('disabled');
             document.getElementById('matchContainer').innerHTML =
-                '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が試合を準備中です</div>';
+                '<div style="padding:30px;text-align:center;color:#888;font-size:1rem;">竢ｳ 邂｡逅・・′隧ｦ蜷医ｒ貅門ｙ荳ｭ縺ｧ縺・/div>';
             document.getElementById('rankBody').innerHTML = '';
             if (isAdmin && Array.isArray(state.roster) && state.roster.length > 0) {
-                // 管理者かつ名簿あり → エントリーモードを表示し、組合せタブも有効化
-                setupCourts = state.courts || 2;
+                // 邂｡逅・・°縺､蜷咲ｰｿ縺ゅｊ 竊・繧ｨ繝ｳ繝医Μ繝ｼ繝｢繝ｼ繝峨ｒ陦ｨ遉ｺ縺励∫ｵ・粋縺帙ち繝悶ｂ譛牙柑蛹・                setupCourts = state.courts || 2;
                 document.getElementById('disp-courts').textContent = setupCourts;
-                _rebuildEntryPlayers(); // state.players=[]の場合はentryPlayersを空にリセット
+                _rebuildEntryPlayers(); // state.players=[]縺ｮ蝣ｴ蜷医・entryPlayers繧堤ｩｺ縺ｫ繝ｪ繧ｻ繝・ヨ
                 showEntryMode();
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else if (isAdmin) {
-                // 管理者だが名簿なし → 手動モード表示
+                // 邂｡逅・・□縺悟錐邁ｿ縺ｪ縺・竊・謇句虚繝｢繝ｼ繝芽｡ｨ遉ｺ
                 document.getElementById('btn-match').classList.add('disabled');
                 document.getElementById('entryListCard').style.display = 'none';
                 document.getElementById('manualMode').style.display = 'block';
                 document.getElementById('manualModeExtra').style.display = 'block';
                 showStep('step-setup', document.getElementById('btn-setup'));
             } else {
-                // 閲覧者 → 組合せタブ無効
+                // 髢ｲ隕ｧ閠・竊・邨・粋縺帙ち繝也┌蜉ｹ
                 document.getElementById('btn-match').classList.add('disabled');
                 showStep('step-match', document.getElementById('btn-match'));
             }
         }
-        updateSyncStatus('🟢 同期中', '#2e7d32');
+        updateSyncStatus('泙 蜷梧悄荳ｭ', '#2e7d32');
     } finally {
         isApplyingRemote = false;
     }
@@ -4343,15 +4132,13 @@ window._fbApply = function(remoteState) {
 
 
 // =====================================================================
-// 状態の保存・復元
-// =====================================================================
+// 迥ｶ諷九・菫晏ｭ倥・蠕ｩ蜈・// =====================================================================
 let _fbPushTimer = null;
 function saveState() {
-    state._sid = _sessionId; // セッションID をキャッシュに含める
+    state._sid = _sessionId; // 繧ｻ繝・す繝ｧ繝ｳID 繧偵く繝｣繝・す繝･縺ｫ蜷ｫ繧√ｋ
     localStorage.setItem('rr_state_v2', JSON.stringify(state));
     if (!isApplyingRemote && window._fbPush) {
-        // 短時間に連続呼び出しされても300ms後に1回だけ送信（デバウンス）
-        clearTimeout(_fbPushTimer);
+        // 遏ｭ譎る俣縺ｫ騾｣邯壼他縺ｳ蜃ｺ縺励＆繧後※繧・00ms蠕後↓1蝗槭□縺鷹∽ｿ｡・医ョ繝舌え繝ｳ繧ｹ・・        clearTimeout(_fbPushTimer);
         _fbPushTimer = setTimeout(() => window._fbPush(state), 300);
     }
 }
@@ -4361,13 +4148,11 @@ function loadState() {
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            // セッションIDが一致しなければ古いキャッシュを無視
-            // （_sidがない古いキャッシュも別イベントとみなして破棄）
-            if ((parsed._sid || '') !== _sessionId) {
+            // 繧ｻ繝・す繝ｧ繝ｳID縺御ｸ閾ｴ縺励↑縺代ｌ縺ｰ蜿､縺・く繝｣繝・す繝･繧堤┌隕・            // ・・sid縺後↑縺・商縺・く繝｣繝・す繝･繧ょ挨繧､繝吶Φ繝医→縺ｿ縺ｪ縺励※遐ｴ譽・ｼ・            if ((parsed._sid || '') !== _sessionId) {
                 localStorage.removeItem('rr_state_v2');
                 return false;
             }
-            // v2形式の確認: players配列とpairMatrixが存在すること
+            // v2蠖｢蠑上・遒ｺ隱・ players驟榊・縺ｨpairMatrix縺悟ｭ伜惠縺吶ｋ縺薙→
             if (Array.isArray(parsed.players) && parsed.players.length > 0 && parsed.pairMatrix) {
                 Object.assign(state, parsed);
                 return true;
@@ -4378,13 +4163,11 @@ function loadState() {
 }
 
 // =====================================================================
-// 初期化
-// =====================================================================
+// 蛻晄悄蛹・// =====================================================================
 window.onload = function () {
     loadCourtNameSetting();
 
-    // URLハッシュ・localStorageからセッションIDを先に確認
-    const rawHash = (window.location.hash || '').replace('#', '').trim();
+    // URL繝上ャ繧ｷ繝･繝ｻlocalStorage縺九ｉ繧ｻ繝・す繝ｧ繝ｳID繧貞・縺ｫ遒ｺ隱・    const rawHash = (window.location.hash || '').replace('#', '').trim();
     const colonIdx = rawHash.indexOf(':');
     const encodedSid = colonIdx >= 0 ? rawHash.substring(0, colonIdx) : rawHash;
     const hashToken = (colonIdx >= 0 ? rawHash.substring(colonIdx + 1) : '').toUpperCase();
@@ -4394,15 +4177,11 @@ window.onload = function () {
     const sid = hashSid || storedSid;
 
     if (sid.length >= 3) {
-        // セッションIDあり → 状態を復元
-        _sessionId = sid;
+        // 繧ｻ繝・す繝ｧ繝ｳID縺ゅｊ 竊・迥ｶ諷九ｒ蠕ｩ蜈・        _sessionId = sid;
         document.getElementById('sessionIdInput').value = sid;
 
-        // 管理者判定:
-        // #SID:TOKEN → 管理者確定
-        // #SID のみ  → 閲覧者確定（stored tokenがあっても使わない）
-        // ハッシュなし → localStorageのトークンで復元
-        const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
+        // 邂｡逅・・愛螳・
+        // #SID:TOKEN 竊・邂｡逅・・｢ｺ螳・        // #SID 縺ｮ縺ｿ  竊・髢ｲ隕ｧ閠・｢ｺ螳夲ｼ・tored token縺後≠縺｣縺ｦ繧ゆｽｿ繧上↑縺・ｼ・        // 繝上ャ繧ｷ繝･縺ｪ縺・竊・localStorage縺ｮ繝医・繧ｯ繝ｳ縺ｧ蠕ｩ蜈・        const storedToken = localStorage.getItem('rr_admin:' + sid) || '';
         const isViewerUrl = hashSid && !hashToken;
         const token = isViewerUrl ? '' : (hashToken || storedToken);
         if (token.length > 0) {
@@ -4415,8 +4194,7 @@ window.onload = function () {
         updateAdminUI();
 
         if (loadState() && state.roundCount > 0) {
-            // 試合データあり → 画面を復元
-            document.getElementById('disp-players').textContent = state.players.length;
+            // 隧ｦ蜷医ョ繝ｼ繧ｿ縺ゅｊ 竊・逕ｻ髱｢繧貞ｾｩ蜈・            document.getElementById('disp-players').textContent = state.players.length;
             document.getElementById('disp-courts').textContent  = state.courts;
             document.getElementById('disp-courts-live').textContent = state.courts;
             setupPlayers = state.players.length;
@@ -4428,25 +4206,23 @@ window.onload = function () {
             renderPlayerList();
             showStep('step-match', document.getElementById('btn-match'));
         } else {
-            // 試合データなし → セッションIDを保持したまま初期画面を表示
-            // appReady後にFirebaseから状態を受信する（閲覧者URLなど）
-            localStorage.setItem('rr_session_id', sid);
+            // 隧ｦ蜷医ョ繝ｼ繧ｿ縺ｪ縺・竊・繧ｻ繝・す繝ｧ繝ｳID繧剃ｿ晄戟縺励◆縺ｾ縺ｾ蛻晄悄逕ｻ髱｢繧定｡ｨ遉ｺ
+            // appReady蠕後↓Firebase縺九ｉ迥ｶ諷九ｒ蜿嶺ｿ｡縺吶ｋ・磯夢隕ｧ閠・RL縺ｪ縺ｩ・・            localStorage.setItem('rr_session_id', sid);
             document.getElementById('initialSetup').style.display = 'block';
             document.getElementById('liveSetup').style.display = 'none';
             showStep('step-setup', document.getElementById('btn-setup'));
         }
     } else {
-        // セッションIDなし → 設定の初期画面を表示
+        // 繧ｻ繝・す繝ｧ繝ｳID縺ｪ縺・竊・險ｭ螳壹・蛻晄悄逕ｻ髱｢繧定｡ｨ遉ｺ
         document.getElementById('initialSetup').style.display = 'block';
         document.getElementById('liveSetup').style.display = 'none';
         showStep('step-setup', document.getElementById('btn-setup'));
     }
 
-    // Firebaseモジュールへ準備完了を通知
+    // Firebase繝｢繧ｸ繝･繝ｼ繝ｫ縺ｸ貅門ｙ螳御ｺ・ｒ騾夂衍
     window.dispatchEvent(new Event('appReady'));
 
-    // 画面回転・リサイズ時に組合せの文字サイズを再計算
-    let _resizeTimer;
+    // 逕ｻ髱｢蝗櫁ｻ｢繝ｻ繝ｪ繧ｵ繧､繧ｺ譎ゅ↓邨・粋縺帙・譁・ｭ励し繧､繧ｺ繧貞・險育ｮ・    let _resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(() => {
@@ -4456,12 +4232,12 @@ window.onload = function () {
 };
 </script>
 
-<!-- ペア選択モーダル -->
+<!-- 繝壹い驕ｸ謚槭Δ繝ｼ繝繝ｫ -->
 <div class="pair-modal-bg" id="pairModal">
     <div class="pair-modal">
-        <h3 id="pairModalTitle">🤝 ペア相手を選択</h3>
+        <h3 id="pairModalTitle">､・繝壹い逶ｸ謇九ｒ驕ｸ謚・/h3>
         <div id="pairModalList"></div>
-        <button class="pm-cancel" onclick="closePairModal()">キャンセル</button>
+        <button class="pm-cancel" onclick="closePairModal()">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
     </div>
 </div>
 
@@ -4486,21 +4262,18 @@ let _ref = null;
 
 let _evRef = null;
 window._fbStart = function(sessionId) {
-    if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+    if (window.updateSyncStatus) window.updateSyncStatus('泯 謗･邯壻ｸｭ...', '#e65100');
     if (_ref) off(_ref);
     _ref = ref(db, 'sessions/' + encodeURIComponent(sessionId));
     onValue(_ref, snap => {
         const d = snap.val();
-        // 接続確認できたら常に同期中に更新（自分のデータでも）
-        if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
+        // 謗･邯夂｢ｺ隱阪〒縺阪◆繧牙ｸｸ縺ｫ蜷梧悄荳ｭ縺ｫ譖ｴ譁ｰ・郁・蛻・・繝・・繧ｿ縺ｧ繧ゑｼ・        if (window.updateSyncStatus) window.updateSyncStatus('泙 蜷梧悄荳ｭ', '#2e7d32');
         if (!d) return;
-        // 自分が送ったデータは無視して無限ループを防ぐ
-        if (d._cid === CLIENT_ID) return;
+        // 閾ｪ蛻・′騾√▲縺溘ョ繝ｼ繧ｿ縺ｯ辟｡隕悶＠縺ｦ辟｡髯舌Ν繝ｼ繝励ｒ髦ｲ縺・        if (d._cid === CLIENT_ID) return;
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
     });
-    // イベント情報（名前・日付・状態）を監視
-    if (_evRef) off(_evRef);
+    // 繧､繝吶Φ繝域ュ蝣ｱ・亥錐蜑阪・譌･莉倥・迥ｶ諷具ｼ峨ｒ逶｣隕・    if (_evRef) off(_evRef);
     _evRef = ref(db, 'events/' + encodeURIComponent(sessionId));
     onValue(_evRef, snap => {
         if (window.updateEventInfo) window.updateEventInfo(snap.exists() ? snap.val() : null);
@@ -4515,17 +4288,16 @@ window._fbPush = function(data) {
 window._fbSetEventStatus = async function(sessionId, status) {
     try {
         await update(ref(db, 'events/' + encodeURIComponent(sessionId)), { status });
-    } catch(e) { console.error('イベント状態更新失敗:', e); }
+    } catch(e) { console.error('繧､繝吶Φ繝育憾諷区峩譁ｰ螟ｱ謨・', e); }
 };
 
 window._fbUpdatePlayerRating = async function(pid, mu, sigma) {
     try {
         await update(ref(db, 'players/' + pid), { mu, sigma });
-    } catch(e) { console.error('選手レーティング更新失敗:', e); }
+    } catch(e) { console.error('驕ｸ謇九Ξ繝ｼ繝・ぅ繝ｳ繧ｰ譖ｴ譁ｰ螟ｱ謨・', e); }
 };
 
-// 前方一致＋期間フィルタでセッションを取得
-window._fbQueryPrefix = async function(prefix, date1str, date2str) {
+// 蜑肴婿荳閾ｴ・区悄髢薙ヵ繧｣繝ｫ繧ｿ縺ｧ繧ｻ繝・す繝ｧ繝ｳ繧貞叙蠕・window._fbQueryPrefix = async function(prefix, date1str, date2str) {
     const encodedPrefix = encodeURIComponent(prefix);
     const q = query(
         ref(db, 'sessions'),
@@ -4541,8 +4313,7 @@ window._fbQueryPrefix = async function(prefix, date1str, date2str) {
         const data = child.val();
         if (!data) return;
         if (useDateFilter) {
-            // createdAt がないセッションは期間不明として除外
-            if (!data.createdAt) { excludedNoDate++; return; }
+            // createdAt 縺後↑縺・そ繝・す繝ｧ繝ｳ縺ｯ譛滄俣荳肴・縺ｨ縺励※髯､螟・            if (!data.createdAt) { excludedNoDate++; return; }
             const created = new Date(data.createdAt);
             if (date1str && created < new Date(date1str + 'T00:00:00')) return;
             if (date2str && created > new Date(date2str + 'T23:59:59')) return;
@@ -4552,15 +4323,14 @@ window._fbQueryPrefix = async function(prefix, date1str, date2str) {
     return { results, excludedNoDate };
 };
 
-// appReadyイベントで自動接続
-function _tryFbConnect() {
-    if (_ref) return; // 既に接続済み
-    // initTournamentが先に呼ばれていた場合の保留SID
+// appReady繧､繝吶Φ繝医〒閾ｪ蜍墓磁邯・function _tryFbConnect() {
+    if (_ref) return; // 譌｢縺ｫ謗･邯壽ｸ医∩
+    // initTournament縺悟・縺ｫ蜻ｼ縺ｰ繧後※縺・◆蝣ｴ蜷医・菫晉蕗SID
     const pending = window._pendingFbSid;
     if (pending) {
         delete window._pendingFbSid;
         window._fbStart(pending);
-        if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+        if (window.updateSyncStatus) window.updateSyncStatus('泯 謗･邯壻ｸｭ...', '#e65100');
         return;
     }
     const rawHash = (window.location.hash || '').replace('#', '').trim();
@@ -4571,12 +4341,12 @@ function _tryFbConnect() {
     const sid = hashSid || storedId;
     if (sid.length >= 3) {
         window._fbStart(sid);
-        if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+        if (window.updateSyncStatus) window.updateSyncStatus('泯 謗･邯壻ｸｭ...', '#e65100');
     }
 }
 window.addEventListener('appReady', _tryFbConnect);
-// モジュールがappReadyより遅く読み込まれた場合（CDN遅延など）
-if (document.readyState === 'complete') setTimeout(_tryFbConnect, 0);
+// 繝｢繧ｸ繝･繝ｼ繝ｫ縺径ppReady繧医ｊ驕・￥隱ｭ縺ｿ霎ｼ縺ｾ繧後◆蝣ｴ蜷茨ｼ・DN驕・ｻｶ縺ｪ縺ｩ・・if (document.readyState === 'complete') setTimeout(_tryFbConnect, 0);
 </script>
 </body>
 </html>
+
