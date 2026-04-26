@@ -3219,10 +3219,13 @@ function renderMatchContainer() {
             ? `<span class="round-done-badge">✓ 全終了</span>` : '';
 
         // 自動展開の判定
+        // イベント終了済み: 全ラウンドを展開
         // 自動/順次ONの場合: 終了していないラウンドをすべて展開（終了済みは折り畳み）
         // 両方OFFの場合: 管理者→最新のみ、閲覧者→最新2件
         let isOpen;
-        if (autoOrSeq) {
+        if (isEventLocked()) {
+            isOpen = true;
+        } else if (autoOrSeq) {
             isOpen = !isRoundDone;
         } else if (isAdmin) {
             isOpen = ri === state.schedule.length - 1;
