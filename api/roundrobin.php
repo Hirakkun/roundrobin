@@ -4781,6 +4781,9 @@ window._fbSetEventStatus = async function(sessionId, status) {
 
 window._fbUpdatePlayerRating = async function(pid, mu, sigma) {
     try {
+        // 選手マスタが存在する場合のみ書き戻す（消去済みの場合は新規作成しない）
+        const snap = await get(ref(db, 'players/' + pid));
+        if (!snap.exists()) return;
         await update(ref(db, 'players/' + pid), { mu, sigma });
     } catch(e) { console.error('選手レーティング更新失敗:', e); }
 };
