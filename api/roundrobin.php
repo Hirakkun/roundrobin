@@ -107,6 +107,14 @@ body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; backgro
 .pair-modal .pm-cancel { width:100%; padding:0.625rem; margin-top:0.625rem; background:#e0e0e0; border:none; border-radius:0.5rem; font-size:0.875rem; font-weight:bold; cursor:pointer; }
 .new-btn { font-size: 0.8125rem; padding: 0.375rem 0.5rem; border: 2px solid #7b1fa2; background: #fff; color: #7b1fa2; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
 .player-add-btn { width: 100%; font-size: 1.0625rem; padding: 0.75rem; background: #1565c0; color: #fff; border: none; border-radius: 0.625rem; margin-top: 0.625rem; cursor: pointer; font-weight: bold; }
+.player-add-btn.guest-btn { background: #f57c00; }
+.guest-badge { display:inline-block; font-size:0.625rem; background:#f57c00; color:#fff; border-radius:4px; padding:1px 5px; margin-left:4px; font-weight:bold; vertical-align:middle; }
+/* ゲスト追加・正式登録モーダル共通フォームフィールド */
+.gf-field { display:flex; flex-direction:column; gap:3px; }
+.gf-label { font-size:0.75rem; font-weight:bold; color:#555; }
+.gf-req { color:#c62828; }
+.gf-input { padding:8px 10px; border:2px solid #ccc; border-radius:6px; font-size:0.9375rem; width:100%; box-sizing:border-box; outline:none; }
+.gf-input:focus { border-color:#1565c0; }
 .court-change-row { background: #fff; border-radius: 0.75rem; padding: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 0.625rem; }
 .court-change-row .setup-label { margin-bottom: 0.5rem; }
 
@@ -413,7 +421,8 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
         </div>
         <div id="playerList" class="player-list"></div>
-        <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
+        <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加（既存）</button>
+        <button class="player-add-btn guest-btn admin-only" onclick="addGuestPlayer()">＋ 新たに参加する人を追加（ゲスト）</button>
         <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:0.9375rem;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">🏁 イベントを終了</button>
     </div>
 </div>
@@ -1120,12 +1129,31 @@ function renderPlayerList() {
         const pairBadgeHtml = pairColor
             ? `<span class="pair-badge" style="background:${pairColor};color:#fff;">🤝</span>`
             : '';
+        const numStyle = pairColor ? `background:${pairColor}` : '';
+
+        if (p.isGuest) {
+            // ゲストは名前固定・セレクトなし・ゲストバッジ表示
+            div.innerHTML = `
+                <span class="player-num" style="${numStyle}">${p.id}</span>
+                <div class="playerSelectWrap">
+                    <div class="playerSelectLabel">
+                        <span>${_esc(name)}</span>
+                        ${curClubName ? `<span class="club">(${_esc(curClubName)})</span>` : ''}
+                        <span class="guest-badge">ゲスト</span>
+                        ${pairBadgeHtml}
+                    </div>
+                </div>
+                ${restBtnHtml}
+            `;
+            list.appendChild(div);
+            return;
+        }
+
         const hasName = !!state.playerNames[p.id];
         const labelHtml = hasName
             ? `<span>${name}</span>${curClubName?`<span class="club">(${curClubName})</span>`:''}${pairBadgeHtml}`
             : `選手${p.id}`;
         const labelClass = hasName ? 'playerSelectLabel' : 'playerSelectLabel placeholder';
-        const numStyle = pairColor ? `background:${pairColor}` : '';
         div.innerHTML = `
             <span class="player-num" style="${numStyle}">${p.id}</span>
             <div class="playerSelectWrap">
@@ -1197,6 +1225,12 @@ async function endEvent() {
     renderPlayerList();
     renderMatchContainer();
     showToast('🏁 イベントを終了しました');
+
+    // ゲスト参加者が居れば正式登録を案内
+    const guests = state.players.filter(p => p.isGuest && !p.pid);
+    if (guests.length > 0) {
+        setTimeout(() => showGuestRegModal(guests), 500);
+    }
 }
 
 function removeUnplayedPlayer(id) {
@@ -1357,6 +1391,117 @@ function addPlayer() {
             style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">×</button>`;
     const addBtn = document.querySelector('#liveSetup .player-add-btn');
     addBtn.parentNode.insertBefore(row, addBtn);
+}
+
+// =====================================================================
+// ゲスト追加
+// =====================================================================
+function addGuestPlayer() {
+    if (isEventLocked()) return;
+    ['gf-name','gf-kana','gf-birthdate','gf-club'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const gs = document.getElementById('gf-gender'); if (gs) gs.value = '';
+    const cs = document.getElementById('gf-class');  if (cs) cs.value = '';
+    document.getElementById('guestModal').classList.add('show');
+}
+
+function closeGuestModal() {
+    document.getElementById('guestModal').classList.remove('show');
+}
+
+function confirmGuestAdd() {
+    const name      = (document.getElementById('gf-name').value      || '').trim();
+    const kana      = (document.getElementById('gf-kana').value      || '').trim();
+    const gender    = document.getElementById('gf-gender').value;
+    const birthdate = document.getElementById('gf-birthdate').value;
+    const cls       = document.getElementById('gf-class').value;
+    const club      = (document.getElementById('gf-club').value      || '').trim();
+
+    if (!name)      { showToast('氏名を入力してください');       return; }
+    if (!kana)      { showToast('ふりがなを入力してください');   return; }
+    if (!gender)    { showToast('性別を選択してください');       return; }
+    if (!birthdate) { showToast('生年月日を入力してください');   return; }
+    if (!cls)       { showToast('初期クラスを選択してください'); return; }
+
+    const muMap    = { high: 32.0, mid: 25.0, low: 18.0 };
+    const sigmaMap = { high: 8.3,  mid: 7.0,  low: 7.0  };
+
+    const newId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
+    addPlayerToState(newId, true);
+    state.playerNames[newId] = name;
+    if (!state.playerClubs) state.playerClubs = {};
+    if (club) state.playerClubs[newId] = club;
+
+    const player = state.players.find(p => p.id === newId);
+    if (player) {
+        player.pid          = null;
+        player.isGuest      = true;
+        player.guestName    = name;
+        player.guestKana    = kana;
+        player.guestGender  = gender;
+        player.guestBirthdate = birthdate.replace(/-/g, '/');
+        player.guestClass   = cls;
+    }
+    state.tsMap[newId] = { mu: muMap[cls], sigma: sigmaMap[cls] };
+
+    closeGuestModal();
+    renderPlayerList();
+    saveState();
+    showToast(`${name} さんをゲストとして追加しました`);
+}
+
+// ─── ゲスト正式登録モーダル ──────────────────────────────────
+function showGuestRegModal(guests) {
+    const list = document.getElementById('guestRegList');
+    list.innerHTML = guests.map(p => {
+        const ts = state.tsMap[p.id] || { mu: 25.0, sigma: 25/3 };
+        const genderIcon = p.guestGender === '男性' ? '♂' : p.guestGender === '女性' ? '♀' : '';
+        return `
+        <div style="background:#f5f5f5;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+            <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.guestName)}
+                <span style="font-size:0.75rem;color:#666;font-weight:normal;margin-left:4px;">${genderIcon} ${_esc(p.guestBirthdate||'')}</span>
+            </div>
+            <div style="font-size:0.75rem;color:#888;margin:2px 0 6px;">ふりがな: ${_esc(p.guestKana||'')}　最終 μ=${ts.mu.toFixed(1)} σ=${ts.sigma.toFixed(1)}</div>
+            <button id="guest-reg-btn-${p.id}" onclick="registerGuest(${p.id})"
+                style="width:100%;padding:8px;background:#1565c0;color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-weight:bold;cursor:pointer;">
+                ✅ 正式登録する
+            </button>
+        </div>`;
+    }).join('');
+    document.getElementById('guestRegModal').classList.add('show');
+}
+
+function closeGuestRegModal() {
+    document.getElementById('guestRegModal').classList.remove('show');
+}
+
+async function registerGuest(playerId) {
+    const p = state.players.find(pp => pp.id === playerId);
+    if (!p || !p.isGuest) return;
+    const ts = state.tsMap[playerId] || { mu: 25.0, sigma: 25/3 };
+    const btn = document.getElementById('guest-reg-btn-' + playerId);
+    if (btn) { btn.disabled = true; btn.textContent = '登録中...'; }
+    try {
+        if (typeof window._fbRegisterGuest === 'function') {
+            const pid = await window._fbRegisterGuest({
+                name:      p.guestName,
+                kana:      p.guestKana,
+                gender:    p.guestGender,
+                birthdate: p.guestBirthdate,
+                mu:        ts.mu,
+                sigma:     ts.sigma
+            });
+            p.pid = pid;
+            saveState();
+            if (btn) { btn.textContent = '✅ 登録済み'; btn.style.background = '#2e7d32'; }
+            showToast(`${p.guestName} さんを正式登録しました`);
+        }
+    } catch(e) {
+        console.error('ゲスト正式登録失敗:', e);
+        if (btn) { btn.disabled = false; btn.textContent = '✅ 正式登録する'; }
+        showToast('登録に失敗しました');
+    }
 }
 
 function confirmLiveAdd(btn) {
@@ -4519,6 +4664,66 @@ window.onload = function () {
     </div>
 </div>
 
+<!-- ゲスト追加モーダル -->
+<div class="pair-modal-bg" id="guestModal">
+    <div class="pair-modal" style="max-width:400px;width:94%;">
+        <h3 style="margin:0 0 14px;font-size:1rem;color:#e65100;">👤 ゲスト参加者を追加</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            <div class="gf-field">
+                <div class="gf-label">氏名 <span class="gf-req">※</span></div>
+                <input class="gf-input" type="text" id="gf-name" placeholder="山田 太郎">
+            </div>
+            <div class="gf-field">
+                <div class="gf-label">ふりがな <span class="gf-req">※</span></div>
+                <input class="gf-input" type="text" id="gf-kana" placeholder="やまだ たろう">
+            </div>
+            <div class="gf-field">
+                <div class="gf-label">性別 <span class="gf-req">※</span></div>
+                <select class="gf-input" id="gf-gender">
+                    <option value="">選択してください</option>
+                    <option value="男性">男性</option>
+                    <option value="女性">女性</option>
+                </select>
+            </div>
+            <div class="gf-field">
+                <div class="gf-label">生年月日 <span class="gf-req">※</span></div>
+                <input class="gf-input" type="date" id="gf-birthdate">
+            </div>
+            <div class="gf-field">
+                <div class="gf-label">初期クラス <span class="gf-req">※</span></div>
+                <select class="gf-input" id="gf-class">
+                    <option value="">選択してください</option>
+                    <option value="high">そこそこいける（6割以上）</option>
+                    <option value="mid">まぁふつうかも（4〜6割）</option>
+                    <option value="low">ちょっと自信ない（4割以下）</option>
+                </select>
+                <div style="font-size:0.6875rem;color:#888;margin-top:2px;">high:μ=32/σ=8.3　mid:μ=25/σ=7.0　low:μ=18/σ=7.0</div>
+            </div>
+            <div class="gf-field">
+                <div class="gf-label">クラブ <span style="font-weight:normal;color:#aaa;">（任意）</span></div>
+                <input class="gf-input" type="text" id="gf-club" placeholder="例：さんさてクラブ">
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button class="pm-cancel" style="flex:1;" onclick="closeGuestModal()">キャンセル</button>
+            <button onclick="confirmGuestAdd()"
+                style="flex:2;padding:10px;background:#f57c00;color:#fff;border:none;border-radius:8px;font-size:0.9375rem;font-weight:bold;cursor:pointer;">
+                ✓ 追加
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ゲスト正式登録モーダル -->
+<div class="pair-modal-bg" id="guestRegModal">
+    <div class="pair-modal" style="max-width:420px;width:94%;">
+        <h3 style="margin:0 0 8px;font-size:1rem;color:#1565c0;">📋 ゲストを正式登録しますか？</h3>
+        <div style="font-size:0.8125rem;color:#555;margin-bottom:12px;line-height:1.6;">今回参加したゲストを選手DBに登録できます。登録すると次回から「既存」として参加可能になります。</div>
+        <div id="guestRegList"></div>
+        <button class="pm-cancel" style="width:100%;margin-top:10px;" onclick="closeGuestRegModal()">閉じる</button>
+    </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getDatabase, ref, set, update, onValue, off, query, orderByKey, startAt, endAt, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
@@ -4576,6 +4781,21 @@ window._fbUpdatePlayerRating = async function(pid, mu, sigma) {
     try {
         await update(ref(db, 'players/' + pid), { mu, sigma });
     } catch(e) { console.error('選手レーティング更新失敗:', e); }
+};
+
+window._fbRegisterGuest = async function(data) {
+    const pid = (crypto.randomUUID ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).slice(2));
+    await set(ref(db, 'players/' + pid), {
+        name:      data.name,
+        kana:      data.kana,
+        gender:    data.gender,
+        birthdate: data.birthdate,
+        mu:        data.mu,
+        sigma:     data.sigma,
+        clubs:     {}
+    });
+    return pid;
 };
 
 // 前方一致＋期間フィルタでセッションを取得
