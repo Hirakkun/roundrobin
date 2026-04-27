@@ -3265,7 +3265,7 @@ function renderMatchContainer() {
                     // 自動/順次ON かつ終了済みコート → カード型（グレーアウト）
                     if (autoOrSeq && courtDone) {
                         return `
-                        <div class="match-card match-card-done-wrap">
+                        <div class="match-card match-card-done-wrap${isEventLocked() ? ' expanded' : ''}">
                             <div class="match-header-row match-header-done" onclick="this.closest('.match-card-done-wrap').classList.toggle('expanded')">
                                 ${getCourtNameHTML(physIdx)}
                                 <span style="display:flex;align-items:center;gap:6px;">
