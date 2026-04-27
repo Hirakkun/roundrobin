@@ -1,10 +1,10 @@
-<?php // 選手・グループ管理 ?>
+<?php // 選手・クラブ管理 ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>👤 選手・グループ管理</title>
+<title>👤 選手・クラブ管理</title>
 <style>
 * { box-sizing: border-box; }
 body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; background: #f0f4f8; }
@@ -67,7 +67,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .player-card .pc-meta { font-size: 12px; color: #888; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .player-card .pc-clubs { font-size: 12px; }
 
-/* ── グループカード ── */
+/* ── クラブカード ── */
 .club-list { padding: 6px 10px 80px; display: flex; flex-direction: column; gap: 8px; }
 .club-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
 .club-card .cc-name { flex: 1; font-weight: bold; color: #222; font-size: 15px; word-break: break-word; }
@@ -99,10 +99,10 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 </head>
 <body>
 
-<!-- ■ Screen 1: メインタブ（選手一覧 / グループ一覧） -->
+<!-- ■ Screen 1: メインタブ（選手一覧 / クラブ一覧） -->
 <div id="screen-main" class="screen active">
     <div class="hdr">
-        <h1>👤 選手・グループ管理</h1>
+        <h1>👤 選手・クラブ管理</h1>
         <div id="all-data-btns" style="display:flex;gap:5px;align-items:center;">
             <button class="back-btn" onclick="exportAll()">📤 書出</button>
             <button class="back-btn" onclick="document.getElementById('import-all-input').click()">📥 読込</button>
@@ -112,7 +112,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <button class="back-btn" id="back-to-event" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
     </div>
     <div class="tab-bar">
-        <button class="tab-btn active" id="tab-clubs" onclick="switchTab('clubs')">🏢 グループ一覧</button>
+        <button class="tab-btn active" id="tab-clubs" onclick="switchTab('clubs')">🏢 クラブ一覧</button>
         <button class="tab-btn" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
     </div>
 
@@ -121,16 +121,16 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <div class="search-bar">
             <input type="text" id="p-search" placeholder="🔍 氏名・ふりがな" oninput="renderPlayers()">
             <select id="p-filter-club" onchange="renderPlayers()">
-                <option value="">全グループ</option>
+                <option value="">全クラブ</option>
             </select>
         </div>
         <div id="players-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
 
-    <!-- グループ一覧タブ -->
+    <!-- クラブ一覧タブ -->
     <div id="pane-clubs">
         <div class="search-bar">
-            <input type="text" id="c-search" placeholder="🔍 グループ名" oninput="renderClubs()">
+            <input type="text" id="c-search" placeholder="🔍 クラブ名" oninput="renderClubs()">
         </div>
         <div id="clubs-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
@@ -138,7 +138,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div class="bottom-bar" id="main-bottom-bar">
         <div style="display:flex;gap:8px;">
             <!-- btn-add-player removed -->
-            <button class="btn btn-dark" style="flex:1;" id="btn-add-club" onclick="openClubForm(null)">🏢 新規グループ登録</button>
+            <button class="btn btn-dark" style="flex:1;" id="btn-add-club" onclick="openClubForm(null)">🏢 新規クラブ登録</button>
         </div>
     </div>
 </div>
@@ -187,11 +187,11 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
             </div>
         </div>
 
-        <!-- 所属グループ -->
+        <!-- 所属クラブ -->
         <div id="pf-clubs-section" style="display:none;">
-            <div class="section-hdr" style="margin: 0 -14px;">所属グループ</div>
+            <div class="section-hdr" style="margin: 0 -14px;">所属クラブ</div>
             <div id="pf-clubs-container" style="padding:8px 0;"></div>
-            <button class="btn btn-dark" style="width:100%;" onclick="openClubPicker()">＋ 所属グループを追加</button>
+            <button class="btn btn-dark" style="width:100%;" onclick="openClubPicker()">＋ 所属クラブを追加</button>
         </div>
 
         <hr class="divider">
@@ -200,17 +200,17 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     </div>
 </div>
 
-<!-- ■ Screen 3: グループ登録・編集 -->
+<!-- ■ Screen 3: クラブ登録・編集 -->
 <div id="screen-club" class="screen">
     <div class="hdr">
         <button class="back-btn" id="cf-back-btn" onclick="showScreen('screen-main')">← 戻る</button>
-        <h1 id="cf-title">グループ登録</h1>
+        <h1 id="cf-title">クラブ登録</h1>
     </div>
     <div class="form-body">
-        <div class="field"><label>グループ名 <span class="req">※</span></label><input type="text" id="cf-name" placeholder="例: らさんて"></div>
+        <div class="field"><label>クラブ名 <span class="req">※</span></label><input type="text" id="cf-name" placeholder="例: らさんて"></div>
         <div class="field"><label>パスワード <span class="req">※</span></label><input type="password" id="cf-pw" placeholder="編集・削除時に使用"></div>
         <button class="btn btn-purple" style="width:100%;padding:14px;" id="cf-save-btn" onclick="saveClub()">💾 保存</button>
-        <button class="btn btn-danger" style="width:100%;padding:12px;display:none;" id="cf-del-btn" onclick="confirmDeleteClub()">🗑 このグループを削除</button>
+        <button class="btn btn-danger" style="width:100%;padding:12px;display:none;" id="cf-del-btn" onclick="confirmDeleteClub()">🗑 このクラブを削除</button>
     </div>
 
     <!-- 所属選手 (編集時のみ) -->
@@ -224,7 +224,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     </div>
 </div>
 
-<!-- ■ Screen 5: 既存選手選択（グループから） -->
+<!-- ■ Screen 5: 既存選手選択（クラブから） -->
 <div id="screen-player-picker" class="screen">
     <div class="hdr">
         <button class="back-btn" onclick="showScreen('screen-club')">← 戻る</button>
@@ -237,11 +237,11 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div id="player-picker-container"></div>
 </div>
 
-<!-- ■ Screen 4: グループ選択（選手の所属追加用） -->
+<!-- ■ Screen 4: クラブ選択（選手の所属追加用） -->
 <div id="screen-club-picker" class="screen">
     <div class="hdr">
         <button class="back-btn" onclick="showScreen('screen-player')">← 戻る</button>
-        <h1>所属グループを追加</h1>
+        <h1>所属クラブを追加</h1>
     </div>
     <div id="club-picker-container"></div>
 </div>
@@ -299,7 +299,7 @@ async function fbRemove(path)   { await remove(ref(db,path)); }
 
 // ─── URL Parameters ──────────────────────────────────────────────────
 const _urlParams = new URLSearchParams(location.search);
-const PARAM_CLUB = _urlParams.get('club') || '';  // グループ名フィルタ
+const PARAM_CLUB = _urlParams.get('club') || '';  // クラブ名フィルタ
 const PARAM_NAME = _urlParams.get('name') || '';  // イベント名（戻るリンク引き継ぎ用）
 let _paramClubIds = new Set(); // init後に解決
 
@@ -341,7 +341,7 @@ window.switchTab=function(tab){
 // ─── Password modal ───────────────────────────────────────────────────
 function requirePw(clubName,expected,cb){
     pendingPwCb=cb; pendingPwExp=expected;
-    document.getElementById('modal-pw-label').textContent='グループ: '+clubName;
+    document.getElementById('modal-pw-label').textContent='クラブ: '+clubName;
     document.getElementById('modal-pw-input').value='';
     document.getElementById('modal-pw-err').style.display='none';
     document.getElementById('modal-pw').classList.add('show');
@@ -371,7 +371,7 @@ window.closeConfirm=function(){ document.getElementById('modal-confirm').classLi
 function buildClubFilter(){
     const sel=document.getElementById('p-filter-club');
     const cur=sel.value;
-    sel.innerHTML='<option value="">全グループ</option>';
+    sel.innerHTML='<option value="">全クラブ</option>';
     let clubs=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(_paramClubIds.size>0) clubs=clubs.filter(([cid])=>_paramClubIds.has(cid));
     clubs.forEach(([cid,c])=>{
@@ -384,7 +384,7 @@ window.renderPlayers=function(){
     const filterCid=document.getElementById('p-filter-club').value;
     const c=document.getElementById('players-container');
     let entries=Object.entries(allPlayers);
-    // パラメータフィルタ：指定グループの選手のみ
+    // パラメータフィルタ：指定クラブの選手のみ
     if(_paramClubIds.size>0) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).some(cid=>_paramClubIds.has(cid)));
     if(filterCid) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).includes(filterCid));
     if(q) entries=entries.filter(([,p])=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q));
@@ -412,17 +412,17 @@ window.renderPlayers=function(){
 };
 
 // ═══════════════════════════════════════════════════════════════
-// グループ一覧
+// クラブ一覧
 // ═══════════════════════════════════════════════════════════════
 window.renderClubs=function(){
     const q=(document.getElementById('c-search').value||'').toLowerCase();
     const c=document.getElementById('clubs-container');
     let entries=Object.entries(allClubs);
-    // パラメータフィルタ：指定グループのみ
+    // パラメータフィルタ：指定クラブのみ
     if(_paramClubIds.size>0) entries=entries.filter(([cid])=>_paramClubIds.has(cid));
     if(q) entries=entries.filter(([,cl])=>(cl.name||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
-    if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 グループが登録されていません</div>'; return; }
+    if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 クラブが登録されていません</div>'; return; }
     let h='<div class="club-list">';
     for(const [cid,cl] of entries){
         const cnt=Object.keys(cl.playerIds||{}).length;
@@ -468,7 +468,7 @@ function _openPlayerForm(pid, context){
 }
 // 選手一覧から開く
 window.openPlayerForm=function(pid){ _openPlayerForm(pid,'main'); };
-// グループ編集画面から新規登録
+// クラブ編集画面から新規登録
 window.openPlayerFormFromClub=function(){ _openPlayerForm(null,'club'); };
 // 戻るボタン（コンテキスト対応）
 window.goBackFromPlayer=function(){
@@ -480,7 +480,7 @@ function renderPlayerClubs(){
     const p=allPlayers[currentPlayerId]; if(!p) return;
     const c=document.getElementById('pf-clubs-container');
     const clubIds=Object.keys(p.clubs||{});
-    if(!clubIds.length){ c.innerHTML='<div style="padding:8px 0;color:#aaa;font-size:13px;">所属グループなし</div>'; return; }
+    if(!clubIds.length){ c.innerHTML='<div style="padding:8px 0;color:#aaa;font-size:13px;">所属クラブなし</div>'; return; }
     c.innerHTML=clubIds.map(cid=>{
         const name=allClubs[cid]?.name||decodeURIComponent(cid);
         return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
@@ -495,9 +495,9 @@ window.removeClubFromPlayer=async function(cid){
     const otherClubs=Object.keys(p.clubs||{}).filter(c=>c!==cid);
     const clubName=allClubs[cid]?.name||decodeURIComponent(cid);
     const msg=otherClubs.length>0
-        ?`「${clubName}」から外します。（他グループには残ります）`
-        :`「${clubName}」から外します。\n他に所属グループがないため選手データも削除されます。`;
-    showConfirm('⚠️ 所属グループ変更',msg,'実行する',async()=>{
+        ?`「${clubName}」から外します。（他クラブには残ります）`
+        :`「${clubName}」から外します。\n他に所属クラブがないため選手データも削除されます。`;
+    showConfirm('⚠️ 所属クラブ変更',msg,'実行する',async()=>{
         try{
             await fbRemove('clubs/'+cid+'/playerIds/'+currentPlayerId);
             if(allClubs[cid]?.playerIds) delete allClubs[cid].playerIds[currentPlayerId];
@@ -505,7 +505,7 @@ window.removeClubFromPlayer=async function(cid){
                 await fbRemove('players/'+currentPlayerId+'/clubs/'+cid);
                 if(allPlayers[currentPlayerId]?.clubs) delete allPlayers[currentPlayerId].clubs[cid];
                 renderPlayerClubs();
-                showToast('✅ 所属グループから外しました');
+                showToast('✅ 所属クラブから外しました');
             } else {
                 await fbRemove('players/'+currentPlayerId);
                 delete allPlayers[currentPlayerId];
@@ -562,7 +562,7 @@ window.savePlayer=async function(){
 
 window.confirmDeletePlayer=function(){
     const p=allPlayers[currentPlayerId]; if(!p) return;
-    showConfirm('⚠️ 選手削除',`「${p.name}」を削除しますか？\n全グループの所属も解除されます。`,'削除する',doDeletePlayer);
+    showConfirm('⚠️ 選手削除',`「${p.name}」を削除しますか？\n全クラブの所属も解除されます。`,'削除する',doDeletePlayer);
 };
 async function doDeletePlayer(){
     const p=allPlayers[currentPlayerId]; if(!p) return;
@@ -579,13 +579,13 @@ async function doDeletePlayer(){
     }catch(e){showToast('❌ '+e.message);}
 }
 
-// ─── グループ選択（選手の所属追加）───────────────────────────────
+// ─── クラブ選択（選手の所属追加）───────────────────────────────
 window.openClubPicker=function(){
     const p=allPlayers[currentPlayerId];
     const alreadyIds=Object.keys(p?.clubs||{});
     const available=Object.entries(allClubs).filter(([cid])=>!alreadyIds.includes(cid)).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     const c=document.getElementById('club-picker-container');
-    if(!available.length){ c.innerHTML='<div class="empty-msg">追加できるグループがありません</div>'; }
+    if(!available.length){ c.innerHTML='<div class="empty-msg">追加できるクラブがありません</div>'; }
     else {
         c.innerHTML='<div style="background:#fff;">'+available.map(([cid,cl])=>{
             const cnt=Object.keys(cl.playerIds||{}).length;
@@ -610,13 +610,13 @@ window.addClubToPlayer=async function(cid){
         allPlayers[currentPlayerId].clubs[cid]=true;
         if(!allClubs[cid].playerIds) allClubs[cid].playerIds={};
         allClubs[cid].playerIds[currentPlayerId]=true;
-        showToast('✅ 所属グループに追加しました');
+        showToast('✅ 所属クラブに追加しました');
         showScreen('screen-player');
         renderPlayerClubs();
     }catch(e){showToast('❌ '+e.message);}
 };
 
-// ─── 既存選手選択（グループ編集画面から）────────────────────────
+// ─── 既存選手選択（クラブ編集画面から）────────────────────────
 window.openPlayerPickerFromClub=function(){
     const alreadyIds=Object.keys(allClubs[currentClubId]?.playerIds||{});
     playerPickerAll=Object.entries(allPlayers)
@@ -656,19 +656,19 @@ window.addPlayerToCurrentClub=async function(pid){
         allPlayers[pid].clubs[currentClubId]=true;
         playerPickerAll=playerPickerAll.filter(p=>p.pid!==pid);
         window.filterPlayerPicker();
-        showToast('✅ 選手をグループに追加しました');
+        showToast('✅ 選手をクラブに追加しました');
     }catch(e){showToast('❌ '+e.message);}
 };
 
 // ═══════════════════════════════════════════════════════════════
-// グループフォーム
+// クラブフォーム
 // ═══════════════════════════════════════════════════════════════
 window.openClubForm=function(cid){
     currentClubId=cid;
     currentClubIsNew=!cid;
     const isNew=currentClubIsNew;
     const clubLocked=PARAM_CLUB&&!isNew;
-    document.getElementById('cf-title').textContent=isNew?'グループ登録':'グループ編集';
+    document.getElementById('cf-title').textContent=isNew?'クラブ登録':'クラブ編集';
     document.getElementById('cf-del-btn').style.display=(isNew||clubLocked)?'none':'block';
     document.getElementById('cf-save-btn').style.display=clubLocked?'none':'block';
     document.getElementById('cf-players-section').style.display=isNew?'none':'block';
@@ -722,22 +722,22 @@ function renderClubMemberList(){
 window.saveClub=async function(){
     const name=(document.getElementById('cf-name').value||'').trim();
     const pw=(document.getElementById('cf-pw').value||'').trim();
-    if(!name){showToast('⚠️ グループ名を入力してください');return;}
+    if(!name){showToast('⚠️ クラブ名を入力してください');return;}
     if(!pw){showToast('⚠️ パスワードを入力してください');return;}
     if(currentClubIsNew){
         const cid=encodeURIComponent(name);
-        if(allClubs[cid]){showToast('⚠️ 同じ名前のグループが既に存在します');return;}
+        if(allClubs[cid]){showToast('⚠️ 同じ名前のクラブが既に存在します');return;}
         try{
             const cl={name,password:pw,playerIds:{}};
             await fbSet('clubs/'+cid,cl);
             allClubs[cid]=cl;
             currentClubId=cid; currentClubIsNew=false;
-            document.getElementById('cf-title').textContent='グループ編集';
+            document.getElementById('cf-title').textContent='クラブ編集';
             document.getElementById('cf-name').disabled=true;
             document.getElementById('cf-del-btn').style.display='block';
             document.getElementById('cf-players-section').style.display='block';
             buildClubFilter();
-            showToast('✅ グループを登録しました');
+            showToast('✅ クラブを登録しました');
         }catch(e){showToast('❌ '+e.message);}
     } else {
         try{
@@ -751,7 +751,7 @@ window.saveClub=async function(){
 window.confirmDeleteClub=function(){
     const cl=allClubs[currentClubId]; if(!cl) return;
     const cnt=Object.keys(cl.playerIds||{}).length;
-    showConfirm('⚠️ グループ削除',`「${cl.name}」を削除しますか？\n（このグループのみ所属の選手${cnt}人も削除されます）`,'削除する',doDeleteClub);
+    showConfirm('⚠️ クラブ削除',`「${cl.name}」を削除しますか？\n（このクラブのみ所属の選手${cnt}人も削除されます）`,'削除する',doDeleteClub);
 };
 async function doDeleteClub(){
     const cl=allClubs[currentClubId]; if(!cl) return;
@@ -765,7 +765,7 @@ async function doDeleteClub(){
         await fbRemove('clubs/'+currentClubId);
         delete allClubs[currentClubId];
         buildClubFilter();
-        showToast('🗑 グループを削除しました');
+        showToast('🗑 クラブを削除しました');
         showScreen('screen-main');
         switchTab('clubs');
     }catch(e){showToast('❌ '+e.message);}
@@ -804,7 +804,7 @@ function parseCSV(text){
 
 // ─── 選手 書出 ────────────────────────────────────────────────
 window.exportPlayers=function(){
-    const header=['氏名','ふりがな','性別','生年月日','μ','σ','所属グループ'];
+    const header=['氏名','ふりがな','性別','生年月日','μ','σ','所属クラブ'];
     const rows=[header];
     const entries=Object.entries(allPlayers).sort((a,b)=>(a[1].kana||a[1].name||'').localeCompare(b[1].kana||b[1].name||'','ja'));
     for(const [,p] of entries){
@@ -825,7 +825,7 @@ window.importPlayers=async function(input){
     if(rows.length<2){showToast('⚠️ データが見つかりません');return;}
     const header=rows[0];
     const col=name=>header.indexOf(name);
-    const iName=col('氏名'),iKana=col('ふりがな'),iGender=col('性別'),iBirth=col('生年月日'),iMu=col('μ'),iSigma=col('σ'),iGroups=col('所属グループ');
+    const iName=col('氏名'),iKana=col('ふりがな'),iGender=col('性別'),iBirth=col('生年月日'),iMu=col('μ'),iSigma=col('σ'),iGroups=col('所属クラブ');
     if(iName<0){showToast('⚠️ ヘッダーが正しくありません（氏名 が必要）');return;}
     let added=0,updated=0,errors=0;
     for(const row of rows.slice(1)){
@@ -836,14 +836,14 @@ window.importPlayers=async function(input){
         const birthdate=iBirth>=0?(row[iBirth]||'').replace(/-/g,'/').trim():'';
         const mu=iMu>=0?parseFloat(row[iMu])||25.0:25.0;
         const sigma=iSigma>=0?parseFloat(row[iSigma])||8.33:8.33;
-        // 所属グループ → club IDに変換（存在するグループのみ）
+        // 所属クラブ → club IDに変換（存在するクラブのみ）
         const groupNames=iGroups>=0?(row[iGroups]||'').split('/').map(s=>s.trim()).filter(Boolean):[];
         const newClubIds=groupNames.map(g=>encodeURIComponent(g)).filter(cid=>allClubs[cid]);
         // 氏名＋生年月日で既存選手を検索
         const existEntry=Object.entries(allPlayers).find(([,p])=>p.name===name&&(p.birthdate||'')===(birthdate||'')&&birthdate!=='');
         try{
             if(existEntry){
-                // 既存：μ・σのみ更新、グループは重複なく追加
+                // 既存：μ・σのみ更新、クラブは重複なく追加
                 const [pid]=existEntry;
                 await fbUpdate('players/'+pid,{mu,sigma});
                 allPlayers[pid].mu=mu; allPlayers[pid].sigma=sigma;
@@ -878,9 +878,9 @@ window.importPlayers=async function(input){
     showToast(`📥 追加:${added}人 更新:${updated}人${errors?` エラー:${errors}件`:''}`,4000);
 };
 
-// ─── グループ 書出 ────────────────────────────────────────────
+// ─── クラブ 書出 ────────────────────────────────────────────
 window.exportClubs=function(){
-    const header=['グループ名','パスワード','人数'];
+    const header=['クラブ名','パスワード','人数'];
     const rows=[header];
     const entries=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     for(const [,cl] of entries){
@@ -889,10 +889,10 @@ window.exportClubs=function(){
     }
     const today=new Date(); const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
     downloadCSV(`groups_${ds}.csv`,rows);
-    showToast(`📤 ${rows.length-1}件のグループデータを書出しました`);
+    showToast(`📤 ${rows.length-1}件のクラブデータを書出しました`);
 };
 
-// ─── グループ 読込 ────────────────────────────────────────────
+// ─── クラブ 読込 ────────────────────────────────────────────
 window.importClubs=async function(input){
     const file=input.files[0]; if(!file){return;}
     input.value='';
@@ -901,8 +901,8 @@ window.importClubs=async function(input){
     if(rows.length<2){showToast('⚠️ データが見つかりません');return;}
     const header=rows[0];
     const col=name=>header.indexOf(name);
-    const iName=col('グループ名'),iPw=col('パスワード');
-    if(iName<0){showToast('⚠️ ヘッダーが正しくありません（グループ名 が必要）');return;}
+    const iName=col('クラブ名'),iPw=col('パスワード');
+    if(iName<0){showToast('⚠️ ヘッダーが正しくありません（クラブ名 が必要）');return;}
     let added=0,skipped=0,errors=0;
     for(const row of rows.slice(1)){
         const name=(row[iName]||'').trim();
@@ -936,7 +936,7 @@ window.exportAll=function(){
     const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
     a.href=url; a.download=`all_data_${ds}.json`; a.click();
     URL.revokeObjectURL(url);
-    showToast(`📤 選手 ${Object.keys(allPlayers).length}人・グループ ${Object.keys(allClubs).length}件 を書出しました`);
+    showToast(`📤 選手 ${Object.keys(allPlayers).length}人・クラブ ${Object.keys(allClubs).length}件 を書出しました`);
 };
 
 // ─── 全データ 読込（JSON） ────────────────────────────────────
@@ -948,7 +948,7 @@ window.importAll=async function(input){
     catch(e){ showToast('⚠️ JSONファイルの読込に失敗しました'); return; }
     if(!data.players&&!data.clubs){ showToast('⚠️ 正しい形式のファイルではありません'); return; }
     let addedP=0,updP=0,addedC=0,updC=0,errors=0;
-    // グループを先に書き込む（選手がグループを参照するため）
+    // クラブを先に書き込む（選手がクラブを参照するため）
     for(const [cid,cl] of Object.entries(data.clubs||{})){
         try{
             await fbSet('clubs/'+cid,cl);
@@ -965,14 +965,14 @@ window.importAll=async function(input){
         }catch(e){ errors++; }
     }
     buildClubFilter(); renderPlayers(); renderClubs();
-    showToast(`📥 選手 追加:${addedP} 更新:${updP} / グループ 追加:${addedC} 更新:${updC}${errors?` エラー:${errors}件`:''}`,5000);
+    showToast(`📥 選手 追加:${addedP} 更新:${updP} / クラブ 追加:${addedC} 更新:${updC}${errors?` エラー:${errors}件`:''}`,5000);
 };
 
 // ─── 全データ 消去 ─────────────────────────────────────────────
 window.clearAllData=async function(){
     const pCount=Object.keys(allPlayers).length;
     const cCount=Object.keys(allClubs).length;
-    if(!confirm(`⚠️ 全データを消去します\n選手 ${pCount}人・グループ ${cCount}件をすべて削除します。\nこの操作は取り消せません。`)) return;
+    if(!confirm(`⚠️ 全データを消去します\n選手 ${pCount}人・クラブ ${cCount}件をすべて削除します。\nこの操作は取り消せません。`)) return;
     if(!confirm('本当に削除しますか？\n「OK」を押すと全データが消去されます。')) return;
     try{
         await Promise.all([fbRemove('players'),fbRemove('clubs')]);
@@ -1009,7 +1009,7 @@ async function init(){
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         // 戻るリンクにパラメータ引き継ぎ
         _updateBackLink();
-        // 全体操作ボタン・新規グループ登録ボタン非表示
+        // 全体操作ボタン・新規クラブ登録ボタン非表示
         document.getElementById('all-data-btns').style.display='none';
         document.getElementById('btn-add-club').style.display='none';
     } else if(PARAM_NAME){
