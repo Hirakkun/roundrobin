@@ -274,6 +274,22 @@ body.viewer-mode #initialSetup { display: none !important; }
                 </div>
                 <div class="match-games-desc-txt" style="font-size:0.75rem;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
             </div>
+            <!-- コートチェンジ設定 -->
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:0.8125rem;font-weight:bold;color:#333;">🔄 コートチェンジ</div>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                        <span id="court-change-label" style="font-size:0.75rem;color:#2e7d32;font-weight:bold;">あり</span>
+                        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+                            <input type="checkbox" id="courtChangeToggle" style="opacity:0;width:0;height:0;"
+                                onchange="onCourtChangeToggle(this.checked)">
+                            <span id="court-change-track" style="position:absolute;inset:0;background:#2e7d32;border-radius:24px;transition:.3s;"></span>
+                            <span id="court-change-thumb" style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%;transition:.3s;"></span>
+                        </label>
+                    </label>
+                </div>
+                <div id="court-change-desc" style="font-size:0.6875rem;color:#888;margin-top:4px;">奇数ゲーム後にコート左右を入れ替えます</div>
+            </div>
             <!-- Gemini APIキー設定 -->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -523,6 +539,7 @@ let state = {
     seqMatch:   false,      // 順次組合せ ON/OFF（プール方式）
     matchPool:  [],         // 順次プール [{team1:[...], team2:[...]}]
     matchGames: 3,          // スコアページのゲーム数（奇数: 1,3,5,7）
+    courtChange: true,      // コートチェンジあり/なし
 };
 
 // =====================================================================
@@ -2671,6 +2688,32 @@ function updateMatchGamesUI() {
     _setMatchGamesUI(state.matchGames || 3);
 }
 
+function onCourtChangeToggle(checked) {
+    state.courtChange = checked;
+    _setCourtChangeUI(checked);
+    saveState();
+}
+
+function updateCourtChangeUI() {
+    _setCourtChangeUI(state.courtChange !== false); // デフォルト true
+}
+
+function _setCourtChangeUI(enabled) {
+    const toggle = document.getElementById('courtChangeToggle');
+    const label  = document.getElementById('court-change-label');
+    const track  = document.getElementById('court-change-track');
+    const thumb  = document.getElementById('court-change-thumb');
+    const desc   = document.getElementById('court-change-desc');
+    if (!toggle) return;
+    toggle.checked = enabled;
+    if (label) { label.textContent = enabled ? 'あり' : 'なし'; label.style.color = enabled ? '#2e7d32' : '#999'; }
+    if (track) track.style.background = enabled ? '#2e7d32' : '#ccc';
+    if (thumb) thumb.style.left = enabled ? '22px' : '2px';
+    if (desc)  desc.textContent = enabled
+        ? '奇数ゲーム後にコート左右を入れ替えます'
+        : 'コートの左右入れ替えは行いません';
+}
+
 function _setMatchGamesUI(g) {
     const desc = g + 'ゲームマッチ（' + Math.ceil(g / 2) + 'ゲーム先取）';
     document.querySelectorAll('.match-games-val').forEach(el => { el.textContent = g; });
@@ -2821,6 +2864,7 @@ function toggleQrPanel() {
     btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
     if (!isOpen) {
         updateMatchGamesUI();
+        updateCourtChangeUI();
         updateGeminiKeyUI();
         renderCourtQRCodes();
     }
@@ -4267,6 +4311,7 @@ window._fbApply = function(remoteState) {
         if (seqToggle) seqToggle.checked = !!state.seqMatch;
         updateAutoMatchUI();
         updateMatchGamesUI();
+        updateCourtChangeUI();
         updateGeminiKeyUI();
         if (state.roundCount > 0) {
             // 試合進行中

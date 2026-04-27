@@ -399,6 +399,7 @@ const stateRef = ref(db, 'sessions/' + encodeURIComponent(sessionId));
 // ── ゲーム設定（Firebase から取得） ──────────────────────────
 let MATCH_GAMES = 3;  // 何ゲームマッチか
 let WIN_GAMES   = 2;  // 何ゲーム先取か
+let courtChangeEnabled = true; // コートチェンジあり/なし（デフォルト: あり）
 
 // ── チーム情報 ────────────────────────────────────────────────
 // team1/team2 は Firebase上の固定 (s1=team1のスコア, s2=team2のスコア)
@@ -441,6 +442,9 @@ function onStateUpdate(state) {
     }
     const gBadge = document.getElementById('hd-games');
     if (gBadge) gBadge.textContent = MATCH_GAMES + 'ゲームマッチ';
+
+    // コートチェンジ設定を取得（デフォルト: true）
+    courtChangeEnabled = state.courtChange !== false;
 
     showPlayerNum = !!state.showPlayerNum;
 
@@ -712,7 +716,8 @@ function checkGameWinner() {
         setUmpire('ゲームセット ' + (leftTeam === 1 ? nextS1 : nextS2) + ' - ' + (leftTeam === 1 ? nextS2 : nextS1));
         document.getElementById('btn-end').style.display = 'block';
     } else if (total % 2 !== 0) {
-        setUmpire('ゲーム、チェンジサイズ');
+        // 奇数ゲーム終了：コートチェンジあり→「チェンジサイズ」、なし→「チェンジサービス」
+        setUmpire(courtChangeEnabled ? 'ゲーム、チェンジサイズ' : 'ゲーム、チェンジサービス');
         document.getElementById('btn-confirm').style.display = 'block';
     } else {
         setUmpire('ゲーム、チェンジサービス');
@@ -747,8 +752,8 @@ window.handleGameConfirm = async function() {
     const totalAfter = set_score_t1 + set_score_t2;
     // サービス交代
     current_server = current_server === 1 ? 2 : 1;
-    // チェンジサイズ（奇数ゲーム後）
-    if (totalAfter % 2 !== 0) {
+    // チェンジサイズ（奇数ゲーム後 かつ コートチェンジあり）
+    if (totalAfter % 2 !== 0 && courtChangeEnabled) {
         leftTeam = leftTeam === 1 ? 2 : 1;
         swapHistoryRows();
     }
