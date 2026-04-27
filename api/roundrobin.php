@@ -3730,6 +3730,9 @@ function updateRoundStatus() {
 // 順位計算
 // =====================================================================
 function calcRank() {
+    // 最新スコアを反映してμ/σを再計算（タブを開くたびに最新化）
+    recalcAllTrueSkill();
+
     // state.roster から年齢マップを生成（名前→age）
     const ageMap = {};
     (state.roster || []).forEach(r => { if (r.name) ageMap[r.name] = parseInt(r.age) || 0; });
