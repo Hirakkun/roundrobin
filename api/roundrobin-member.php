@@ -112,8 +112,8 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <button class="back-btn" id="back-to-event" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
     </div>
     <div class="tab-bar">
-        <button class="tab-btn" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
         <button class="tab-btn active" id="tab-clubs" onclick="switchTab('clubs')">🏢 グループ一覧</button>
+        <button class="tab-btn" id="tab-players" onclick="switchTab('players')">👤 選手一覧</button>
     </div>
 
     <!-- 選手一覧タブ -->
