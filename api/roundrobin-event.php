@@ -22,6 +22,8 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .btn-gray   { background: #e0e0e0; color: #444; }
 .btn-yellow { background: #f9a825; color: #fff; }
 .btn-purple { background: #6a1b9a; color: #fff; }
+.btn-teal   { background: #00695c; color: #fff; }
+.btn-navy   { background: #1a237e; color: #fff; }
 .btn:active { opacity: .8; }
 .btn-sm { padding: 5px 11px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 .btn-sm-blue  { background: #1565c0; color: #fff; }
@@ -69,8 +71,24 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .evt-date { font-size: 13px; color: #666; margin-bottom: 8px; }
 .evt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .evt-actions > * { flex: 1; min-width: 0; }
-.evt-expand { background: #fff3e0; border-radius: 0 0 12px 12px; margin: -10px 10px 0; padding: 12px 14px 14px; display: none; flex-direction: column; gap: 8px; }
+.evt-expand { background: #f1f3f8; border-radius: 0 0 12px 12px; margin: -10px 10px 0; padding: 12px 14px 14px; display: none; flex-direction: column; gap: 8px; border: 1px solid #dde3f0; border-top: none; }
 .evt-expand.show { display: flex; }
+/* ── 展開メニュー内ボタングリッド ── */
+.evt-expand-actions { display: flex; flex-direction: column; gap: 8px; }
+.evt-expand-actions .btn,
+.evt-expand-actions a.btn { width: 100%; box-sizing: border-box; text-align: left; text-decoration: none; display: block; }
+
+/* ── PC対応（620px以上） ── */
+@media (min-width: 620px) {
+    .evt-list { max-width: 680px; margin: 0 auto; }
+    .bottom-bar { display: flex; justify-content: center; }
+    .bottom-bar > button { max-width: 680px; }
+    .form-body { max-width: 680px; margin: 0 auto; }
+    .confirm-bar { max-width: 680px; margin: 0 auto; width: 100%; }
+    .evt-expand-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .evt-expand-actions .btn,
+    .evt-expand-actions a.btn { text-align: center; }
+}
 
 /* ── 参加グループ行 ── */
 .club-row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; padding: 12px 14px; background: #fff; border-bottom: 1px solid #f0f0f0; }
@@ -314,16 +332,20 @@ function renderEvents(){
             <div style="background:#fff;border:1px solid #ffcc80;border-radius:8px;padding:12px 14px;color:#e65100;font-size:13px;display:flex;align-items:center;gap:8px;">
                 <span style="font-size:18px;">⚠️</span>
                 <span>参加グループが設定されていません。<br>先に「参加グループ登録」ボタンから参加グループを設定してください。</span>
-            </div>` : `
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                ${st==='準備中' ? `<button class="btn btn-green" style="flex:1;" onclick="changeStatus('${esc(eid)}','開催中')">▶ 開催中にする</button>` : ''}
-                ${st==='開催中' ? `<button class="btn btn-dark"  style="flex:1;" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
-                ${st==='終了'   ? `<button class="btn btn-gray"  style="flex:1;" onclick="changeStatus('${esc(eid)}','準備中')">↩ 準備中に戻す</button>` : ''}
             </div>
-            <button class="btn btn-purple" style="width:100%;text-align:left;" onclick="openAdminUrl('${esc(eid)}')">🚀 管理者画面を開く</button>
-            <button class="btn btn-orange" style="width:100%;text-align:left;" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー（自分用に保存）</button>
-            <button class="btn btn-dark" style="width:100%;text-align:left;" onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINEで送信）</button>`}
-            <a class="btn btn-purple" href="${memberUrl}" target="_blank" style="width:100%;text-align:left;text-decoration:none;display:block;box-sizing:border-box;">👤 選手・クラブ登録を開く</a>
+            <a class="btn btn-teal" href="${memberUrl}" target="_blank">👤 選手・クラブ登録を開く</a>
+            ` : `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                ${st==='準備中' ? `<button class="btn btn-green"  style="flex:1;" onclick="changeStatus('${esc(eid)}','開催中')">▶ 開催中にする</button>` : ''}
+                ${st==='開催中' ? `<button class="btn btn-navy"   style="flex:1;" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
+                ${st==='終了'   ? `<button class="btn btn-gray"   style="flex:1;" onclick="changeStatus('${esc(eid)}','準備中')">↩ 準備中に戻す</button>` : ''}
+            </div>
+            <div class="evt-expand-actions">
+                <button class="btn btn-purple" onclick="openAdminUrl('${esc(eid)}')">🚀 管理者画面を開く</button>
+                <button class="btn btn-orange" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー</button>
+                <button class="btn btn-green"  onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINE送信）</button>
+                <a class="btn btn-teal" href="${memberUrl}" target="_blank">👤 選手・クラブ登録を開く</a>
+            </div>`}
         </div>`;
     }
     h+='</div>';
