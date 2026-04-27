@@ -44,9 +44,10 @@ $default_courts  = isset($_POST['courts'])  ? intval($_POST['courts'])  : 2;
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
 /* ── レスポンシブ基準フォントサイズ（vw スケール） ── */
-html { font-size: clamp(11px, 1.3vw, 16px); }
+/* モバイル: ~4.5vw≒17px, デスクトップ: 上限18px で元のサイズを維持 */
+html { font-size: clamp(16px, 4.5vw, 18px); }
 * { box-sizing: border-box; }
-body { font-family: sans-serif; font-size: 1.125rem; color: #222; margin: 0; background: #f0f4f8; }
+body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; background: #f0f4f8; }
 
 /* ステップバー */
 .step-bar { background: #fff; border-bottom: 3px solid #1565c0; display: flex; flex-direction: row; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
@@ -4143,8 +4144,14 @@ function updateEventInfo(ev) {
     bar.dataset.evName = name;
     bar.dataset.evDate = rawDate;
     bar.dataset.evStatus = status;
+    const prevStatus = currentEventStatus;
     currentEventStatus = status;
     if (typeof updateAdminUI === 'function') updateAdminUI();
+    // イベント状態が変化したとき（特に終了時）は組合せ画面を再描画
+    // （Firebase の onValue が別々に発火するためレース防止）
+    if (prevStatus !== status && Array.isArray(state.schedule) && state.schedule.length > 0) {
+        if (typeof renderMatchContainer === 'function') renderMatchContainer();
+    }
     // 「結果を確認する」は管理者なら常時表示、終了時は閲覧者にも表示
     // 「期間集計」は終了時のみ表示
     const btnPreview = document.getElementById('btn-preview-report');
