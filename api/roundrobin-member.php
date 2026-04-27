@@ -350,7 +350,7 @@ function requirePw(clubName,expected,cb){
 }
 window.checkPw=function(){
     const v=document.getElementById('modal-pw-input').value;
-    if(v===pendingPwExp){ closePwModal(); pendingPwCb&&pendingPwCb(); }
+    if(v===pendingPwExp){ const cb=pendingPwCb; closePwModal(); cb&&cb(); }
     else{ document.getElementById('modal-pw-err').style.display='block'; }
 };
 window.closePwModal=function(){ document.getElementById('modal-pw').classList.remove('show'); pendingPwCb=null; pendingPwExp=null; };
@@ -1044,12 +1044,12 @@ async function init(){
         }
     }
     if(PARAM_NAME){
-        // イベント指定モード：ヘッダー変更・ボタン非表示・PW認証有効
+        // イベント指定モード：ヘッダー変更・書出読込全消去戻る非表示・PW認証有効
+        // 新規クラブ登録は可能なので btn-add-club は非表示にしない
         const hdr=document.querySelector('#screen-main .hdr h1');
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_NAME);
         _updateBackLink();
         document.getElementById('all-data-btns').style.display='none';
-        document.getElementById('btn-add-club').style.display='none';
         document.getElementById('back-to-event').style.display='none';
     } else if(PARAM_CLUB){
         // クラブフィルタのみの場合（後方互換）
