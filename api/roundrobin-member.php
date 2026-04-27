@@ -299,9 +299,10 @@ async function fbRemove(path)   { await remove(ref(db,path)); }
 
 // ─── URL Parameters ──────────────────────────────────────────────────
 const _urlParams = new URLSearchParams(location.search);
-const PARAM_CLUB = _urlParams.get('club') || '';  // クラブ名フィルタ
-const PARAM_NAME = _urlParams.get('name') || '';  // イベント名（戻るリンク引き継ぎ用）
-let _paramClubIds = new Set(); // init後に解決
+const PARAM_CLUB = _urlParams.get('club') || '';  // クラブ名フィルタ（後方互換）
+const PARAM_NAME = _urlParams.get('name') || '';  // イベント名
+const PARAM_EID  = _urlParams.get('eid')  || '';  // イベントID（usedClubs解決・新規クラブ登録に使用）
+let _paramClubIds = new Set(); // init後に解決（イベント参加クラブIDのセット）
 
 // ─── State ────────────────────────────────────────────────────────────
 let allClubs={}, allPlayers={};
@@ -374,7 +375,8 @@ function buildClubFilter(){
     const cur=sel.value;
     sel.innerHTML='<option value="">全クラブ</option>';
     let clubs=Object.entries(allClubs).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
-    if(_paramClubIds.size>0) clubs=clubs.filter(([cid])=>_paramClubIds.has(cid));
+    // EID指定時は空セットでもフィルタ適用（全クラブを表示しない）
+    if(_paramClubIds.size>0||PARAM_EID) clubs=clubs.filter(([cid])=>_paramClubIds.has(cid));
     clubs.forEach(([cid,c])=>{
         sel.innerHTML+=`<option value="${escH(cid)}" ${cur===cid?'selected':''}>${escH(c.name)}</option>`;
     });
@@ -385,8 +387,8 @@ window.renderPlayers=function(){
     const filterCid=document.getElementById('p-filter-club').value;
     const c=document.getElementById('players-container');
     let entries=Object.entries(allPlayers);
-    // パラメータフィルタ：指定クラブの選手のみ
-    if(_paramClubIds.size>0) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).some(cid=>_paramClubIds.has(cid)));
+    // パラメータフィルタ：指定クラブの選手のみ（EID指定時は空でもフィルタ適用）
+    if(_paramClubIds.size>0||PARAM_EID) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).some(cid=>_paramClubIds.has(cid)));
     if(filterCid) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).includes(filterCid));
     if(q) entries=entries.filter(([,p])=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].kana||a[1].name||'').localeCompare(b[1].kana||b[1].name||'','ja'));
@@ -419,8 +421,8 @@ window.renderClubs=function(){
     const q=(document.getElementById('c-search').value||'').toLowerCase();
     const c=document.getElementById('clubs-container');
     let entries=Object.entries(allClubs);
-    // パラメータフィルタ：指定クラブのみ
-    if(_paramClubIds.size>0) entries=entries.filter(([cid])=>_paramClubIds.has(cid));
+    // パラメータフィルタ：指定クラブのみ（EID指定時は空でもフィルタ適用）
+    if(_paramClubIds.size>0||PARAM_EID) entries=entries.filter(([cid])=>_paramClubIds.has(cid));
     if(q) entries=entries.filter(([,cl])=>(cl.name||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 クラブが登録されていません</div>'; return; }
@@ -754,8 +756,15 @@ window.saveClub=async function(){
             document.getElementById('cf-name').disabled=true;
             document.getElementById('cf-del-btn').style.display='block';
             document.getElementById('cf-players-section').style.display='block';
+            // イベント指定モードの場合、作成したクラブをイベント参加クラブに登録
+            if(PARAM_EID){
+                await fbUpdate('events/'+PARAM_EID+'/usedClubs',{[cid]:true});
+                _paramClubIds.add(cid);
+                showToast('✅ クラブを登録し、イベント参加クラブに追加しました');
+            } else {
+                showToast('✅ クラブを登録しました');
+            }
             buildClubFilter();
-            showToast('✅ クラブを登録しました');
         }catch(e){showToast('❌ '+e.message);}
     } else {
         try{
@@ -1036,8 +1045,16 @@ function _updateBackLink(){
 async function init(){
     const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
     allClubs=cd||{}; allPlayers=pd||{};
-    // クラブフィルタ解決（PARAM_CLUBが設定されている場合）
-    if(PARAM_CLUB){
+    // イベントID指定：そのイベントのusedClubsからフィルタを解決
+    if(PARAM_EID){
+        const ev=await fbGet('events/'+PARAM_EID);
+        if(ev){
+            for(const cid of Object.keys(ev.usedClubs||{})){
+                _paramClubIds.add(cid);
+            }
+        }
+    } else if(PARAM_CLUB){
+        // クラブ名フィルタ（後方互換）
         const names=PARAM_CLUB.split(',').map(s=>s.trim()).filter(Boolean);
         for(const [cid,club] of Object.entries(allClubs)){
             if(names.includes(club.name)) _paramClubIds.add(cid);
