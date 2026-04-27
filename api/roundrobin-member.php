@@ -219,7 +219,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
         <div id="cf-players-container"></div>
         <div class="section-actions">
             <button class="btn btn-purple" onclick="openPlayerFormFromClub()">➕ 新規選手登録</button>
-            <button class="btn btn-dark" onclick="openPlayerPickerFromClub()">👥 既存選手を追加</button>
+            <button class="btn btn-dark" id="btn-picker-from-club" onclick="openPlayerPickerFromClub()">👥 既存選手を追加</button>
         </div>
     </div>
 </div>
@@ -1068,6 +1068,7 @@ async function init(){
         _updateBackLink();
         document.getElementById('all-data-btns').style.display='none';
         document.getElementById('back-to-event').style.display='none';
+        document.getElementById('btn-picker-from-club').style.display='none'; // 既存選手追加は非表示
     } else if(PARAM_CLUB){
         // クラブフィルタのみの場合（後方互換）
         const hdr=document.querySelector('#screen-main .hdr h1');
