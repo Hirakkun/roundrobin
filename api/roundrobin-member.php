@@ -103,6 +103,12 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div id="screen-main" class="screen active">
     <div class="hdr">
         <h1>👤 選手・グループ管理</h1>
+        <div id="all-data-btns" style="display:flex;gap:5px;align-items:center;">
+            <button class="back-btn" onclick="exportAll()">📤 書出</button>
+            <button class="back-btn" onclick="document.getElementById('import-all-input').click()">📥 読込</button>
+            <input type="file" id="import-all-input" accept=".json" style="display:none;" onchange="importAll(this)">
+            <button class="back-btn" style="background:rgba(198,40,40,.75);" onclick="clearAllData()">🗑 全消去</button>
+        </div>
         <button class="back-btn" id="back-to-event" onclick="location.href='/roundrobin-event.php'">← 戻る</button>
     </div>
     <div class="tab-bar">
@@ -118,11 +124,6 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
                 <option value="">全グループ</option>
             </select>
         </div>
-        <div id="player-csv-bar" style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
-            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="exportPlayers()">📤 書出（CSV）</button>
-            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="document.getElementById('import-players-input').click()">📥 読込（CSV）</button>
-            <input type="file" id="import-players-input" accept=".csv" style="display:none;" onchange="importPlayers(this)">
-        </div>
         <div id="players-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
 
@@ -130,11 +131,6 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div id="pane-clubs">
         <div class="search-bar">
             <input type="text" id="c-search" placeholder="🔍 グループ名" oninput="renderClubs()">
-        </div>
-        <div id="club-csv-bar" style="display:flex;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid #eee;">
-            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="exportClubs()">📤 書出（CSV）</button>
-            <button class="btn btn-dark" style="flex:1;font-size:13px;" onclick="document.getElementById('import-clubs-input').click()">📥 読込（CSV）</button>
-            <input type="file" id="import-clubs-input" accept=".csv" style="display:none;" onchange="importClubs(this)">
         </div>
         <div id="clubs-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
@@ -925,6 +921,67 @@ window.importClubs=async function(input){
     showToast(`📥 追加:${added}件 スキップ:${skipped}件${errors?` エラー:${errors}件`:''}`,4000);
 };
 
+// ─── 全データ 書出（JSON） ────────────────────────────────────
+window.exportAll=function(){
+    const data={
+        version:1,
+        exportedAt:new Date().toLocaleDateString('ja-JP'),
+        clubs:allClubs,
+        players:allPlayers
+    };
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const today=new Date();
+    const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    a.href=url; a.download=`all_data_${ds}.json`; a.click();
+    URL.revokeObjectURL(url);
+    showToast(`📤 選手 ${Object.keys(allPlayers).length}人・グループ ${Object.keys(allClubs).length}件 を書出しました`);
+};
+
+// ─── 全データ 読込（JSON） ────────────────────────────────────
+window.importAll=async function(input){
+    const file=input.files[0]; if(!file){return;}
+    input.value='';
+    let data;
+    try{ data=JSON.parse(await file.text()); }
+    catch(e){ showToast('⚠️ JSONファイルの読込に失敗しました'); return; }
+    if(!data.players&&!data.clubs){ showToast('⚠️ 正しい形式のファイルではありません'); return; }
+    let addedP=0,updP=0,addedC=0,updC=0,errors=0;
+    // グループを先に書き込む（選手がグループを参照するため）
+    for(const [cid,cl] of Object.entries(data.clubs||{})){
+        try{
+            await fbSet('clubs/'+cid,cl);
+            if(allClubs[cid]) updC++; else addedC++;
+            allClubs[cid]=cl;
+        }catch(e){ errors++; }
+    }
+    // 選手を書き込む
+    for(const [pid,p] of Object.entries(data.players||{})){
+        try{
+            await fbSet('players/'+pid,p);
+            if(allPlayers[pid]) updP++; else addedP++;
+            allPlayers[pid]=p;
+        }catch(e){ errors++; }
+    }
+    buildClubFilter(); renderPlayers(); renderClubs();
+    showToast(`📥 選手 追加:${addedP} 更新:${updP} / グループ 追加:${addedC} 更新:${updC}${errors?` エラー:${errors}件`:''}`,5000);
+};
+
+// ─── 全データ 消去 ─────────────────────────────────────────────
+window.clearAllData=async function(){
+    const pCount=Object.keys(allPlayers).length;
+    const cCount=Object.keys(allClubs).length;
+    if(!confirm(`⚠️ 全データを消去します\n選手 ${pCount}人・グループ ${cCount}件をすべて削除します。\nこの操作は取り消せません。`)) return;
+    if(!confirm('本当に削除しますか？\n「OK」を押すと全データが消去されます。')) return;
+    try{
+        await Promise.all([fbRemove('players'),fbRemove('clubs')]);
+        allPlayers={}; allClubs={};
+        buildClubFilter(); renderPlayers(); renderClubs();
+        showToast('🗑 全データを消去しました');
+    }catch(e){ showToast('❌ 消去に失敗しました: '+e.message); }
+};
+
 // ═══════════════════════════════════════════════════════════════
 // Init
 // ═══════════════════════════════════════════════════════════════
@@ -952,9 +1009,8 @@ async function init(){
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         // 戻るリンクにパラメータ引き継ぎ
         _updateBackLink();
-        // CSVボタン・新規グループ登録ボタン非表示
-        document.getElementById('player-csv-bar').style.display='none';
-        document.getElementById('club-csv-bar').style.display='none';
+        // 全体操作ボタン・新規グループ登録ボタン非表示
+        document.getElementById('all-data-btns').style.display='none';
         document.getElementById('btn-add-club').style.display='none';
     } else if(PARAM_NAME){
         _updateBackLink();
