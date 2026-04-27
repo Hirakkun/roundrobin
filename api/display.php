@@ -554,6 +554,8 @@ function getCourtLabel(physIdx) {
 function getCourtStatus(mid) {
     const sc = state.scores?.[mid];
     if (sc?.done) return 'done';
+    // status フィールドを優先、なければスコアで後方互換判定
+    if (sc?.status) return sc.status;
     if (sc && (sc.s1 > 0 || sc.s2 > 0)) return 'playing';
     return 'calling';
 }
