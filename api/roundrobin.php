@@ -247,37 +247,37 @@ body.viewer-mode #initialSetup { display: none !important; }
     <!-- クラウド同期・イベント状態カード -->
     <div class="setup-card" style="border:2px solid #1565c0;margin-bottom:14px;padding:12px 16px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:15px;color:#1565c0;">☁️</span>
-            <span id="syncBadge" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
-            <div id="modeIndicator" style="font-size:12px;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
+            <span style="font-size:0.9375rem;color:#1565c0;">☁️</span>
+            <span id="syncBadge" style="font-size:0.75rem;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;">⚪ 未接続</span>
+            <div id="modeIndicator" style="font-size:0.75rem;font-weight:bold;padding:3px 10px;border-radius:20px;background:#eee;color:#888;display:none;"></div>
         </div>
-        <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:13px;line-height:1.6;"></div>
+        <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:0.8125rem;line-height:1.6;"></div>
     </div>
 
     <!-- コートQRコードカード（管理者・セッション接続後） -->
     <div id="courtQrCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div class="setup-label" style="margin:0;">📱 コートスコア入力QR</div>
-            <button onclick="toggleQrPanel()" id="qrToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#555;">▼ 開く</button>
+            <button onclick="toggleQrPanel()" id="qrToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;color:#555;">▼ 開く</button>
         </div>
         <div id="qrPanelBody" style="display:none;">
-            <div style="font-size:12px;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
+            <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
             <div id="qrCodesWrap" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;"></div>
             <!-- ゲーム数設定 -->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
-                <div style="font-size:13px;font-weight:bold;color:#333;margin-bottom:8px;">🎾 ゲーム数（スコア入力）</div>
+                <div style="font-size:0.8125rem;font-weight:bold;color:#333;margin-bottom:8px;">🎾 ゲーム数（スコア入力）</div>
                 <div class="counter-row">
                     <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">－</button>
                     <div class="counter-val match-games-val">3</div>
                     <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
                 </div>
-                <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+                <div class="match-games-desc-txt" style="font-size:0.75rem;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
             </div>
             <!-- Gemini APIキー設定 -->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                    <div style="font-size:13px;font-weight:bold;color:#333;">🔊 アナウンス（Gemini APIキー）</div>
-                    <div style="display:flex;align-items:center;gap:4px;font-size:13px;">
+                    <div style="font-size:0.8125rem;font-weight:bold;color:#333;">🔊 アナウンス（Gemini APIキー）</div>
+                    <div style="display:flex;align-items:center;gap:4px;font-size:0.8125rem;">
                         <span id="tts-gender-female-label" style="color:#c2185b;font-weight:bold;">♀</span>
                         <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;">
                             <input type="checkbox" id="tts-gender-toggle" style="opacity:0;width:0;height:0;"
@@ -291,9 +291,9 @@ body.viewer-mode #initialSetup { display: none !important; }
                     </div>
                 </div>
                 <input type="password" id="gemini-api-key-input" placeholder="AIza..."
-                    style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:monospace;box-sizing:border-box;"
+                    style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:0.8125rem;font-family:monospace;box-sizing:border-box;"
                     oninput="saveGeminiKey(this.value)">
-                <div style="font-size:11px;color:#888;margin-top:4px;">Google AI Studio で取得したAPIキー</div>
+                <div style="font-size:0.6875rem;color:#888;margin-top:4px;">Google AI Studio で取得したAPIキー</div>
             </div>
         </div>
     </div>
@@ -302,15 +302,15 @@ body.viewer-mode #initialSetup { display: none !important; }
     <div id="displayPanelCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div class="setup-label" style="margin:0;">📺 試合案内パネル</div>
-            <button onclick="toggleDisplayPanel()" id="displayPanelToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#555;">▼ 開く</button>
+            <button onclick="toggleDisplayPanel()" id="displayPanelToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;color:#555;">▼ 開く</button>
         </div>
         <div id="displayPanelBody" style="display:none;">
-            <div style="font-size:12px;color:#777;margin-bottom:10px;">プロジェクター等で試合状況をリアルタイム表示します</div>
+            <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">プロジェクター等で試合状況をリアルタイム表示します</div>
             <div id="displayPanelQrWrap" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
                 <div id="qr-display-panel"></div>
-                <div id="display-panel-url" style="font-size:11px;color:#555;word-break:break-all;text-align:center;"></div>
+                <div id="display-panel-url" style="font-size:0.6875rem;color:#555;word-break:break-all;text-align:center;"></div>
                 <a id="display-panel-link" href="#" target="_blank"
-                    style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:13px;text-decoration:none;font-weight:bold;">
+                    style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:0.8125rem;text-decoration:none;font-weight:bold;">
                     🔗 パネルを開く
                 </a>
             </div>
@@ -323,7 +323,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div id="entryListCard" class="setup-card admin-only" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
                 <div class="setup-label" style="margin:0;">👥 参加者登録</div>
-                <span id="entry-count-label" style="font-size:13px;color:#555;font-weight:bold;"></span>
+                <span id="entry-count-label" style="font-size:0.8125rem;color:#555;font-weight:bold;"></span>
             </div>
             <div id="entryList"></div>
             <button type="button" class="player-add-btn" style="margin-top:8px;" onclick="addEntryPlayer()">＋ 参加者を追加</button>
@@ -356,7 +356,7 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <div class="counter-val match-games-val">3</div>
                 <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
             </div>
-            <div class="match-games-desc-txt" style="font-size:12px;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
+            <div class="match-games-desc-txt" style="font-size:0.75rem;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
         </div>
         <div class="setup-card">
             <div class="setup-label">🎯 マッチングルール</div>
@@ -364,27 +364,27 @@ body.viewer-mode #initialSetup { display: none !important; }
                 <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
                     <span class="rule-icon">⚖️</span>
                     バランスマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
+                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
                 </button>
                 <button type="button" class="rule-btn" id="rule-rating" onclick="selectRule('rating')">
                     <span class="rule-icon">📊</span>
                     レーティングマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・μ値でチームバランス</div>
+                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">試合数均等・μ値でチームバランス</div>
                 </button>
                 <button type="button" class="rule-btn selected" id="rule-random" onclick="selectRule('random')">
                     <span class="rule-icon">🎲</span>
                     ランダムマッチ
-                    <div style="font-size:11px;font-weight:normal;color:#888;margin-top:4px;">試合数均等・ペア重複なし・対戦偏りなし</div>
+                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">試合数均等・ペア重複なし・対戦偏りなし</div>
                 </button>
             </div>
-            <div id="setupRuleDesc" style="margin-top:10px;font-size:13px;color:#444;background:#f0f4ff;border-radius:8px;padding:10px 12px;border-left:3px solid #1565c0;line-height:1.7;"></div>
+            <div id="setupRuleDesc" style="margin-top:10px;font-size:0.8125rem;color:#444;background:#f0f4ff;border-radius:8px;padding:10px 12px;border-left:3px solid #1565c0;line-height:1.7;"></div>
         </div>
         </div>
     </div>
 
     <!-- 参加者・途中変更エリア（試合開始後に表示） -->
     <div id="liveSetup" style="display:none;">
-        <div style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
+        <div style="color:#555;font-size:0.9375rem;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;">
             名前の割り当て・休憩・コート数の変更は次の試合から反映されます。
         </div>
         <div class="court-change-row">
@@ -397,7 +397,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         </div>
         <div id="playerList" class="player-list"></div>
         <button class="player-add-btn admin-only" onclick="addPlayer()">＋ 新たに参加する人を追加</button>
-        <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:15px;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">🏁 イベントを終了</button>
+        <button class="admin-only" id="endEventBtn" onclick="endEvent()" style="width:100%;font-size:0.9375rem;padding:12px;background:#fff;color:#c62828;border:2px solid #c62828;border-radius:10px;margin-top:14px;cursor:pointer;font-weight:bold;">🏁 イベントを終了</button>
     </div>
 </div>
 
@@ -440,9 +440,9 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
         </div>
     </div>
-    <div style="font-size:13px;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;color:#444;" id="matchRuleDesc">
+    <div style="font-size:0.8125rem;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #1565c0;color:#444;" id="matchRuleDesc">
     </div>
-    <div class="admin-only" style="color:#555;font-size:15px;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #e65100;">
+    <div class="admin-only" style="color:#555;font-size:0.9375rem;margin-bottom:12px;background:#fff;border-radius:10px;padding:10px;border-left:4px solid #e65100;">
         チームをタップするとスコアが変わります。左半分で＋、右半分でー。
     </div>
     <div id="matchContainer"></div>
@@ -461,7 +461,7 @@ body.viewer-mode #initialSetup { display: none !important; }
     </div>
     <button class="report-btn" id="btn-preview-report" onclick="previewReport()" style="display:none;">📋 結果を確認する</button>
     <div id="reportPreview" style="display:none;margin-top:12px;">
-        <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
+        <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:12px;font-size:0.75rem;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:#333;" id="reportPreviewText"></div>
         <button class="report-btn" style="margin-top:10px;background:#2e7d32;" onclick="downloadReport()">📥 結果をダウンロードする</button>
     </div>
     <div id="reportStatus"></div>
@@ -469,27 +469,27 @@ body.viewer-mode #initialSetup { display: none !important; }
     <!-- 期間集計パネル -->
     <button class="report-btn" id="btn-period-agg" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;display:none;">📅 期間集計</button>
     <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
-        <div style="font-weight:bold;font-size:15px;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
+        <div style="font-weight:bold;font-size:0.9375rem;margin-bottom:10px;color:#6a1b9a;">📊 期間別集計</div>
         <div style="margin-bottom:8px;">
-            <div style="font-size:12px;color:#555;margin-bottom:4px;">イベント名（前方一致）</div>
-            <input id="periodPrefix" type="text" placeholder="例: らさんて" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:15px;box-sizing:border-box;">
+            <div style="font-size:0.75rem;color:#555;margin-bottom:4px;">イベント名（前方一致）</div>
+            <input id="periodPrefix" type="text" placeholder="例: らさんて" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:0.9375rem;box-sizing:border-box;">
         </div>
         <div style="display:flex;gap:8px;margin-bottom:6px;">
             <div style="flex:1;">
-                <div style="font-size:12px;color:#555;margin-bottom:4px;">期間１（開始日）</div>
-                <input id="period1" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:4px;">期間１（開始日）</div>
+                <input id="period1" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:0.875rem;box-sizing:border-box;">
             </div>
             <div style="flex:1;">
-                <div style="font-size:12px;color:#555;margin-bottom:4px;">期間２（終了日）</div>
-                <input id="period2" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:14px;box-sizing:border-box;">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:4px;">期間２（終了日）</div>
+                <input id="period2" type="date" style="width:100%;padding:8px;border:1px solid #ce93d8;border-radius:6px;font-size:0.875rem;box-sizing:border-box;">
             </div>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:10px;">
-            <button onclick="setPeriodYear()" style="flex:1;padding:7px;background:#4527a0;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">📅 年間</button>
-            <button onclick="setPeriodFiscal()" style="flex:1;padding:7px;background:#311b92;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">📅 年度</button>
+            <button onclick="setPeriodYear()" style="flex:1;padding:7px;background:#4527a0;color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-weight:bold;cursor:pointer;">📅 年間</button>
+            <button onclick="setPeriodFiscal()" style="flex:1;padding:7px;background:#311b92;color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-weight:bold;cursor:pointer;">📅 年度</button>
         </div>
-        <button onclick="calcPeriodStats()" style="width:100%;padding:10px;background:#6a1b9a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">🔍 集計する</button>
-        <div id="periodStatus" style="text-align:center;margin-top:8px;font-size:13px;font-weight:bold;"></div>
+        <button onclick="calcPeriodStats()" style="width:100%;padding:10px;background:#6a1b9a;color:#fff;border:none;border-radius:8px;font-size:0.9375rem;font-weight:bold;cursor:pointer;">🔍 集計する</button>
+        <div id="periodStatus" style="text-align:center;margin-top:8px;font-size:0.8125rem;font-weight:bold;"></div>
         <div id="periodResult" style="margin-top:10px;overflow-x:auto;"></div>
     </div>
 </div>
@@ -701,11 +701,11 @@ function addEntryPlayer() {
     const opts = `<option value="">--- 選択してください ---</option>` +
         unused.map(p => `<option value="${_esc(p.pid)}">${_esc(p.name)}${p.kana?' ('+_esc(p.kana)+')':''}</option>`).join('');
     row.innerHTML = `
-        <select style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:14px;">${opts}</select>
+        <select style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:0.875rem;">${opts}</select>
         <button type="button" onclick="confirmEntryRow(this)"
-            style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:13px;white-space:nowrap;">✓ 決定</button>
+            style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.8125rem;white-space:nowrap;">✓ 決定</button>
         <button type="button" onclick="this.closest('.entry-pending-row').remove()"
-            style="padding:8px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:14px;">×</button>`;
+            style="padding:8px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">×</button>`;
     list.appendChild(row);
 }
 
@@ -821,22 +821,22 @@ function renderEntryList() {
         const isResting = entryRestingPids.has(p.pid);
         let actionBtns;
         if (isActive) {
-            actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:11px;white-space:nowrap;">🔒 参加済</span>`;
+            actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:0.6875rem;white-space:nowrap;">🔒 参加済</span>`;
         } else {
             const restBtn = isResting
-                ? `<button type="button" class="rest-btn resting" style="font-size:12px;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">復帰</button>`
-                : `<button type="button" class="rest-btn" style="font-size:12px;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">休憩</button>`;
-            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:12px;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(p.pid)}')">削除</button>`;
+                ? `<button type="button" class="rest-btn resting" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">復帰</button>`
+                : `<button type="button" class="rest-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">休憩</button>`;
+            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(p.pid)}')">削除</button>`;
             actionBtns = restBtn + delBtn;
         }
         const clubBadge = p.clubName
-            ? ` <span style="font-size:11px;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
+            ? ` <span style="font-size:0.6875rem;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
             : '';
         div.style.opacity = isResting ? '0.5' : '1';
         div.innerHTML = `
             <div style="flex:1;">
-                <div style="font-weight:bold;font-size:15px;">${_esc(p.name)}${clubBadge}</div>
-                <div style="font-size:11px;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
+                <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${clubBadge}</div>
+                <div style="font-size:0.6875rem;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
             </div>
             <div style="display:flex;gap:6px;">${actionBtns}</div>`;
         frag.appendChild(div);
@@ -891,7 +891,7 @@ function _evalBadge(mark) {
         '△': { bg: '#fff8e1', color: '#f57f17', border: '#ffe082' },
         '×': { bg: '#fce4ec', color: '#b71c1c', border: '#f48fb1' },
     }[mark] || {};
-    return `<span style="display:inline-block;font-size:12px;font-weight:bold;padding:1px 7px;border-radius:10px;border:1px solid ${cfg.border};background:${cfg.bg};color:${cfg.color};margin-left:4px;">${mark}</span>`;
+    return `<span style="display:inline-block;font-size:0.75rem;font-weight:bold;padding:1px 7px;border-radius:10px;border:1px solid ${cfg.border};background:${cfg.bg};color:${cfg.color};margin-left:4px;">${mark}</span>`;
 }
 
 const RULE_DESCS = {
@@ -935,13 +935,13 @@ function updateMatchRuleDesc() {
         `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;">
             <span style="min-width:1.4em;font-weight:bold;color:#1565c0;">${r.num}</span>
             ${_evalBadge(r.mark)}
-            <span><b>${r.text}</b> <span style="color:#666;font-size:12px;">— ${r.note}</span></span>
+            <span><b>${r.text}</b> <span style="color:#666;font-size:0.75rem;">— ${r.note}</span></span>
         </div>`
     ).join('');
 
     const buildDetail = desc =>
         buildRows(desc.rows) +
-        `<div style="margin-top:6px;font-size:12px;color:#888;border-top:1px solid #ddd;padding-top:6px;">💡 ${desc.summary}</div>`;
+        `<div style="margin-top:6px;font-size:0.75rem;color:#888;border-top:1px solid #ddd;padding-top:6px;">💡 ${desc.summary}</div>`;
 
     const buildPriority = desc =>
         desc.rows.map(r => `${r.num}${r.text} ${_evalBadge(r.mark)}`).join('<span style="color:#aaa;margin:0 4px;">›</span>');
@@ -958,9 +958,9 @@ function updateMatchRuleDesc() {
     const expanded = !!window._matchRuleDescOpen;
     const arrow = expanded ? '▼' : '▶';
     const bodyHtml = expanded
-        ? `<div style="margin-top:8px;">${buildRows(desc.rows)}<div style="margin-top:4px;font-size:12px;color:#888;">💡 ${desc.summary}</div></div>`
+        ? `<div style="margin-top:8px;">${buildRows(desc.rows)}<div style="margin-top:4px;font-size:0.75rem;color:#888;">💡 ${desc.summary}</div></div>`
         : '';
-    el.innerHTML = `<div style="font-weight:bold;color:#1565c0;display:flex;align-items:center;gap:6px;"><span style="font-size:11px;">${arrow}</span>📌 組合せの優先順位（${desc.label}）</div>${bodyHtml}`;
+    el.innerHTML = `<div style="font-weight:bold;color:#1565c0;display:flex;align-items:center;gap:6px;"><span style="font-size:0.6875rem;">${arrow}</span>📌 組合せの優先順位（${desc.label}）</div>${bodyHtml}`;
     el.onclick = () => { window._matchRuleDescOpen = !window._matchRuleDescOpen; updateMatchRuleDesc(); };
 }
 
@@ -1086,7 +1086,7 @@ function renderPlayerList() {
         } else {
             restBtnHtml = isAdmin
                 ? `<button class="${restClass}" onclick="toggleRest(${p.id})">${restLabel}</button>`
-                : (p.resting ? `<span style="font-size:12px;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
+                : (p.resting ? `<span style="font-size:0.75rem;font-weight:bold;color:#fff;background:#e65100;border-radius:6px;padding:3px 8px;white-space:nowrap;">💤 休憩</span>` : '');
         }
         // ペア固定ボタン（管理者 & イベント未終了）
         if (isAdmin && !isEventLocked()) {
@@ -1332,11 +1332,11 @@ function addPlayer() {
     row.className = 'live-pending-row';
     row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e8f5e9;border-radius:10px;margin-top:8px;';
     row.innerHTML = `
-        <select style="flex:1;padding:9px;border:2px solid #2e7d32;border-radius:8px;font-size:14px;">${opts}</select>
+        <select style="flex:1;padding:9px;border:2px solid #2e7d32;border-radius:8px;font-size:0.875rem;">${opts}</select>
         <button type="button" onclick="confirmLiveAdd(this)"
-            style="padding:9px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:13px;white-space:nowrap;">✓ 決定</button>
+            style="padding:9px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.8125rem;white-space:nowrap;">✓ 決定</button>
         <button type="button" onclick="this.closest('.live-pending-row').remove()"
-            style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:14px;">×</button>`;
+            style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">×</button>`;
     const addBtn = document.querySelector('#liveSetup .player-add-btn');
     addBtn.parentNode.insertBefore(row, addBtn);
 }
@@ -1480,7 +1480,7 @@ function getPlayerDisplayName(id) {
 
     const fs = fontSize + 'px';
     if (showPlayerNum) {
-        return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
+        return `<span style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;font-size:${fs};"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1565c0;color:#fff;font-size:0.6875rem;font-weight:bold;flex-shrink:0;">${id}</span>${name}</span>`;
     }
     return `<span style="white-space:nowrap;font-size:${fs};">${name}</span>`;
 }
@@ -2632,14 +2632,14 @@ function renderCourtQRCodes() {
 
         const lbl = document.createElement('div');
         lbl.textContent = label;
-        lbl.style.cssText = 'font-size:13px;font-weight:bold;color:#333;';
+        lbl.style.cssText = 'font-size:0.8125rem;font-weight:bold;color:#333;';
         col.appendChild(lbl);
 
         const link = document.createElement('a');
         link.href = url;
         link.target = '_blank';
         link.textContent = '開く';
-        link.style.cssText = 'font-size:11px;color:#1565c0;';
+        link.style.cssText = 'font-size:0.6875rem;color:#1565c0;';
         col.appendChild(link);
 
         wrap.appendChild(col);
@@ -3268,8 +3268,8 @@ function renderMatchContainer() {
                             <div class="match-header-row match-header-done" onclick="this.closest('.match-card-done-wrap').classList.toggle('expanded')">
                                 ${getCourtNameHTML(physIdx)}
                                 <span style="display:flex;align-items:center;gap:6px;">
-                                    <span style="font-size:12px;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
-                                    <span class="done-arrow" style="font-size:11px;color:#cfd8dc;">▼</span>
+                                    <span style="font-size:0.75rem;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
+                                    <span class="done-arrow" style="font-size:0.6875rem;color:#cfd8dc;">▼</span>
                                 </span>
                             </div>
                             <div class="match-content" style="opacity:0.5;">
@@ -3299,8 +3299,8 @@ function renderMatchContainer() {
                     // ステータスバッジ
                     const statusBadge = showCourtDoneBtn
                         ? isCalling
-                            ? `<span style="font-size:11px;font-weight:bold;color:#ff9800;white-space:nowrap;">📢 呼び出し中</span>`
-                            : `<span style="font-size:11px;font-weight:bold;color:#4caf50;white-space:nowrap;">🏸 試合中</span>`
+                            ? `<span style="font-size:0.6875rem;font-weight:bold;color:#ff9800;white-space:nowrap;">📢 呼び出し中</span>`
+                            : `<span style="font-size:0.6875rem;font-weight:bold;color:#4caf50;white-space:nowrap;">🏸 試合中</span>`
                         : '';
                     // APIキーが設定済み かつ 試合未終了の場合のみアナウンスボタンを表示
                     const announceBtn = isAdmin && state.geminiApiKey && !courtDone
@@ -3621,10 +3621,10 @@ function calcRank() {
         const muDisp = r.mu.toFixed(1);
         const sigmaDisp = r.sigma.toFixed(2);
         const clubHtml = r.clubName
-            ? `<span style="font-size:11px;color:#666;font-weight:normal;margin-left:3px;">(${r.clubName})</span>`
+            ? `<span style="font-size:0.6875rem;color:#666;font-weight:normal;margin-left:3px;">(${r.clubName})</span>`
             : '';
         h += `<tr${rc}>
-            <td style="font-size:17px;font-weight:bold;">${rank}</td>
+            <td style="font-size:1.0625rem;font-weight:bold;">${rank}</td>
             <td class="name-cell">
                 <span class="name-text">${r.name}</span>${clubHtml}
                 <div class="stats-mini"><span>出場${r.appearedCount}回</span><span>${intvLabel}</span><span>μ:${muDisp}</span><span>σ:${sigmaDisp}</span></div>
@@ -3917,7 +3917,7 @@ async function calcPeriodStats() {
         status.textContent = statusMsg;
         status.style.color = '#2e7d32';
 
-        let h = '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
+        let h = '<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">';
         h += '<tr style="background:#6a1b9a;color:#fff;"><th style="padding:6px 4px;">順</th><th style="padding:6px 4px;text-align:left;">氏名</th><th style="padding:6px 4px;">勝率</th><th style="padding:6px 4px;">試</th><th style="padding:6px 4px;">勝</th><th style="padding:6px 4px;">負</th><th style="padding:6px 4px;">差</th></tr>';
         arr.forEach((r, i) => {
             const wr = (r.wins / r.played * 100).toFixed(0) + '%';
@@ -3972,21 +3972,21 @@ function renderSessionHistory() {
     const hist = JSON.parse(localStorage.getItem(SESSION_HISTORY_KEY) || '[]');
     if (hist.length === 0) { el.innerHTML = ''; return; }
 
-    let h = '<div style="font-size:12px;color:#888;margin-bottom:4px;">🕐 履歴</div>';
+    let h = '<div style="font-size:0.75rem;color:#888;margin-bottom:4px;">🕐 履歴</div>';
     h += '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">';
     hist.forEach(item => {
         const icon  = item.isAdmin ? '🔑' : '👁';
         const d     = new Date(item.usedAt);
         const label = `${d.getMonth()+1}/${d.getDate()}`;
         h += `<button onclick="selectHistoryId('${item.id.replace(/'/g,"\\'")}',${item.isAdmin})"`
-           + ` style="padding:5px 10px;font-size:13px;border:1px solid #90caf9;`
+           + ` style="padding:5px 10px;font-size:0.8125rem;border:1px solid #90caf9;`
            + `border-radius:16px;background:#e3f2fd;color:#1565c0;cursor:pointer;`
            + `display:flex;align-items:center;gap:4px;white-space:nowrap;">`
-           + `${icon} ${item.id} <span style="color:#aaa;font-size:11px;">${label}</span>`
+           + `${icon} ${item.id} <span style="color:#aaa;font-size:0.6875rem;">${label}</span>`
            + `</button>`;
     });
     h += `<button onclick="clearSessionHistory()" title="履歴を消去"`
-       + ` style="padding:5px 8px;font-size:13px;border:1px solid #ffcdd2;`
+       + ` style="padding:5px 8px;font-size:0.8125rem;border:1px solid #ffcdd2;`
        + `border-radius:16px;background:#fff;color:#e57373;cursor:pointer;">🗑</button>`;
     h += '</div>';
     el.innerHTML = h;
@@ -4134,7 +4134,7 @@ function updateEventInfo(ev) {
         '準備中': { bg:'#fff3e0', color:'#e65100', border:'1px solid #ffcc80' },
     };
     const s = stMap[status] || stMap['準備中'];
-    const stBadge = `<span style="background:${s.bg};color:${s.color};border:${s.border};border-radius:12px;padding:1px 8px;font-size:11px;font-weight:bold;white-space:nowrap;">${status}</span>`;
+    const stBadge = `<span style="background:${s.bg};color:${s.color};border:${s.border};border-radius:12px;padding:1px 8px;font-size:0.6875rem;font-weight:bold;white-space:nowrap;">${status}</span>`;
     bar.style.display = 'block';
     bar.innerHTML = `<span style="font-weight:bold;color:#1565c0;">${_escH(name)}</span>`
                   + (date ? `&emsp;<span style="color:#555;">${_escH(date)}</span>` : '')
@@ -4286,7 +4286,7 @@ window._fbApply = function(remoteState) {
                 document.getElementById('btn-match').classList.add('disabled');
                 document.getElementById('btn-rank').classList.add('disabled');
                 document.getElementById('matchContainer').innerHTML =
-                    '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が参加者を選択中です</div>';
+                    '<div style="padding:30px;text-align:center;color:#888;font-size:1rem;">⏳ 管理者が参加者を選択中です</div>';
                 document.getElementById('rankBody').innerHTML = '';
                 showStep('step-match', document.getElementById('btn-match'));
             }
@@ -4315,7 +4315,7 @@ window._fbApply = function(remoteState) {
             // 試合データなし（初期状態）
             document.getElementById('btn-rank').classList.add('disabled');
             document.getElementById('matchContainer').innerHTML =
-                '<div style="padding:30px;text-align:center;color:#888;font-size:16px;">⏳ 管理者が試合を準備中です</div>';
+                '<div style="padding:30px;text-align:center;color:#888;font-size:1rem;">⏳ 管理者が試合を準備中です</div>';
             document.getElementById('rankBody').innerHTML = '';
             if (isAdmin && Array.isArray(state.roster) && state.roster.length > 0) {
                 // 管理者かつ名簿あり → エントリーモードを表示し、組合せタブも有効化
