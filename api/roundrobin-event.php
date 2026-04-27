@@ -106,7 +106,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 <div id="screen-events" class="screen active">
     <div class="hdr">
         <h1>🎾 イベント作成編集</h1>
-        <a id="link-member" href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
+        <a id="link-member" href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 クラブ管理</a>
     </div>
     <div id="events-container"><div class="loading-msg">⏳ 読込中...</div></div>
     <div class="bottom-bar">
@@ -141,7 +141,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
             <h1 style="margin:0;font-size:15px;">参加グループ選択</h1>
             <div style="font-size:11px;opacity:.8;">ID: <span id="clubs-eid-label"></span></div>
         </div>
-        <a id="link-member" href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 グループ管理</a>
+        <a id="link-member" href="/roundrobin-member.php" style="background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:bold;padding:5px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;">👤 クラブ管理</a>
     </div>
     <div id="clubs-container"><div class="loading-msg">⏳ 読込中...</div></div>
     <div class="confirm-bar">
@@ -294,9 +294,15 @@ function renderEvents(){
         const delBtn = st==='開催中'
             ? `<button class="btn-sm btn-sm-del" disabled title="開催中は削除できません" style="opacity:0.4;cursor:not-allowed;" onclick="event.stopPropagation()">削除</button>`
             : `<button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button>`;
+        // イベント指定URL（このページ自体をイベント名＋参加クラブで絞り込み）
+        const clubNames=Object.keys(ev.usedClubs||{}).map(cid=>decodeURIComponent(cid)).join(',');
+        const eventUrl='/roundrobin-event.php?name='+encodeURIComponent(ev.name)+(clubNames?'&club='+encodeURIComponent(clubNames):'');
+        // 選手・クラブ管理ページのURL（イベント名＋参加クラブ指定）
+        const memberUrl='/roundrobin-member.php?name='+encodeURIComponent(ev.name)+(clubNames?'&club='+encodeURIComponent(clubNames):'');
         h+=`<div class="evt-card" onclick="toggleERow('${esc(eid)}')">
             <div class="evt-head">
                 <div class="evt-name">${escH(ev.name)}</div>
+                <a class="btn-sm btn-sm-blue" href="${eventUrl}" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none;flex-shrink:0;" title="このイベントのURLをコピー">🔗</a>
                 <div>${statusBadge(st)}</div>
             </div>
             <div class="evt-date">📅 ${fmtDate(ev.date)}</div>
@@ -317,6 +323,7 @@ function renderEvents(){
             <button class="btn btn-purple" style="width:100%;text-align:left;" onclick="openAdminUrl('${esc(eid)}')">🚀 管理者画面を開く</button>
             <button class="btn btn-orange" style="width:100%;text-align:left;" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー（自分用に保存）</button>
             <button class="btn btn-dark" style="width:100%;text-align:left;" onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINEで送信）</button>`}
+            <a class="btn btn-purple" href="${memberUrl}" target="_blank" style="width:100%;text-align:left;text-decoration:none;display:block;box-sizing:border-box;">👤 選手・クラブ登録を開く</a>
         </div>`;
     }
     h+='</div>';
@@ -435,7 +442,7 @@ function renderClubsScreen(){
         const paramIds=new Set(_resolveClubIds(PARAM_CLUB));
         entries=entries.filter(([cid])=>paramIds.has(cid));
     }
-    if(!entries.length){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 グループ管理</a> から登録してください。</div>';return;}
+    if(!entries.length){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 クラブ管理</a> から登録してください。</div>';return;}
     const st=getStatus(allEvents[currentEventId]||{});
     const isActive=st==='開催中';
     const ev=allEvents[currentEventId]||{};

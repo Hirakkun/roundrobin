@@ -311,6 +311,7 @@ let currentClubId=null, currentClubIsNew=true;
 let pendingPwCb=null, pendingPwExp=null, pendingConfirmCb=null;
 let playerFormContext='main'; // 'main' or 'club'
 let playerPickerAll=[];
+let _unlockedClubs=new Set(); // event-mode: password-verified club IDs
 
 // ─── Utils ────────────────────────────────────────────────────────────
 function genId(){ return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -423,13 +424,15 @@ window.renderClubs=function(){
     if(q) entries=entries.filter(([,cl])=>(cl.name||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 クラブが登録されていません</div>'; return; }
+    // イベント指定モードではパスワード確認してからフォームを開く
+    const clubEditFn = PARAM_CLUB ? 'openClubFormWithPw' : 'openClubForm';
     let h='<div class="club-list">';
     for(const [cid,cl] of entries){
         const cnt=Object.keys(cl.playerIds||{}).length;
         h+=`<div class="club-card">
             <span class="cc-name">${escH(cl.name||'')}</span>
             <span class="cc-count">${cnt}人</span>
-            <button class="btn-sm btn-sm-edit" onclick="openClubForm('${esc(cid)}')">編集</button>
+            <button class="btn-sm btn-sm-edit" onclick="${clubEditFn}('${esc(cid)}')">編集</button>
         </div>`;
     }
     h+='</div>';
@@ -466,8 +469,22 @@ function _openPlayerForm(pid, context){
     }
     showScreen('screen-player');
 }
-// 選手一覧から開く
-window.openPlayerForm=function(pid){ _openPlayerForm(pid,'main'); };
+// 選手一覧から開く（イベント指定モードではパスワード確認）
+window.openPlayerForm=function(pid){
+    if(PARAM_CLUB && _paramClubIds.size>0){
+        const p=allPlayers[pid];
+        if(p){
+            const playerCids=Object.keys(p.clubs||{}).filter(cid=>_paramClubIds.has(cid));
+            const unlocked=playerCids.some(cid=>_unlockedClubs.has(cid));
+            if(!unlocked && playerCids.length>0){
+                const cid=playerCids[0];
+                const cl=allClubs[cid];
+                if(cl){ requirePw(cl.name,cl.password,()=>{ _unlockedClubs.add(cid); _openPlayerForm(pid,'main'); }); return; }
+            }
+        }
+    }
+    _openPlayerForm(pid,'main');
+};
 // クラブ編集画面から新規登録
 window.openPlayerFormFromClub=function(){ _openPlayerForm(null,'club'); };
 // 戻るボタン（コンテキスト対応）
@@ -695,8 +712,9 @@ window.openClubForm=function(cid){
 };
 
 window.openClubFormWithPw=function(cid){
+    if(_unlockedClubs.has(cid)){ openClubForm(cid); return; }
     const cl=allClubs[cid]; if(!cl) return;
-    requirePw(cl.name,cl.password,()=>openClubForm(cid));
+    requirePw(cl.name,cl.password,()=>{ _unlockedClubs.add(cid); openClubForm(cid); });
 };
 
 function renderClubMemberList(){
@@ -1029,9 +1047,10 @@ async function init(){
         if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         // 戻るリンクにパラメータ引き継ぎ
         _updateBackLink();
-        // 全体操作ボタン・新規クラブ登録ボタン非表示
+        // 全体操作ボタン・新規クラブ登録ボタン・戻るボタン非表示
         document.getElementById('all-data-btns').style.display='none';
         document.getElementById('btn-add-club').style.display='none';
+        document.getElementById('back-to-event').style.display='none';
     } else if(PARAM_NAME){
         _updateBackLink();
     }
