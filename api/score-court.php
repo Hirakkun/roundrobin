@@ -680,7 +680,10 @@ function updateUmpireCall() {
 
     if (p_sv === 3 && p_rc === 3) { setUmpire('デュース'); return; }
     if (p_sv >= 3 && p_rc >= 3) {
-        if (p_sv === p_rc) { setUmpire('デュース'); return; }
+        if (p_sv === p_rc) {
+            setUmpire(p_sv === 4 ? 'フォー・オール' : 'デュース');
+            return;
+        }
         setUmpire('アドバンテージ ' + (p_sv > p_rc ? 'サーバー' : 'レシーバー'));
         return;
     }
