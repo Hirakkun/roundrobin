@@ -1435,13 +1435,14 @@ function confirmGuestAdd() {
 
     const player = state.players.find(p => p.id === newId);
     if (player) {
-        player.pid          = null;
-        player.isGuest      = true;
-        player.guestName    = name;
-        player.guestKana    = kana;
-        player.guestGender  = gender;
+        player.pid            = null;
+        player.isGuest        = true;
+        player.guestName      = name;
+        player.guestKana      = kana;
+        player.guestGender    = gender;
         player.guestBirthdate = birthdate.replace(/-/g, '/');
-        player.guestClass   = cls;
+        player.guestClass     = cls;
+        player.guestClub      = club; // 任意・空文字の場合もあり
     }
     state.tsMap[newId] = { mu: muMap[cls], sigma: sigmaMap[cls] };
 
@@ -1462,7 +1463,8 @@ function showGuestRegModal(guests) {
             <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.guestName)}
                 <span style="font-size:0.75rem;color:#666;font-weight:normal;margin-left:4px;">${genderIcon} ${_esc(p.guestBirthdate||'')}</span>
             </div>
-            <div style="font-size:0.75rem;color:#888;margin:2px 0 6px;">ふりがな: ${_esc(p.guestKana||'')}　最終 μ=${ts.mu.toFixed(1)} σ=${ts.sigma.toFixed(1)}</div>
+            <div style="font-size:0.75rem;color:#888;margin:2px 0 2px;">ふりがな: ${_esc(p.guestKana||'')}　最終 μ=${ts.mu.toFixed(1)} σ=${ts.sigma.toFixed(1)}</div>
+            ${p.guestClub ? `<div style="font-size:0.75rem;color:#888;margin-bottom:2px;">クラブ: ${_esc(p.guestClub)}（※登録後に選手管理で紐付け要）</div>` : ''}
             <button id="guest-reg-btn-${p.id}" onclick="registerGuest(${p.id})"
                 style="width:100%;padding:8px;background:#1565c0;color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-weight:bold;cursor:pointer;">
                 ✅ 正式登録する
@@ -4718,7 +4720,7 @@ window.onload = function () {
 <div class="pair-modal-bg" id="guestRegModal">
     <div class="pair-modal" style="max-width:420px;width:94%;">
         <h3 style="margin:0 0 8px;font-size:1rem;color:#1565c0;">📋 ゲストを正式登録しますか？</h3>
-        <div style="font-size:0.8125rem;color:#555;margin-bottom:12px;line-height:1.6;">今回参加したゲストを選手DBに登録できます。登録すると次回から「既存」として参加可能になります。</div>
+        <div style="font-size:0.8125rem;color:#555;margin-bottom:12px;line-height:1.6;">今回参加したゲストを選手DBに登録できます。登録すると次回から「既存」として参加可能になります。<br><span style="color:#e65100;">※ クラブの紐付けは登録後に「選手・グループ管理」画面で設定してください。</span></div>
         <div id="guestRegList"></div>
         <button class="pm-cancel" style="width:100%;margin-top:10px;" onclick="closeGuestRegModal()">閉じる</button>
     </div>
