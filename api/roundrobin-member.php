@@ -947,7 +947,7 @@ window.importAll=async function(input){
     try{ data=JSON.parse(await file.text()); }
     catch(e){ showToast('⚠️ JSONファイルの読込に失敗しました'); return; }
     if(!data.players&&!data.clubs){ showToast('⚠️ 正しい形式のファイルではありません'); return; }
-    let addedP=0,updP=0,addedC=0,updC=0,errors=0;
+    let addedP=0,updP=0,addedC=0,updC=0,reissued=0,errors=0;
     // クラブを先に書き込む（選手がクラブを参照するため）
     for(const [cid,cl] of Object.entries(data.clubs||{})){
         try{
@@ -959,13 +959,33 @@ window.importAll=async function(input){
     // 選手を書き込む
     for(const [pid,p] of Object.entries(data.players||{})){
         try{
-            await fbSet('players/'+pid,p);
-            if(allPlayers[pid]) updP++; else addedP++;
-            allPlayers[pid]=p;
+            // 同じpidで氏名が異なる選手が既存の場合 → 新しいpidを発行して復元
+            const existing=allPlayers[pid];
+            if(existing && existing.name !== p.name){
+                const newPid=genId();
+                // 新pidで選手を登録
+                await fbSet('players/'+newPid,p);
+                allPlayers[newPid]=p;
+                // 所属クラブの playerIds に新pidを追加（旧pidは既存選手のものなので触らない）
+                for(const cid of Object.keys(p.clubs||{})){
+                    if(allClubs[cid]){
+                        await fbUpdate('clubs/'+cid+'/playerIds',{[newPid]:true});
+                        if(!allClubs[cid].playerIds) allClubs[cid].playerIds={};
+                        allClubs[cid].playerIds[newPid]=true;
+                    }
+                }
+                reissued++;
+            } else {
+                // 通常：同じpidで書き込み（新規 or 同一選手の更新）
+                await fbSet('players/'+pid,p);
+                if(existing) updP++; else addedP++;
+                allPlayers[pid]=p;
+            }
         }catch(e){ errors++; }
     }
     buildClubFilter(); renderPlayers(); renderClubs();
-    showToast(`📥 選手 追加:${addedP} 更新:${updP} / クラブ 追加:${addedC} 更新:${updC}${errors?` エラー:${errors}件`:''}`,5000);
+    const reissuedMsg=reissued?` pid再発行:${reissued}人`:'';
+    showToast(`📥 選手 追加:${addedP} 更新:${updP}${reissuedMsg} / クラブ 追加:${addedC} 更新:${updC}${errors?` エラー:${errors}件`:''}`,5000);
 };
 
 // ─── 全データ 消去 ─────────────────────────────────────────────
