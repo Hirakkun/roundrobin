@@ -422,6 +422,8 @@ let historyStack   = [];
 // Firebase上のマッチ情報
 let currentMid = null;
 let currentRoundLabel = '';
+// playing書き込み中フラグ（書き込み完了前のonValue誤リセット防止）
+let _statusWritePending = false;
 
 // ── Firebase監視 ─────────────────────────────────────────────
 onValue(stateRef, snap => {
@@ -527,11 +529,12 @@ function onStateUpdate(state) {
         }
     } else {
         // 'calling'
-        if (matchStarted) {
+        if (matchStarted && !_statusWritePending) {
             resetMatch();           // 外部からcallingに戻された → リセット
-        } else {
+        } else if (!matchStarted) {
             showServeSetup();       // 通常のサーブ待ち
         }
+        // _statusWritePending中はonValueを無視（playing書き込み完了待ち）
     }
 }
 
@@ -562,6 +565,7 @@ function resetMatch() {
     document.getElementById('game-history').innerHTML = '';
     document.getElementById('btn-confirm').style.display = 'none';
     document.getElementById('btn-end').style.display     = 'none';
+    document.getElementById('btn-undo').style.display    = '';
     document.getElementById('umpire-msg').textContent    = 'プレイボール';
     document.getElementById('tennis-ball').style.display = 'none';
     togglePointButtons(false);
@@ -634,15 +638,17 @@ function showCourtSetup() {
 }
 
 // 左または右を選んだら即試合開始
-window.onCourtSideSelect = function(side) {
+window.onCourtSideSelect = async function(side) {
     // 選択したサイドにサーブチームを配置
     leftTeam = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
     // 試合開始（ボタン状態は updateDisplay() が matchStarted で管理）
     hideAll();
     matchStarted = true;
     showMain();
-    // Firebase に「試合中」を書き込む
-    writeStatus('playing');
+    // Firebase に「試合中」を書き込む（完了前のonValueによる誤リセットを防止）
+    _statusWritePending = true;
+    await writeStatus('playing');
+    _statusWritePending = false;
 };
 
 // ── メイン画面表示 ────────────────────────────────────────────
