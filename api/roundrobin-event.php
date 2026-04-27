@@ -297,8 +297,8 @@ function renderEvents(){
         // イベント指定URL（このページ自体をイベント名＋参加クラブで絞り込み）
         const clubNames=Object.keys(ev.usedClubs||{}).map(cid=>decodeURIComponent(cid)).join(',');
         const eventUrl='/roundrobin-event.php?name='+encodeURIComponent(ev.name)+(clubNames?'&club='+encodeURIComponent(clubNames):'');
-        // 選手・クラブ管理ページのURL（イベント名＋参加クラブ指定）
-        const memberUrl='/roundrobin-member.php?name='+encodeURIComponent(ev.name)+(clubNames?'&club='+encodeURIComponent(clubNames):'');
+        // 選手・クラブ管理ページのURL（イベント名のみ指定）
+        const memberUrl='/roundrobin-member.php?name='+encodeURIComponent(ev.name);
         h+=`<div class="evt-card" onclick="toggleERow('${esc(eid)}')">
             <div class="evt-head">
                 <div class="evt-name">${escH(ev.name)}</div>

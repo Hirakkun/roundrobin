@@ -425,7 +425,7 @@ window.renderClubs=function(){
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 クラブが登録されていません</div>'; return; }
     // イベント指定モードではパスワード確認してからフォームを開く
-    const clubEditFn = PARAM_CLUB ? 'openClubFormWithPw' : 'openClubForm';
+    const clubEditFn = PARAM_NAME ? 'openClubFormWithPw' : 'openClubForm';
     let h='<div class="club-list">';
     for(const [cid,cl] of entries){
         const cnt=Object.keys(cl.playerIds||{}).length;
@@ -471,10 +471,10 @@ function _openPlayerForm(pid, context){
 }
 // 選手一覧から開く（イベント指定モードではパスワード確認）
 window.openPlayerForm=function(pid){
-    if(PARAM_CLUB && _paramClubIds.size>0){
+    if(PARAM_NAME){
         const p=allPlayers[pid];
         if(p){
-            const playerCids=Object.keys(p.clubs||{}).filter(cid=>_paramClubIds.has(cid));
+            const playerCids=Object.keys(p.clubs||{});
             const unlocked=playerCids.some(cid=>_unlockedClubs.has(cid));
             if(!unlocked && playerCids.length>0){
                 const cid=playerCids[0];
@@ -1036,23 +1036,29 @@ function _updateBackLink(){
 async function init(){
     const [cd,pd]=await Promise.all([fbGet('clubs'),fbGet('players')]);
     allClubs=cd||{}; allPlayers=pd||{};
-    // パラメータからクラブIDを解決
+    // クラブフィルタ解決（PARAM_CLUBが設定されている場合）
     if(PARAM_CLUB){
         const names=PARAM_CLUB.split(',').map(s=>s.trim()).filter(Boolean);
         for(const [cid,club] of Object.entries(allClubs)){
             if(names.includes(club.name)) _paramClubIds.add(cid);
         }
-        // ヘッダーにフィルタ表示
+    }
+    if(PARAM_NAME){
+        // イベント指定モード：ヘッダー変更・ボタン非表示・PW認証有効
         const hdr=document.querySelector('#screen-main .hdr h1');
-        if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
-        // 戻るリンクにパラメータ引き継ぎ
+        if(hdr) hdr.innerHTML='👤 '+escH(PARAM_NAME);
         _updateBackLink();
-        // 全体操作ボタン・新規クラブ登録ボタン・戻るボタン非表示
         document.getElementById('all-data-btns').style.display='none';
         document.getElementById('btn-add-club').style.display='none';
         document.getElementById('back-to-event').style.display='none';
-    } else if(PARAM_NAME){
+    } else if(PARAM_CLUB){
+        // クラブフィルタのみの場合（後方互換）
+        const hdr=document.querySelector('#screen-main .hdr h1');
+        if(hdr) hdr.innerHTML='👤 '+escH(PARAM_CLUB);
         _updateBackLink();
+        document.getElementById('all-data-btns').style.display='none';
+        document.getElementById('btn-add-club').style.display='none';
+        document.getElementById('back-to-event').style.display='none';
     }
     buildClubFilter();
     renderClubs();
