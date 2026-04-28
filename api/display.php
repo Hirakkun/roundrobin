@@ -383,7 +383,7 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.3em;
+    gap: 0.25em;
     flex-shrink: 0;
 }
 .score-val {
@@ -396,6 +396,15 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 .score-val.t1 { color: var(--score-t1); }
 .score-val.t2 { color: var(--score-t2); }
 .score-hyphen { font-size: 2em; color: var(--text-dim); font-weight: bold; }
+
+/* ── ボールアイコン ── */
+.game-ball { display: inline-block; vertical-align: middle; }
+/* 横長カード：スコア横のボール */
+.score-balls { display: flex; align-items: center; gap: 0.1em; }
+.score-balls .game-ball { width: 1.5em; height: 1.5em; }
+/* 縦長カード：スコア行のボール */
+.pc-balls { display: inline-flex; align-items: center; gap: 0.08em; }
+.pc-balls .game-ball { width: 1em; height: 1em; }
 
 /* ── サブメッセージ（コートへお集まりください） ── */
 /* min-height を score-row に合わせることで呼び出し中も試合中も
@@ -618,6 +627,14 @@ const firebaseConfig = {
 
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 
+// バドミントンボールSVG（スコア表示用）
+const BALL_SVG = `<svg class="game-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#ccff33"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>`;
+// n個のボールHTML（n<=0なら空文字）
+function ballsHTML(n) {
+    if (!n || n <= 0) return '';
+    return Array.from({length: n}, () => BALL_SVG).join('');
+}
+
 const ICON_PLAYING = `<svg viewBox="0 0 28 20" fill="none" stroke="white" stroke-linecap="square">
   <rect x="1" y="1" width="26" height="18" stroke-width="1.8"/>
   <line x1="1"  y1="10" x2="27" y2="10" stroke-width="2.8"/>
@@ -786,7 +803,7 @@ function buildPortraitCard(item, physIdx) {
     if (status === 'calling') {
         scoreRowHtml = `<span class="pc-vs-label">VS</span>`;
     } else {
-        scoreRowHtml = `<span class="pc-s1">${s1}</span><span class="pc-sv">vs</span><span class="pc-s2">${s2}</span>`;
+        scoreRowHtml = `<span class="pc-balls">${ballsHTML(s1)}</span><span class="pc-s1">${s1}</span><span class="pc-sv">vs</span><span class="pc-s2">${s2}</span><span class="pc-balls">${ballsHTML(s2)}</span>`;
     }
 
     const t1 = team1BlockHTML(ct.team1 || []);
@@ -951,9 +968,11 @@ function renderCourts() {
                         <div class="team-block">${teamHTML(ct.team2 || [])}</div>
                     </div>
                     <div class="score-row">
+                        <div class="score-balls">${ballsHTML(s1)}</div>
                         <div class="score-val t1">${s1}</div>
                         <div class="score-hyphen">−</div>
                         <div class="score-val t2">${s2}</div>
+                        <div class="score-balls">${ballsHTML(s2)}</div>
                     </div>`;
             } else {
                 bodyHtml = `
