@@ -57,7 +57,7 @@ body.light {
 /* 横長デフォルト */
 html { font-size: min(2.8vw, 5vh); }
 
-/* 縦長（スマホ）：カード5枚が縦に収まるサイズに調整 */
+/* 縦長（スマホ）：5コートが縦に収まるサイズ */
 @media (orientation: portrait) {
     html { font-size: min(4.5vw, 2.8vh); }
 }
@@ -174,18 +174,14 @@ body.light #theme-thumb { left: 1.15em; }
 #courts-grid.cols-5 { grid-template-columns: 1fr 1fr 1fr; }
 #courts-grid.cols-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
-/* ── 横長：カードが縦長にならないよう制限 ── */
+/* ── 横長：全カードを「2段分の高さ」に統一 ── */
 @media (orientation: landscape) {
-    /* 1行グリッドでカードが縦長化しやすい cols-2/3 のみ制限 */
     #courts-grid {
-        align-content: center;  /* 行全体を中央寄せ */
+        align-content: center;  /* 行全体を上下中央 */
     }
-    #courts-grid.cols-2 .court-card {
-        max-height: 48vw;       /* 横幅(50vw)を超えないよう制限 */
-        align-self: center;
-    }
-    #courts-grid.cols-3 .court-card {
-        max-height: 32vw;       /* 横幅(33vw)を超えないよう制限 */
+    /* 全カードを画面の約半分の高さに制限 → 2段分が収まる感覚 */
+    .court-card {
+        max-height: 47vh;
         align-self: center;
     }
 }
@@ -227,50 +223,32 @@ body.light #theme-thumb { left: 1.15em; }
     opacity: 0.25;
 }
 
-/* 呼び出し中：カード全体が明滅（ダーク） */
 @keyframes pulse-card {
-    0%, 100% {
-        border-color: var(--bd-calling);
-        box-shadow: none;
-    }
-    50% {
-        border-color: #ffe066;
-        box-shadow: 0 0 0.7em 0.2em rgba(249,168,37,0.45);
-    }
+    0%, 100% { border-color: var(--bd-calling); box-shadow: none; }
+    50%       { border-color: #ffe066; box-shadow: 0 0 0.7em 0.2em rgba(249,168,37,0.45); }
 }
-/* 呼び出し中：ヘッダー帯も明滅（ダーク） */
 @keyframes pulse-head-calling {
     0%, 100% { background: #f59f00; }
     50%       { background: #ffd54f; }
 }
-/* ライトモード専用：より強い明滅（橙→深橙） */
 @keyframes pulse-card-light {
-    0%, 100% {
-        border-color: #f59f00;
-        background: #fff8e1;
-        box-shadow: none;
-    }
-    50% {
-        border-color: #d84315;
-        background: #ffe0b2;
-        box-shadow: 0 0 0.9em 0.35em rgba(216,67,21,0.55), inset 0 0 0.5em rgba(216,67,21,0.12);
-    }
+    0%, 100% { border-color: #f59f00; background: #fff8e1; box-shadow: none; }
+    50%       { border-color: #d84315; background: #ffe0b2;
+                box-shadow: 0 0 0.9em 0.35em rgba(216,67,21,0.55), inset 0 0 0.5em rgba(216,67,21,0.12); }
 }
 @keyframes pulse-head-calling-light {
     0%, 100% { background: #f59f00; }
     50%       { background: #d84315; }
 }
-body.light .court-card.status-calling {
-    animation: pulse-card-light 1.2s ease-in-out infinite;
-}
-body.light .status-calling .card-head {
-    animation: pulse-head-calling-light 1.2s ease-in-out infinite;
-}
-body.light .status-calling .pc-head {
-    animation: pulse-head-calling-light 1.2s ease-in-out infinite;
-}
+body.light .court-card.status-calling { animation: pulse-card-light 1.2s ease-in-out infinite; }
+body.light .status-calling .card-head { animation: pulse-head-calling-light 1.2s ease-in-out infinite; }
+body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s ease-in-out infinite; }
 
-/* ── 横長カード：カードヘッダーバー（全幅色帯） ── */
+/* ════════════════════════════════════
+   横長カード用スタイル
+   ════════════════════════════════════ */
+
+/* カードヘッダーバー（全幅色帯） */
 .card-head {
     display: flex;
     align-items: stretch;
@@ -295,7 +273,6 @@ body.light .status-calling .pc-head {
     padding: 0.08em 0.5em;
     min-width: 2.5em;
     flex-shrink: 0;
-    gap: 0;
 }
 .court-letter {
     font-size: 1.6em;
@@ -310,7 +287,7 @@ body.light .status-calling .pc-head {
     line-height: 1.2;
 }
 
-/* ステータスラベル（中央）：大きめに */
+/* ステータスラベル（中央） */
 .card-head-center {
     flex: 1;
     display: flex;
@@ -333,7 +310,7 @@ body.light .status-calling .pc-head {
 }
 .card-head-icon svg { width: 1.15em; height: 1.15em; }
 
-/* ── チーム表示 ── */
+/* チーム表示 */
 .match-row {
     display: flex;
     align-items: center;
@@ -362,7 +339,6 @@ body.light .status-calling .pc-head {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     gap: 0.25em;
     max-width: 100%;
 }
@@ -392,11 +368,6 @@ body.light .status-calling .pc-head {
     flex-shrink: 0;
 }
 
-/* 呼び出し中：選手名を大きく */
-.court-card.status-calling .player-name { font-size: 1.8em; line-height: 1.1; }
-.court-card.status-calling .vs-label    { font-size: 1.05em; }
-.court-card.status-calling .sub-msg     { font-size: 0.78em; }
-
 /* ── スコア ── */
 .score-row {
     display: flex;
@@ -416,7 +387,7 @@ body.light .status-calling .pc-head {
 .score-val.t2 { color: var(--score-t2); }
 .score-hyphen { font-size: 2em; color: var(--text-dim); font-weight: bold; }
 
-/* ── サブメッセージ ── */
+/* ── サブメッセージ（コートへお集まりください） ── */
 .sub-msg {
     text-align: center;
     font-size: 0.72em;
@@ -427,9 +398,9 @@ body.light .status-calling .pc-head {
     color: var(--sub-calling);
 }
 
-/* ══════════════════════════════════════════════
-   縦長（スマホ）コンパクトカード  .pc-*
-   ══════════════════════════════════════════════ */
+/* ════════════════════════════════════
+   縦長コンパクトカード  .pc-*
+   ════════════════════════════════════ */
 
 /* 縦長カード：padding なし（pc-head が色帯を担う） */
 .court-card.pc {
@@ -447,10 +418,7 @@ body.light .status-calling .pc-head {
     border-radius: 0.35em 0.35em 0 0;
     min-height: 1.9em;
 }
-.status-calling .pc-head {
-    background: #f59f00;
-    animation: pulse-head-calling 1.2s ease-in-out infinite;
-}
+.status-calling .pc-head { background: #f59f00; animation: pulse-head-calling 1.2s ease-in-out infinite; }
 .status-playing .pc-head { background: #388e3c; }
 .status-done    .pc-head { background: #666; }
 .status-empty   .pc-head { background: #444; }
@@ -478,66 +446,57 @@ body.light .status-calling .pc-head {
     letter-spacing: 0.03em;
 }
 
-/* 呼び出し中メッセージ（右端） */
-.pc-msg {
-    font-size: 0.62em;
-    color: rgba(255,255,255,0.92);
-    font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-shrink: 1;
-}
-
-/* インラインスコア（右端） */
-.pc-score {
-    font-size: 1.5em;
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: 0.04em;
-    flex-shrink: 0;
-}
-.pc-score-hyphen {
-    font-size: 0.7em;
-    margin: 0 0.08em;
-    opacity: 0.7;
-}
-
-/* ── チーム行 ── */
-.pc-teams {
+/* ── ボディ：左チーム｜中央スコア/VS｜右チーム ── */
+.pc-body {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 0.3em;
-    padding: 0 0.45em;
+    padding: 0.12em 0.45em;
+    gap: 0.2em;
     min-height: 0;
     overflow: hidden;
 }
 
-/* チーム名ブロック */
-.pc-team {
+/* 空コート */
+.pc-body-empty {
+    justify-content: center;
+    font-size: 0.65em;
+    color: var(--text-dim);
+}
+
+/* チーム列 */
+.pc-col {
     flex: 1;
-    font-size: 0.97em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.08em;
+    min-width: 0;
+    overflow: hidden;
+}
+.pc-col-left  { align-items: flex-start; }
+.pc-col-right { align-items: flex-end; }
+
+/* 選手名行 */
+.pc-player {
+    display: flex;
+    align-items: center;
+    gap: 0.15em;
+    font-size: 0.88em;
     font-weight: bold;
-    line-height: 1.2;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-width: 0;
-    color: var(--text-main);
+    max-width: 100%;
 }
-.pc-team.pc-left  { text-align: right; }
-.pc-team.pc-right { text-align: left; }
-
-/* VS ラベル */
-.pc-vs {
-    font-size: 0.68em;
-    font-weight: 900;
-    color: var(--text-dim);
-    flex-shrink: 0;
+/* 右チームはバッジ→名前の順をそのままに右詰め */
+.pc-col-right .pc-player {
+    flex-direction: row-reverse;
+    text-align: right;
 }
 
-/* 選手番号バッジ（縦長カード内） */
+/* 選手番号バッジ（縦長カード） */
 .pc-pnum {
     display: inline-flex;
     align-items: center;
@@ -545,26 +504,53 @@ body.light .status-calling .pc-head {
     background: var(--num-bg);
     color: var(--num-fg);
     border-radius: 50%;
-    width: 1.4em;
-    height: 1.4em;
+    width: 1.35em;
+    height: 1.35em;
     font-size: 0.65em;
     font-weight: 900;
-    margin-right: 0.12em;
+    flex-shrink: 0;
     line-height: 1;
-    vertical-align: middle;
 }
 
-/* スラッシュ区切り */
-.pc-slash { opacity: 0.45; font-weight: normal; }
-
-/* 空コート待機テキスト */
-.pc-empty-body {
-    flex: 1;
+/* ── 中央列：スコア or VS ── */
+.pc-center-col {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 0.65em;
+    flex-shrink: 0;
+    min-width: 3em;
+    gap: 0;
+}
+
+/* VS表示（ゲーム前） */
+.pc-vs-label {
+    font-size: 1.05em;
+    font-weight: 900;
     color: var(--text-dim);
+    letter-spacing: 0.04em;
+}
+
+/* スコア数字（縦積み） */
+.pc-s1 {
+    font-size: 1.55em;
+    font-weight: 900;
+    color: var(--score-t1);
+    line-height: 1.05;
+    text-align: center;
+}
+.pc-sh {
+    font-size: 0.7em;
+    color: var(--text-dim);
+    font-weight: bold;
+    line-height: 1;
+}
+.pc-s2 {
+    font-size: 1.55em;
+    font-weight: 900;
+    color: var(--score-t2);
+    line-height: 1.05;
+    text-align: center;
 }
 
 /* ── 待機画面 ── */
@@ -591,7 +577,6 @@ body.light .status-calling .pc-head {
 <div id="app" style="display:none;">
     <div id="header">
         <div id="event-name">試合案内パネル</div>
-        <!-- スクロールテロップ -->
         <div id="ticker-wrap">
             <div id="ticker-inner"></div>
         </div>
@@ -623,7 +608,6 @@ const firebaseConfig = {
 
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 
-// ── アイコンSVG ──
 const ICON_PLAYING = `<svg viewBox="0 0 28 20" fill="none" stroke="white" stroke-linecap="square">
   <rect x="1" y="1" width="26" height="18" stroke-width="1.8"/>
   <line x1="1"  y1="10" x2="27" y2="10" stroke-width="2.8"/>
@@ -633,14 +617,13 @@ const ICON_PLAYING = `<svg viewBox="0 0 28 20" fill="none" stroke="white" stroke
 </svg>`;
 const ICON_CALLING = `<svg viewBox="0 0 24 24" fill="white">
   <path d="M3 9v6h4l5 5V4L7 9H3z"/>
-  <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" fill="white"/>
-  <path d="M19.5 12c0 3.04-1.73 5.68-4.25 7.0l.75 1.3C19.33 18.62 21.5 15.56 21.5 12s-2.17-6.62-5.5-8.3l-.75 1.3C17.77 6.32 19.5 8.96 19.5 12z" fill="white"/>
+  <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+  <path d="M19.5 12c0 3.04-1.73 5.68-4.25 7.0l.75 1.3C19.33 18.62 21.5 15.56 21.5 12s-2.17-6.62-5.5-8.3l-.75 1.3C17.77 6.32 19.5 8.96 19.5 12z"/>
 </svg>`;
 const ICON_DONE = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
   <polyline points="20 6 9 17 4 12"/>
 </svg>`;
 
-// ── URLパラメータ ──
 const params = new URLSearchParams(location.search);
 const sid    = params.get('sid');
 if (!sid) {
@@ -648,7 +631,6 @@ if (!sid) {
     throw new Error('no sid');
 }
 
-// ── テーマ ──
 const savedTheme = localStorage.getItem('display_theme') || 'dark';
 if (savedTheme === 'light') document.body.classList.add('light');
 window.toggleTheme = function() {
@@ -656,13 +638,12 @@ window.toggleTheme = function() {
     localStorage.setItem('display_theme', isLight ? 'light' : 'dark');
 };
 
-// ── Firebase ──
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
 let state = null;
 
-// ── 時計 ──
+// 時計
 function updateClock() {
     const now = new Date();
     document.getElementById('current-time').textContent =
@@ -671,7 +652,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ── イベント情報 ──
 onValue(ref(db, 'events/' + encodeURIComponent(sid)), snap => {
     if (snap.exists()) {
         const ev = snap.val();
@@ -679,7 +659,6 @@ onValue(ref(db, 'events/' + encodeURIComponent(sid)), snap => {
     }
 });
 
-// ── セッション状態 ──
 onValue(ref(db, 'sessions/' + encodeURIComponent(sid)), snap => {
     if (!snap.exists()) {
         document.getElementById('waiting-msg').textContent = 'セッションが見つかりません';
@@ -702,15 +681,13 @@ onValue(ref(db, 'sessions/' + encodeURIComponent(sid)), snap => {
     render();
 });
 
-// ── 向き変更で再描画 ──
+// 向き変更で再描画
 window.matchMedia('(orientation: portrait)').addEventListener('change', () => { if (state) render(); });
 
-// ── 縦長モード判定 ──
 function isPortraitMode() {
     return window.matchMedia('(orientation: portrait)').matches;
 }
 
-// ── 選手名取得 ──
 function getPlayerName(id) {
     if (!state) return '';
     const pl = state.players.find(p => p.id === id);
@@ -721,15 +698,11 @@ function getPlayerName(id) {
     return state.playerNames[id] || ('選手' + id);
 }
 
-// ── コートラベル ──
 function getCourtLabel(physIdx) {
-    if (state.courtNameAlpha) {
-        return { big: COURT_ALPHA[physIdx] || (physIdx + 1) };
-    }
+    if (state.courtNameAlpha) return { big: COURT_ALPHA[physIdx] || (physIdx + 1) };
     return { big: physIdx + 1 };
 }
 
-// ── ステータス判定 ──
 function getCourtStatus(mid) {
     const sc = state.scores?.[mid];
     if (sc?.done) return 'done';
@@ -742,30 +715,25 @@ function _esc(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── 横長用：チームHTML（複数行） ──
+// ── 横長用：チームHTML（縦積み複数行） ──
 function teamHTML(ids) {
     return ids.map(id => {
         const name = getPlayerName(id);
-        const numHtml = state.showPlayerNum
-            ? `<span class="player-num">${id}</span>`
-            : '';
-        return `<div class="player-name">${numHtml}<span class="pname-text">${_esc(name)}</span></div>`;
+        const numHtml = state.showPlayerNum ? `<span class="player-num">${id}</span>` : '';
+        return `<div class="player-name">${numHtml}<span>${_esc(name)}</span></div>`;
     }).join('');
 }
 
-// ── 縦長用：チーム名を1行に（スラッシュ区切り） ──
-function teamNamesPortrait(ids) {
-    if (!ids || ids.length === 0) return '';
+// ── 縦長用：チーム列HTML（縦積み、左or右詰め） ──
+function teamColumnHTML(ids) {
     return ids.map(id => {
         const name = getPlayerName(id);
-        if (state.showPlayerNum) {
-            return `<span class="pc-pnum">${id}</span>${_esc(name)}`;
-        }
-        return _esc(name);
-    }).join('<span class="pc-slash"> / </span>');
+        const numHtml = state.showPlayerNum ? `<span class="pc-pnum">${id}</span>` : '';
+        return `<span class="pc-player">${numHtml}<span>${_esc(name)}</span></span>`;
+    }).join('');
 }
 
-// ── 縦長コンパクトカードのHTML生成 ──
+// ── 縦長コンパクトカードのHTML ──
 function buildPortraitCard(item, physIdx) {
     if (!item) {
         const lbl = getCourtLabel(physIdx);
@@ -773,7 +741,7 @@ function buildPortraitCard(item, physIdx) {
             <div class="pc-head">
                 <span class="pc-badge">${_esc(String(lbl.big))}</span>
             </div>
-            <div class="pc-empty-body">待機中</div>`;
+            <div class="pc-body pc-body-empty">待機中</div>`;
     }
 
     const { rd, ct, ci, mid, physIdx: pi } = item;
@@ -789,26 +757,29 @@ function buildPortraitCard(item, physIdx) {
         done:    '✓ 終了',
     };
 
-    let headRight = '';
+    // 中央列：ゲーム前はVS、開始後はスコアを縦積み
+    let centerHtml = '';
     if (status === 'calling') {
-        headRight = `<span class="pc-msg">コートへお集まりください</span>`;
-    } else if (status === 'playing' || status === 'done') {
-        headRight = `<span class="pc-score">${s1}<span class="pc-score-hyphen">−</span>${s2}</span>`;
+        centerHtml = `<span class="pc-vs-label">VS</span>`;
+    } else {
+        centerHtml = `
+            <span class="pc-s1">${s1}</span>
+            <span class="pc-sh">−</span>
+            <span class="pc-s2">${s2}</span>`;
     }
 
-    const t1 = teamNamesPortrait(ct.team1 || []);
-    const t2 = teamNamesPortrait(ct.team2 || []);
+    const t1 = teamColumnHTML(ct.team1 || []);
+    const t2 = teamColumnHTML(ct.team2 || []);
 
     return `
         <div class="pc-head">
             <span class="pc-badge">${_esc(String(lbl.big))}</span>
             <span class="pc-status">${statusLabels[status] || ''}</span>
-            ${headRight}
         </div>
-        <div class="pc-teams">
-            <div class="pc-team pc-left">${t1}</div>
-            <div class="pc-vs">VS</div>
-            <div class="pc-team pc-right">${t2}</div>
+        <div class="pc-body">
+            <div class="pc-col pc-col-left">${t1}</div>
+            <div class="pc-center-col">${centerHtml}</div>
+            <div class="pc-col pc-col-right">${t2}</div>
         </div>`;
 }
 
@@ -832,7 +803,6 @@ function fitPlayerNames() {
 }
 window.addEventListener('resize', () => { fitPlayerNames(); updateTicker(); });
 
-// ── ペア内の○バッジサイズを統一 ──
 function normalizeBadgeSizes() {
     document.querySelectorAll('.team-block').forEach(block => {
         const badges = Array.from(block.querySelectorAll('.player-num'));
@@ -840,29 +810,23 @@ function normalizeBadgeSizes() {
         badges.forEach(b => { b.style.width = ''; b.style.height = ''; });
         const sizes = badges.map(b => b.getBoundingClientRect().width);
         const minSz = Math.min(...sizes);
-        if (minSz > 0) {
-            badges.forEach(b => {
-                b.style.width  = minSz + 'px';
-                b.style.height = minSz + 'px';
-            });
-        }
+        if (minSz > 0) badges.forEach(b => {
+            b.style.width = minSz + 'px';
+            b.style.height = minSz + 'px';
+        });
     });
 }
 
-// ── テロップ更新 ──
+// ── テロップ ──
 let _tickerAnim = null;
 function updateTicker() {
     const wrap   = document.getElementById('ticker-wrap');
     const ticker = document.getElementById('ticker-inner');
     if (!ticker || !wrap || !state) return;
-
     if (_tickerAnim) { _tickerAnim.cancel(); _tickerAnim = null; }
 
     const resting = (state.players || []).filter(p => p.resting);
-    if (!resting.length) {
-        ticker.textContent = '';
-        return;
-    }
+    if (!resting.length) { ticker.textContent = ''; return; }
 
     const names = resting.map(p => getPlayerName(p.id)).join('　・　');
     ticker.textContent = '休憩中：' + names;
@@ -871,15 +835,11 @@ function updateTicker() {
         const wrapW = wrap.clientWidth;
         const textW = ticker.scrollWidth;
         if (textW <= 0 || wrapW <= 0) return;
-
         const totalDist = wrapW + textW;
-        const speed     = 90;
-        const duration  = (totalDist / speed) * 1000;
-
         _tickerAnim = ticker.animate([
             { transform: `translateX(${wrapW}px)` },
             { transform: `translateX(${-textW}px)` }
-        ], { duration, iterations: Infinity, easing: 'linear' });
+        ], { duration: (totalDist / 90) * 1000, iterations: Infinity, easing: 'linear' });
     });
 }
 
@@ -891,20 +851,14 @@ function render() {
     if (!isPortraitMode()) fitPlayerNames();
 }
 
-// ── コートグリッド描画 ──
 function renderCourts() {
     const grid      = document.getElementById('courts-grid');
     const numCourts = state.courts || 1;
     const portrait  = isPortraitMode();
 
-    // グリッドクラス設定
-    if (portrait) {
-        grid.className = 'portrait';
-    } else {
-        grid.className = 'cols-' + Math.min(numCourts, 6);
-    }
+    grid.className = portrait ? 'portrait' : 'cols-' + Math.min(numCourts, 6);
 
-    // 最新試合を各コートから取得
+    // 各コートの最新試合を取得
     const courtCards = [];
     for (let physIdx = 0; physIdx < numCourts; physIdx++) {
         let found = null;
@@ -915,11 +869,10 @@ function renderCourts() {
                 return pi === physIdx;
             });
             if (ci < 0) continue;
-            const ct  = rd.courts[ci];
             const mid = `r${rd.round}c${ci}`;
             const sc  = state.scores?.[mid];
-            if (!sc?.done) { found = { rd, ct, ci, mid, physIdx }; break; }
-            if (!found)    { found = { rd, ct, ci, mid, physIdx }; break; }
+            if (!sc?.done) { found = { rd, ct: rd.courts[ci], ci, mid, physIdx }; break; }
+            if (!found)    { found = { rd, ct: rd.courts[ci], ci, mid, physIdx }; break; }
         }
         courtCards.push(found);
     }
@@ -930,7 +883,6 @@ function renderCourts() {
         card.className = 'court-card';
 
         if (!item) {
-            // 空コート
             card.classList.add('status-empty');
             if (portrait) {
                 card.classList.add('pc');
@@ -958,8 +910,9 @@ function renderCourts() {
             // ── 縦長コンパクトカード ──
             card.classList.add('pc');
             card.innerHTML = buildPortraitCard(item, physIdx);
+
         } else {
-            // ── 横長カード（既存レイアウト） ──
+            // ── 横長カード ──
             const lbl = getCourtLabel(pi);
             const statusTextMap = { calling: '呼び出し中', playing: '試合中', done: '終了' };
             const iconMap       = { calling: ICON_CALLING, playing: ICON_PLAYING, done: ICON_DONE };
