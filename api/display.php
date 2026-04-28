@@ -57,9 +57,9 @@ body.light {
 /* 横長デフォルト */
 html { font-size: min(2.8vw, 5vh); }
 
-/* 縦長（スマホ）：5コートが縦に収まるサイズ */
+/* 縦長（スマホ）：スクロール可能なのでvw基準で固定 */
 @media (orientation: portrait) {
-    html { font-size: min(4.5vw, 2.8vh); }
+    html { font-size: min(5vw, 4vh); }
 }
 
 body {
@@ -192,11 +192,14 @@ body.light #theme-thumb { left: 1.15em; }
     /* cols-4/cols-6 は既に grid-template-rows: 1fr 1fr 定義済み */
 }
 
-/* ── 縦長：1列レイアウト ── */
+/* ── 縦長：1列レイアウト・スクロール可能 ── */
 @media (orientation: portrait) {
     #courts-grid {
         grid-template-columns: 1fr !important;
-        grid-auto-rows: minmax(0, 1fr);  /* コート数に関わらず各行を等分割（内容量に関わらず上限1fr） */
+        grid-auto-rows: auto;   /* カードの自然な高さに任せる */
+        align-content: start;   /* 上詰め */
+        overflow-y: auto;       /* 溢れたらスクロール */
+        /* flex:1 で残り高さ確保済み、スクロールはこの要素内で発生 */
     }
 }
 
@@ -459,17 +462,12 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     letter-spacing: 0.03em;
 }
 
-/* ── ボディ：チーム1（上・左詰め）→ スコア（中央）→ チーム2（下・右詰め） ── */
+/* ── ボディ：チーム1（横並び・左）→ スコア（中央）→ チーム2（横並び・右） ── */
 .pc-body {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 0.12em 0.45em 0.14em;
-    min-height: 0;
-    overflow: hidden;
-    /* コート数に応じてJSが --pc-scale を設定 → 少コート数ほど文字が大きくなる */
-    font-size: calc(1em * var(--pc-scale, 1));
+    gap: 0.28em;
+    padding: 0.18em 0.45em 0.22em;
 }
 
 /* 空コート */
@@ -482,12 +480,13 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     color: var(--text-dim);
 }
 
-/* チーム1ブロック（上部・左詰め） */
+/* チーム1ブロック：選手を横並び・左詰め */
 .pc-team1-block {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.04em;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.1em 0.5em;
 }
 
 /* スコア行（中央・横並び） */
@@ -496,15 +495,16 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     align-items: center;
     justify-content: center;
     gap: 0.38em;
-    flex-shrink: 0;
 }
 
-/* チーム2ブロック（下部・右詰め） */
+/* チーム2ブロック：選手を横並び・右詰め */
 .pc-team2-block {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.04em;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.1em 0.5em;
 }
 
 /* 選手名行（共通） */
@@ -698,16 +698,9 @@ function isPortraitMode() {
     return window.matchMedia('(orientation: portrait)').matches;
 }
 
-// ── 縦長：コート数に応じてカード内フォントを拡大 ──
-// 5コート基準(scale=1)、コートが少ないほど大きくなる（最大2.5倍）
+// 縦長はスクロール式なのでスケール不要（--pc-scale は使わない）
 function updatePortraitScale() {
-    if (!state || !isPortraitMode()) {
-        document.documentElement.style.removeProperty('--pc-scale');
-        return;
-    }
-    const n = Math.max(1, state.courts || 1);
-    const scale = Math.min(5 / n, 2.5);
-    document.documentElement.style.setProperty('--pc-scale', scale);
+    document.documentElement.style.removeProperty('--pc-scale');
 }
 
 function getPlayerName(id) {
