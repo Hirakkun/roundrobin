@@ -836,7 +836,7 @@ function buildPortraitCard(item, physIdx) {
 
     // 終了以外のコートに主審スコア入力ボタンを表示
     const scoreBtnHtml = status !== 'done'
-        ? `<a class="pc-score-btn" href="/score-court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`
+        ? `<a class="pc-score-btn" href="/score/court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`
         : '';
 
     return `
