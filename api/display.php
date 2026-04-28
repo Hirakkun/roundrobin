@@ -900,7 +900,7 @@ function buildPortraitCard(item, physIdx) {
         scoreBtnHtml = `<a class="pc-score-btn" href="/score/court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`;
     } else if (status === 'playing') {
         const url = `/score/court?session=${encodeURIComponent(sid)}&court=${pi}`;
-        scoreBtnHtml = `<button class="pc-score-btn pc-score-btn-playing" onclick="window.confirmScoreEntry(${JSON.stringify(url)})">主審<br>スコア入力</button>`;
+        scoreBtnHtml = `<button class="pc-score-btn pc-score-btn-playing" data-url="${_esc(url)}" onclick="window.confirmScoreEntry(this.dataset.url)">主審<br>スコア入力</button>`;
     }
 
     return `
