@@ -558,7 +558,7 @@ function onStateUpdate(state) {
         currentMid = found.mid;
         MATCH_GAMES = newMatchGames;
         WIN_GAMES   = Math.ceil(MATCH_GAMES / 2);
-        // リロード時: 試合中かつローカル保存があれば復元
+        // リロード時: 試合中かつローカル保存があれば完全復元
         const fStatus = found.sc.status || ((found.sc.s1 > 0 || found.sc.s2 > 0) ? 'playing' : 'calling');
         if (fStatus === 'playing' && restoreLocalState(found.mid)) {
             // Firebase の値で上書き（サーバー側が正）
@@ -568,6 +568,12 @@ function onStateUpdate(state) {
             game_score_t2 = found.sc.pt2 ?? game_score_t2;
             matchStarted = true;
             showMain();
+        } else if (fStatus === 'playing') {
+            // localStorageなし（別端末・キャッシュクリア等）でも Firebase のゲームカウントは復元
+            resetMatch();
+            set_score_t1 = found.sc.s1 || 0;
+            set_score_t2 = found.sc.s2 || 0;
+            // サーブ選択画面からやり直し（leftTeam/serverは復元不可）
         } else {
             resetMatch();
         }
