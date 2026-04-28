@@ -628,7 +628,7 @@ const firebaseConfig = {
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 
 // バドミントンボールSVG（スコア表示用）
-const BALL_SVG = `<svg class="game-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="46" fill="#ccff33" stroke="#000" stroke-width="6"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>`;
+const BALL_SVG = `<svg class="game-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>`;
 // n個のボールHTML（n<=0なら空文字）
 function ballsHTML(n) {
     if (!n || n <= 0) return '';
