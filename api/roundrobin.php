@@ -3087,17 +3087,19 @@ function markCourtDone(roundNum, courtIndex) {
     saveState();
     renderMatchContainer();
 
-    if (state.seqMatch) {
-        // 順次モード: 物理コートindexを渡してプールから次を投入
-        assignNextPoolMatch(physicalIndex);
-    } else if (state.autoMatch) {
-        // 自動ON・一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
-        if (rd) {
-            const allDone = rd.courts.every((ct, ci) => state.scores[`r${roundNum}c${ci}`]?.done);
-            if (allDone) generateNextRound();
+    if (state.autoMatch) {
+        if (state.seqMatch) {
+            // 自動ON＋順次モード: 物理コートindexを渡してプールから次を投入
+            assignNextPoolMatch(physicalIndex);
+        } else {
+            // 自動ON・一括モード: 同じラウンドの全コートが終了したら次ラウンドを自動生成
+            if (rd) {
+                const allDone = rd.courts.every((ct, ci) => state.scores[`r${roundNum}c${ci}`]?.done);
+                if (allDone) generateNextRound();
+            }
         }
     }
-    // 自動OFF・順次OFFの場合は手動で「次の試合を作る」ボタンを押す
+    // 自動OFF の場合は手動で「次の試合を作る」ボタンを押す（seqMatch ON でも autoMatch OFF なら手動）
 }
 
 // コート試合開始ボタン（呼び出し中 → 試合中）
@@ -3134,8 +3136,8 @@ function markRoundDone(e, roundNum) {
 
     saveState();
     renderMatchContainer();
-    // 次のラウンドを自動生成
-    generateNextRound();
+    // 自動ONの場合のみ次のラウンドを自動生成
+    if (state.autoMatch) generateNextRound();
 }
 
 // スコアが入ったコートを検出して自動で次を投入（現在は明示ボタン方式のため予備）

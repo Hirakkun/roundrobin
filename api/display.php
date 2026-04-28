@@ -196,7 +196,7 @@ body.light #theme-thumb { left: 1.15em; }
 @media (orientation: portrait) {
     #courts-grid {
         grid-template-columns: 1fr !important;
-        grid-auto-rows: 1fr;  /* コート数に関わらず各行を等分割（オーバーフロー防止） */
+        grid-auto-rows: minmax(0, 1fr);  /* コート数に関わらず各行を等分割（内容量に関わらず上限1fr） */
     }
 }
 
@@ -396,7 +396,9 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 
 /* ── サブメッセージ（コートへお集まりください） ── */
 /* min-height を score-row に合わせることで呼び出し中も試合中も
-   match-row の高さ（＝選手名の縦位置）が揃う */
+   match-row の高さ（＝選手名の縦位置）が揃う。
+   このセレクタの font-size が 0.72em なので、
+   score-val (3em of card) に揃えるには 3/0.72 ≈ 4.17em が必要 */
 .sub-msg {
     display: flex;
     align-items: center;
@@ -405,7 +407,7 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     font-weight: bold;
     flex-shrink: 0;
     line-height: 1.2;
-    min-height: 3em;          /* score-val が 3em なので揃える */
+    min-height: 4.17em;       /* 4.17 * 0.72 ≈ 3em of card font = score-row と同一 */
     color: var(--sub-calling);
 }
 
