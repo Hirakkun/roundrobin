@@ -174,16 +174,22 @@ body.light #theme-thumb { left: 1.15em; }
 #courts-grid.cols-5 { grid-template-columns: 1fr 1fr 1fr; }
 #courts-grid.cols-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
-/* ── 横長：全カードを「2段分の高さ」に統一 ── */
+/* ── 横長：全カード同一高さ＋2段分サイズ ── */
 @media (orientation: landscape) {
     #courts-grid {
         align-content: center;  /* 行全体を上下中央 */
     }
-    /* 全カードを画面の約半分の高さに制限 → 2段分が収まる感覚 */
-    .court-card {
-        max-height: 47vh;
-        align-self: center;
-    }
+    /*
+     * 1行グリッド（cols-1/2/3）: rowをコンテンツ高さで決め47vh上限にキャップ。
+     * align-items:stretch（デフォルト）により同行カードは全て同じ高さになる。
+     * align-self:center は使わない（使うとカードが自然な高さ＝高さがバラバラになる）
+     */
+    #courts-grid.cols-1 { grid-template-rows: minmax(0, 47vh); }
+    #courts-grid.cols-2 { grid-template-rows: minmax(0, 47vh); }
+    #courts-grid.cols-3 { grid-template-rows: minmax(0, 47vh); }
+    /* 2行グリッド（cols-5）: 利用可能高さを2等分 */
+    #courts-grid.cols-5 { grid-template-rows: 1fr 1fr; }
+    /* cols-4/cols-6 は既に grid-template-rows: 1fr 1fr 定義済み */
 }
 
 /* ── 縦長：1列レイアウト ── */
@@ -455,6 +461,8 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     padding: 0.12em 0.45em 0.14em;
     min-height: 0;
     overflow: hidden;
+    /* コート数に応じてJSが --pc-scale を設定 → 少コート数ほど文字が大きくなる */
+    font-size: calc(1em * var(--pc-scale, 1));
 }
 
 /* 空コート */
@@ -683,6 +691,18 @@ function isPortraitMode() {
     return window.matchMedia('(orientation: portrait)').matches;
 }
 
+// ── 縦長：コート数に応じてカード内フォントを拡大 ──
+// 5コート基準(scale=1)、コートが少ないほど大きくなる（最大2.5倍）
+function updatePortraitScale() {
+    if (!state || !isPortraitMode()) {
+        document.documentElement.style.removeProperty('--pc-scale');
+        return;
+    }
+    const n = Math.max(1, state.courts || 1);
+    const scale = Math.min(5 / n, 2.5);
+    document.documentElement.style.setProperty('--pc-scale', scale);
+}
+
 function getPlayerName(id) {
     if (!state) return '';
     const pl = state.players.find(p => p.id === id);
@@ -847,6 +867,7 @@ function updateTicker() {
 // ── 描画 ──
 function render() {
     if (!state) return;
+    updatePortraitScale();
     renderCourts();
     updateTicker();
     if (!isPortraitMode()) fitPlayerNames();
