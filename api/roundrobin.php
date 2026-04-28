@@ -4516,13 +4516,16 @@ window._fbApply = function(remoteState) {
                 });
                 const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
                 // 少し遅延してから次の組合せを投入（renderの後）
-                if (state.seqMatch) {
-                    setTimeout(() => assignNextPoolMatch(physIdx), 300);
-                } else if (state.autoMatch) {
-                    const allDone = (rd.courts || []).every((c, i) =>
-                        state.scores['r' + rd.round + 'c' + i]?.done);
-                    if (allDone) setTimeout(() => generateNextRound(), 300);
+                if (state.autoMatch) {
+                    if (state.seqMatch) {
+                        setTimeout(() => assignNextPoolMatch(physIdx), 300);
+                    } else {
+                        const allDone = (rd.courts || []).every((c, i) =>
+                            state.scores['r' + rd.round + 'c' + i]?.done);
+                        if (allDone) setTimeout(() => generateNextRound(), 300);
+                    }
                 }
+                // autoMatch=OFF(手動)の場合は自動組み込みしない
             });
         } else {
             Object.assign(state, remoteState);

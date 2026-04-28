@@ -380,10 +380,10 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 
 /* ── スコア ── */
 .score-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto auto auto 1fr;
     align-items: center;
-    justify-content: center;
-    gap: 0.25em;
+    gap: 0.15em;
     flex-shrink: 0;
 }
 .score-val {
@@ -399,12 +399,14 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 
 /* ── ボールアイコン ── */
 .game-ball { display: inline-block; vertical-align: middle; }
-/* 横長カード：スコア横のボール */
-.score-balls { display: flex; align-items: center; gap: 0.1em; }
-.score-balls .game-ball { width: 1.5em; height: 1.5em; }
+/* 横長カード：スコア横のボール（左は右詰め、右は左詰めでスコアを中央固定） */
+.score-balls { display: flex; align-items: center; gap: 0.07em; }
+.score-balls:first-child { justify-content: flex-end; }
+.score-balls:last-child  { justify-content: flex-start; }
+.score-balls .game-ball { width: 1em; height: 1em; }
 /* 縦長カード：スコア行のボール */
-.pc-balls { display: inline-flex; align-items: center; gap: 0.08em; }
-.pc-balls .game-ball { width: 1em; height: 1em; }
+.pc-balls { display: inline-flex; align-items: center; gap: 0.06em; }
+.pc-balls .game-ball { width: 0.67em; height: 0.67em; }
 
 /* ── サブメッセージ（コートへお集まりください） ── */
 /* min-height を score-row に合わせることで呼び出し中も試合中も
