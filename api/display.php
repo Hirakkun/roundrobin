@@ -500,13 +500,16 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     gap: 0.1em 0.5em;
 }
 
-/* スコア行（中央・横並び） */
+/* スコア行（グリッドでvsを常に中央固定） */
 .pc-score-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto auto auto 1fr;
     align-items: center;
-    justify-content: center;
-    gap: 0.38em;
+    gap: 0.2em;
 }
+.pc-score-row .pc-balls { display: flex; align-items: center; gap: 0.06em; flex-wrap: wrap; }
+.pc-score-row .pc-balls:first-child { justify-content: flex-end; }
+.pc-score-row .pc-balls:last-child  { justify-content: flex-start; }
 
 /* チーム2ブロック：選手を横並び・右詰め */
 .pc-team2-block {
