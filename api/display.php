@@ -450,6 +450,23 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 .status-done    .pc-head { background: #666; }
 .status-empty   .pc-head { background: #444; }
 
+/* 主審スコア入力ボタン */
+.pc-score-btn {
+    font-size: 0.6em;
+    font-weight: bold;
+    background: #ffd700;
+    color: #333;
+    border-radius: 0.3em;
+    padding: 0.22em 0.45em;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.35;
+    text-align: center;
+    display: inline-block;
+}
+.pc-score-btn:active { opacity: 0.75; }
+
 /* コートバッジ（A/B/C…） */
 .pc-badge {
     font-size: 1.55em;
@@ -817,10 +834,16 @@ function buildPortraitCard(item, physIdx) {
     const t1 = team1BlockHTML(ct.team1 || []);
     const t2 = team2BlockHTML(ct.team2 || []);
 
+    // 終了以外のコートに主審スコア入力ボタンを表示
+    const scoreBtnHtml = status !== 'done'
+        ? `<a class="pc-score-btn" href="/score-court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`
+        : '';
+
     return `
         <div class="pc-head">
             <span class="pc-badge">${_esc(String(lbl.big))}</span>
             <span class="pc-status">${statusLabels[status] || ''}</span>
+            ${scoreBtnHtml}
         </div>
         <div class="pc-body">
             <div class="pc-team1-block">${t1}</div>

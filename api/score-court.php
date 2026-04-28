@@ -314,7 +314,8 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="icon">✅</div>
     <div class="title">試合終了</div>
     <div class="score" id="done-score-text">-</div>
-    <div class="sub">結果を送信しました</div>
+    <div class="sub">主審おつかれさまでした。</div>
+    <div class="sub" id="done-redirect-msg" style="opacity:0.6;margin-top:0.5em;">表示画面に移動します...</div>
 </div>
 
 <!-- メイン試合画面 -->
@@ -855,6 +856,10 @@ window.handleMatchEnd = async function() {
         document.getElementById('done-score-text').textContent =
             (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' + (leftTeam === 1 ? set_score_t2 : set_score_t1);
         document.getElementById('done-screen').style.display = 'flex';
+        // 3秒後に display 画面へ移動
+        setTimeout(() => {
+            location.href = '/display?sid=' + encodeURIComponent(sessionId);
+        }, 3000);
     } catch(e) {
         console.error(e);
         alert('送信に失敗しました。再度お試しください。');
