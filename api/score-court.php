@@ -425,6 +425,52 @@ let currentRoundLabel = '';
 // playing書き込み中フラグ（書き込み完了前のonValue誤リセット防止）
 let _statusWritePending = false;
 
+// ── ローカル状態の保存/復元（リロード対応） ──────────────────────
+const SC_LS_KEY = 'sc_v1_' + sessionId + '_c' + courtIndex;
+
+function saveLocalState() {
+    if (!currentMid || !matchStarted) return;
+    try {
+        localStorage.setItem(SC_LS_KEY, JSON.stringify({
+            mid: currentMid,
+            leftTeam, current_server,
+            set_score_t1, set_score_t2,
+            game_score_t1, game_score_t2,
+            game_is_over, matchStarted,
+            historyStack,
+            historyHTML: document.getElementById('game-history')?.innerHTML || '',
+            umpireMsg:   document.getElementById('umpire-msg')?.textContent  || ''
+        }));
+    } catch(e) {}
+}
+
+function clearLocalState() {
+    localStorage.removeItem(SC_LS_KEY);
+}
+
+function restoreLocalState(mid) {
+    try {
+        const raw = localStorage.getItem(SC_LS_KEY);
+        if (!raw) return false;
+        const d = JSON.parse(raw);
+        if (d.mid !== mid) return false;
+        leftTeam       = d.leftTeam       ?? 1;
+        current_server = d.current_server ?? 1;
+        set_score_t1   = d.set_score_t1   ?? 0;
+        set_score_t2   = d.set_score_t2   ?? 0;
+        game_score_t1  = d.game_score_t1  ?? 0;
+        game_score_t2  = d.game_score_t2  ?? 0;
+        game_is_over   = d.game_is_over   ?? false;
+        matchStarted   = d.matchStarted   ?? true;
+        historyStack   = Array.isArray(d.historyStack) ? d.historyStack : [];
+        const histEl = document.getElementById('game-history');
+        if (histEl) histEl.innerHTML = d.historyHTML || '';
+        const msgEl = document.getElementById('umpire-msg');
+        if (msgEl) msgEl.textContent = d.umpireMsg || '';
+        return true;
+    } catch(e) { return false; }
+}
+
 // ── Firebase監視 ─────────────────────────────────────────────
 onValue(stateRef, snap => {
     const d = snap.val();
@@ -507,12 +553,24 @@ function onStateUpdate(state) {
     // サーブ設定ボタンのラベル更新
     updateServeSetupButtons();
 
-    // 新しい試合が割り当てられた → リセット
+    // 新しい試合が割り当てられた
     if (found.mid !== currentMid) {
         currentMid = found.mid;
         MATCH_GAMES = newMatchGames;
         WIN_GAMES   = Math.ceil(MATCH_GAMES / 2);
-        resetMatch();
+        // リロード時: 試合中かつローカル保存があれば復元
+        const fStatus = found.sc.status || ((found.sc.s1 > 0 || found.sc.s2 > 0) ? 'playing' : 'calling');
+        if (fStatus === 'playing' && restoreLocalState(found.mid)) {
+            // Firebase の値で上書き（サーバー側が正）
+            set_score_t1  = found.sc.s1  ?? set_score_t1;
+            set_score_t2  = found.sc.s2  ?? set_score_t2;
+            game_score_t1 = found.sc.pt1 ?? game_score_t1;
+            game_score_t2 = found.sc.pt2 ?? game_score_t2;
+            matchStarted = true;
+            showMain();
+        } else {
+            resetMatch();
+        }
         return;
     }
 
@@ -645,6 +703,7 @@ window.onCourtSideSelect = async function(side) {
     hideAll();
     matchStarted = true;
     showMain();
+    saveLocalState();
     // Firebase に「試合中」を書き込む（完了前のonValueによる誤リセットを防止）
     _statusWritePending = true;
     await writeStatus('playing');
@@ -676,6 +735,7 @@ window.addPoint = function(side) {
     updateUmpireCall();
     checkGameWinner();
     writeCurrentPoints();   // displayにリアルタイム反映
+    saveLocalState();
 };
 
 // ── 審判コール ────────────────────────────────────────────────
@@ -771,6 +831,7 @@ window.handleGameConfirm = async function() {
 
     updateDisplay();
     setUmpire('ゲームカウント ' + (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' + (leftTeam === 1 ? set_score_t2 : set_score_t1));
+    saveLocalState();
 };
 
 // ── 試合終了 ──────────────────────────────────────────────────
@@ -784,6 +845,7 @@ window.handleMatchEnd = async function() {
     document.getElementById('btn-undo').style.display = 'none';
     try {
         await writeScore(true);
+        clearLocalState();
         document.getElementById('done-score-text').textContent =
             (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' + (leftTeam === 1 ? set_score_t2 : set_score_t1);
         document.getElementById('done-screen').style.display = 'flex';
@@ -835,6 +897,7 @@ window.undoLastPoint = function() {
     // ボタン状態は updateDisplay() が matchStarted で一元管理する
     updateDisplay();
     writeCurrentPoints();   // 取消後のポイントをFirebaseに反映
+    saveLocalState();
 };
 
 // ── 表示更新 ──────────────────────────────────────────────────
