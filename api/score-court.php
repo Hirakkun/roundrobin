@@ -570,14 +570,25 @@ function onStateUpdate(state) {
             matchStarted = true;
             showMain();
         } else if (fStatus === 'playing') {
-            // localStorageなし（別端末・キャッシュクリア等）でも Firebase のスコアを復元
-            resetMatch();
-            set_score_t1  = found.sc.s1  || 0;
-            set_score_t2  = found.sc.s2  || 0;
-            game_score_t1 = found.sc.pt1 || 0;
-            game_score_t2 = found.sc.pt2 || 0;
-            // サーブ選択画面からやり直し（leftTeam/serverは復元不可）
-            // showServeSetup() は resetMatch() 内で呼び済み
+            // localStorageなし（別端末・キャッシュクリア等）
+            // Firebase に server/left が保存されていれば途中から直接再開
+            const hasServInfo = found.sc.server != null && found.sc.left != null;
+            resetMatch(); // スコアリセット + showServeSetup() が呼ばれる
+            set_score_t1   = found.sc.s1  || 0;
+            set_score_t2   = found.sc.s2  || 0;
+            game_score_t1  = found.sc.pt1 || 0;
+            game_score_t2  = found.sc.pt2 || 0;
+            if (hasServInfo) {
+                // サーブ・コートサイドを Firebase から復元してメイン画面へ直接遷移
+                current_server = found.sc.server;
+                leftTeam       = found.sc.left;
+                matchStarted   = true;
+                hideAll();
+                showMain();
+                updateUmpireCall();
+                checkGameWinner(); // ゲーム終了状態ならボタンを正しく表示
+            }
+            // hasServInfo=false の場合はサーブ選択画面からやり直し（resetMatch済み）
         } else {
             resetMatch();
         }
@@ -1022,12 +1033,16 @@ function swapHistoryRows() {
     });
 }
 
-// ── 現在ゲームのポイントをFirebaseに書き込み（fire-and-forget）──
+// ── 現在ゲームのポイント＋サーブ情報をFirebaseに書き込み（fire-and-forget）──
+// server(1 or 2) と left(1 or 2) も保存することで、別端末が途中参加しても
+// サーブ選択画面をスキップしてメイン画面から再開できるようにする。
 function writeCurrentPoints() {
     if (!currentMid) return;
     const upd = {};
-    upd['scores/' + currentMid + '/pt1'] = game_score_t1;
-    upd['scores/' + currentMid + '/pt2'] = game_score_t2;
+    upd['scores/' + currentMid + '/pt1']    = game_score_t1;
+    upd['scores/' + currentMid + '/pt2']    = game_score_t2;
+    upd['scores/' + currentMid + '/server'] = current_server;
+    upd['scores/' + currentMid + '/left']   = leftTeam;
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     update(stateRef, upd).catch(e => console.warn('writeCurrentPoints:', e));
 }
@@ -1037,11 +1052,18 @@ async function writeStatus(status, resetScores = false) {
     if (!currentMid) return;
     const upd = {};
     upd['scores/' + currentMid + '/status'] = status;
+    if (status === 'playing') {
+        // 試合開始時点のサーブ権・コートサイドも Firebase に保存
+        upd['scores/' + currentMid + '/server'] = current_server;
+        upd['scores/' + currentMid + '/left']   = leftTeam;
+    }
     if (resetScores) {
-        upd['scores/' + currentMid + '/s1']  = 0;
-        upd['scores/' + currentMid + '/s2']  = 0;
-        upd['scores/' + currentMid + '/pt1'] = 0;
-        upd['scores/' + currentMid + '/pt2'] = 0;
+        upd['scores/' + currentMid + '/s1']     = 0;
+        upd['scores/' + currentMid + '/s2']     = 0;
+        upd['scores/' + currentMid + '/pt1']    = 0;
+        upd['scores/' + currentMid + '/pt2']    = 0;
+        upd['scores/' + currentMid + '/server'] = null;
+        upd['scores/' + currentMid + '/left']   = null;
     }
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     await update(stateRef, upd);
