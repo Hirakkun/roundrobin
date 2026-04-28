@@ -3570,7 +3570,7 @@ function renderMatchContainer() {
                                 <div class="team left-side" style="pointer-events:none;">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span>
                                 </div>
-                                <div class="score-area"><div class="rr-balls">${ballsHTML(sc.s1)}</div><span>${sc.s1}</span><small>-</small><span>${sc.s2}</span><div class="rr-balls">${ballsHTML(sc.s2)}</div></div>
+                                <div class="score-area"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div><span>${sc.s1}</span><small>-</small><span>${sc.s2}</span><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div>
                                 <div class="team right-side" style="pointer-events:none;">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span>
                                 </div>
@@ -3616,7 +3616,7 @@ function renderMatchContainer() {
                              data-t2="${ct.team2.join(',')}">
                             <div class="team left-side" data-p="${ct.team1.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span></div>
-                            <div class="score-area"><div class="rr-balls">${ballsHTML(sc.s1)}</div><span class="s1">${sc.s1}</span><small>-</small><span class="s2">${sc.s2}</span><div class="rr-balls">${ballsHTML(sc.s2)}</div></div>
+                            <div class="score-area"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div><span class="s1">${sc.s1}</span><small>-</small><span class="s2">${sc.s2}</span><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div>
                             <div class="team right-side" data-p="${ct.team2.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>

@@ -675,6 +675,7 @@ window.addPoint = function(side) {
     updateDisplay();
     updateUmpireCall();
     checkGameWinner();
+    writeCurrentPoints();   // displayにリアルタイム反映
 };
 
 // ── 審判コール ────────────────────────────────────────────────
@@ -757,6 +758,7 @@ window.handleGameConfirm = async function() {
     game_is_over  = false;
     document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
+    writeCurrentPoints();   // pt1/pt2を0にリセット
 
     const totalAfter = set_score_t1 + set_score_t2;
     // サービス交代
@@ -832,6 +834,7 @@ window.undoLastPoint = function() {
     setUmpire(last.umpireMsg);
     // ボタン状態は updateDisplay() が matchStarted で一元管理する
     updateDisplay();
+    writeCurrentPoints();   // 取消後のポイントをFirebaseに反映
 };
 
 // ── 表示更新 ──────────────────────────────────────────────────
@@ -932,14 +935,26 @@ function swapHistoryRows() {
     });
 }
 
+// ── 現在ゲームのポイントをFirebaseに書き込み（fire-and-forget）──
+function writeCurrentPoints() {
+    if (!currentMid) return;
+    const upd = {};
+    upd['scores/' + currentMid + '/pt1'] = game_score_t1;
+    upd['scores/' + currentMid + '/pt2'] = game_score_t2;
+    upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
+    update(stateRef, upd).catch(e => console.warn('writeCurrentPoints:', e));
+}
+
 // ── ステータス書き込み ─────────────────────────────────────────
 async function writeStatus(status, resetScores = false) {
     if (!currentMid) return;
     const upd = {};
     upd['scores/' + currentMid + '/status'] = status;
     if (resetScores) {
-        upd['scores/' + currentMid + '/s1'] = 0;
-        upd['scores/' + currentMid + '/s2'] = 0;
+        upd['scores/' + currentMid + '/s1']  = 0;
+        upd['scores/' + currentMid + '/s2']  = 0;
+        upd['scores/' + currentMid + '/pt1'] = 0;
+        upd['scores/' + currentMid + '/pt2'] = 0;
     }
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     await update(stateRef, upd);

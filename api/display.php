@@ -788,9 +788,12 @@ function buildPortraitCard(item, physIdx) {
     const { rd, ct, ci, mid, physIdx: pi } = item;
     const status = getCourtStatus(mid);
     const lbl    = getCourtLabel(pi);
-    const sc     = state.scores?.[mid] || {};
-    const s1     = sc.s1 ?? 0;
-    const s2     = sc.s2 ?? 0;
+    const sc  = state.scores?.[mid] || {};
+    const s1  = sc.s1 ?? 0;
+    const s2  = sc.s2 ?? 0;
+    // pt1/pt2: ゲーム内ポイント数（試合中のみ）
+    const pt1 = status === 'playing' ? (sc.pt1 ?? 0) : 0;
+    const pt2 = status === 'playing' ? (sc.pt2 ?? 0) : 0;
 
     const statusLabels = {
         calling: '🔔 呼び出し中',
@@ -798,12 +801,12 @@ function buildPortraitCard(item, physIdx) {
         done:    '✓ 終了',
     };
 
-    // 中央スコア行：ゲーム前は VS、開始後は「1 vs 0」横並び
+    // 中央スコア行：ゲーム前は VS、開始後は「ゲーム数 + ポイントボール」
     let scoreRowHtml = '';
     if (status === 'calling') {
         scoreRowHtml = `<span class="pc-vs-label">VS</span>`;
     } else {
-        scoreRowHtml = `<span class="pc-balls">${ballsHTML(s1)}</span><span class="pc-s1">${s1}</span><span class="pc-sv">vs</span><span class="pc-s2">${s2}</span><span class="pc-balls">${ballsHTML(s2)}</span>`;
+        scoreRowHtml = `<span class="pc-balls">${ballsHTML(pt1)}</span><span class="pc-s1">${s1}</span><span class="pc-sv">vs</span><span class="pc-s2">${s2}</span><span class="pc-balls">${ballsHTML(pt2)}</span>`;
     }
 
     const t1 = team1BlockHTML(ct.team1 || []);
@@ -956,8 +959,11 @@ function renderCourts() {
             const statusTextMap = { calling: '呼び出し中', playing: '試合中', done: '終了' };
             const iconMap       = { calling: ICON_CALLING, playing: ICON_PLAYING, done: ICON_DONE };
             const sc = state.scores?.[mid] || {};
-            const s1 = sc.s1 ?? 0;
-            const s2 = sc.s2 ?? 0;
+            const s1  = sc.s1  ?? 0;
+            const s2  = sc.s2  ?? 0;
+            // pt1/pt2: ゲーム内ポイント数（試合中のみ表示）
+            const pt1 = status === 'playing' ? (sc.pt1 ?? 0) : 0;
+            const pt2 = status === 'playing' ? (sc.pt2 ?? 0) : 0;
 
             let bodyHtml = '';
             if (status === 'playing' || status === 'done') {
@@ -968,11 +974,11 @@ function renderCourts() {
                         <div class="team-block">${teamHTML(ct.team2 || [])}</div>
                     </div>
                     <div class="score-row">
-                        <div class="score-balls">${ballsHTML(s1)}</div>
+                        <div class="score-balls">${ballsHTML(pt1)}</div>
                         <div class="score-val t1">${s1}</div>
                         <div class="score-hyphen">−</div>
                         <div class="score-val t2">${s2}</div>
-                        <div class="score-balls">${ballsHTML(s2)}</div>
+                        <div class="score-balls">${ballsHTML(pt2)}</div>
                     </div>`;
             } else {
                 bodyHtml = `
