@@ -2834,7 +2834,10 @@ function onAutoMatchChange() {
         }
     }
     updateAutoMatchUI();
-    saveState();
+    // autoMatch の変更はデバウンスなく即時 Firebase へ push する。
+    // 300ms のデバウンス遅延中に score-court が done を書き込むと
+    // 旧 autoMatch 値（ON）で自動組み込みが発火する恐れがあるため。
+    _saveStateNow();
 }
 
 // 順次組合せ トグル変更
@@ -2850,7 +2853,18 @@ function onSeqMatchChange() {
         state.players.forEach(p => { p.isOnCourt = false; });
     }
     updateAutoMatchUI();
-    saveState();
+    _saveStateNow(); // seqMatch も即時 push（同じ理由）
+}
+
+// デバウンスなしで即時 Firebase push（autoMatch/seqMatch 切り替え専用）
+function _saveStateNow() {
+    state._sid = _sessionId;
+    localStorage.setItem('rr_state_v2', JSON.stringify(state));
+    if (!isApplyingRemote && window._fbPush) {
+        clearTimeout(_fbPushTimer);
+        _fbPushTimer = null;
+        window._fbPush(state);
+    }
 }
 
 // isOnCourt を現在のスケジュールから再計算
@@ -4490,7 +4504,16 @@ window._fbApply = function(remoteState) {
         if (!remoteState.announcedCourts || typeof remoteState.announcedCourts !== 'object') remoteState.announcedCourts = {};
 
         // コートページから done=true が書き込まれた場合に側面処理を実行（管理者のみ）
-        if (isAdmin && (state.autoMatch || state.seqMatch)) {
+        // ── ローカルとリモートそれぞれの autoMatch/seqMatch を保存 ──────────────────
+        // Object.assign 前のローカル値と、Firebase から届いたリモート値の両方を参照する。
+        // 「手動に切り替えたが 300ms デバウンスで Firebase への push がまだ届いていない」
+        // タイミングで done イベントが届いても、ローカルが OFF なら自動組み込みしない。
+        const _lAutoMatch = !!state.autoMatch;   // ローカル値（merge 前）
+        const _lSeqMatch  = !!state.seqMatch;
+        const _rAutoMatch = !!remoteState.autoMatch; // リモート値（Firebase 最新）
+        const _rSeqMatch  = !!remoteState.seqMatch;
+
+        if (isAdmin && (_rAutoMatch || _rSeqMatch)) {
             const prevScores = state.scores || {};
             const newScores  = remoteState.scores || {};
             // 新たに done=true になったコートを検出
@@ -4516,10 +4539,12 @@ window._fbApply = function(remoteState) {
                 });
                 const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
                 // 少し遅延してから次の組合せを投入（renderの後）
-                if (state.autoMatch) {
-                    if (state.seqMatch) {
+                // ローカルとリモートの両方が autoMatch=ON のときのみ実行
+                // （切り替え直後のデバウンス遅延による誤作動を防止）
+                if (_rAutoMatch && _lAutoMatch) {
+                    if (_rSeqMatch && _lSeqMatch) {
                         setTimeout(() => assignNextPoolMatch(physIdx), 300);
-                    } else {
+                    } else if (!_rSeqMatch && !_lSeqMatch) {
                         const allDone = (rd.courts || []).every((c, i) =>
                             state.scores['r' + rd.round + 'c' + i]?.done);
                         if (allDone) setTimeout(() => generateNextRound(), 300);

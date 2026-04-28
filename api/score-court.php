@@ -853,18 +853,28 @@ window.handleMatchEnd = async function() {
     addGameHistoryRow(winner);
     document.getElementById('btn-end').style.display = 'none';
     document.getElementById('btn-undo').style.display = 'none';
+
+    // ── 先に完了画面を表示する ──────────────────────────────────
+    // Firebase の update() はローカルキャッシュを即時更新して onValue を同期発火させる。
+    // done-screen を先に flex にしておくことで、onStateUpdate が呼ばれたとき
+    // 「done-screen が表示中」と判断して waiting overlay を出さずに return する。
+    clearLocalState();
+    const finalScore =
+        (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' +
+        (leftTeam === 1 ? set_score_t2 : set_score_t1);
+    document.getElementById('done-score-text').textContent = finalScore;
+    document.getElementById('done-screen').style.display = 'flex';
+
     try {
         await writeScore(true);
-        clearLocalState();
-        document.getElementById('done-score-text').textContent =
-            (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' + (leftTeam === 1 ? set_score_t2 : set_score_t1);
-        document.getElementById('done-screen').style.display = 'flex';
         // 3秒後に display 画面へ移動
         setTimeout(() => {
             location.href = '/display?sid=' + encodeURIComponent(sessionId);
         }, 3000);
     } catch(e) {
         console.error(e);
+        // 書き込み失敗時は完了画面を隠してロールバック
+        document.getElementById('done-screen').style.display = 'none';
         alert('送信に失敗しました。再度お試しください。');
         if (winner === 1) set_score_t1--;
         else              set_score_t2--;
