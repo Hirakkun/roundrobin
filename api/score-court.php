@@ -570,11 +570,14 @@ function onStateUpdate(state) {
             matchStarted = true;
             showMain();
         } else if (fStatus === 'playing') {
-            // localStorageなし（別端末・キャッシュクリア等）でも Firebase のゲームカウントは復元
+            // localStorageなし（別端末・キャッシュクリア等）でも Firebase のスコアを復元
             resetMatch();
-            set_score_t1 = found.sc.s1 || 0;
-            set_score_t2 = found.sc.s2 || 0;
+            set_score_t1  = found.sc.s1  || 0;
+            set_score_t2  = found.sc.s2  || 0;
+            game_score_t1 = found.sc.pt1 || 0;
+            game_score_t2 = found.sc.pt2 || 0;
             // サーブ選択画面からやり直し（leftTeam/serverは復元不可）
+            // showServeSetup() は resetMatch() 内で呼び済み
         } else {
             resetMatch();
         }

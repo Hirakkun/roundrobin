@@ -464,8 +464,42 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     line-height: 1.35;
     text-align: center;
     display: inline-block;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
 }
 .pc-score-btn:active { opacity: 0.75; }
+/* 試合中は青色 */
+.pc-score-btn-playing {
+    background: #1565c0;
+    color: #fff;
+}
+
+/* 確認モーダル */
+#score-confirm-modal {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.65);
+    display: none; align-items: center; justify-content: center;
+}
+#score-confirm-modal.open { display: flex; }
+.score-confirm-box {
+    background: #fff; border-radius: 0.7em;
+    padding: 1em 0.9em; width: min(15em, 88vw);
+    display: flex; flex-direction: column; gap: 0.75em;
+    text-align: center;
+}
+.score-confirm-msg {
+    font-size: 0.8em; font-weight: bold; color: #222; line-height: 1.5;
+}
+.score-confirm-btns {
+    display: flex; gap: 0.45em;
+}
+.score-confirm-btns button {
+    flex: 1; padding: 0.55em 0; border: none; border-radius: 0.4em;
+    font-size: 0.78em; font-weight: bold; cursor: pointer; font-family: inherit;
+}
+.scb-yes { background: #1565c0; color: #fff; }
+.scb-no  { background: #e0e0e0; color: #333; }
 
 /* コートバッジ（A/B/C…） */
 .pc-badge {
@@ -612,6 +646,17 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 </head>
 <body>
 
+<!-- 試合中スコア入力確認モーダル -->
+<div id="score-confirm-modal">
+    <div class="score-confirm-box">
+        <div class="score-confirm-msg">試合中ですが、<br>スコア入力を行いますか？</div>
+        <div class="score-confirm-btns">
+            <button class="scb-yes" id="scb-yes">はい</button>
+            <button class="scb-no"  id="scb-no">キャンセル</button>
+        </div>
+    </div>
+</div>
+
 <div id="waiting">
     <div class="icon">📺</div>
     <div id="waiting-msg">接続中...</div>
@@ -732,6 +777,19 @@ onValue(ref(db, 'sessions/' + encodeURIComponent(sid)), snap => {
     render();
 });
 
+// 試合中スコア入力確認モーダル
+window.confirmScoreEntry = function(url) {
+    const modal = document.getElementById('score-confirm-modal');
+    modal.classList.add('open');
+    document.getElementById('scb-yes').onclick = function() {
+        modal.classList.remove('open');
+        location.href = url;
+    };
+    document.getElementById('scb-no').onclick = function() {
+        modal.classList.remove('open');
+    };
+};
+
 // 向き変更で再描画
 window.matchMedia('(orientation: portrait)').addEventListener('change', () => { if (state) render(); });
 
@@ -837,9 +895,13 @@ function buildPortraitCard(item, physIdx) {
     const t2 = team2BlockHTML(ct.team2 || []);
 
     // 終了以外のコートに主審スコア入力ボタンを表示
-    const scoreBtnHtml = status !== 'done'
-        ? `<a class="pc-score-btn" href="/score/court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`
-        : '';
+    let scoreBtnHtml = '';
+    if (status === 'calling') {
+        scoreBtnHtml = `<a class="pc-score-btn" href="/score/court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`;
+    } else if (status === 'playing') {
+        const url = `/score/court?session=${encodeURIComponent(sid)}&court=${pi}`;
+        scoreBtnHtml = `<button class="pc-score-btn pc-score-btn-playing" onclick="window.confirmScoreEntry(${JSON.stringify(url)})">主審<br>スコア入力</button>`;
+    }
 
     return `
         <div class="pc-head">
