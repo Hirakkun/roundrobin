@@ -352,6 +352,7 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
             <div id="entryList"></div>
             <button type="button" class="player-add-btn" style="margin-top:8px;" onclick="addEntryPlayer()">＋ 参加者を追加</button>
+            <button type="button" class="player-add-btn guest-btn" style="margin-top:6px;" onclick="addEntryGuestPlayer()">＋ ゲストとして追加</button>
         </div>
         <!-- 手動モード：参加人数カウンター（名簿なし・非表示） -->
         <div id="manualMode" style="display:none;">
@@ -750,9 +751,10 @@ function confirmEntryRow(btn) {
     _saveEntryToState(); // Firebaseに即保存
 }
 
-window.removeConfirmedEntry = function(pid) {
-    entryPlayers = entryPlayers.filter(p => p.pid !== pid);
-    entryRestingPids.delete(pid);
+window.removeConfirmedEntry = function(key) {
+    // keyはpid（名簿参加者）またはゲストの_guestKey
+    entryPlayers = entryPlayers.filter(p => p.pid !== key && p._guestKey !== key);
+    entryRestingPids.delete(key);
     renderEntryList();
     _saveEntryToState(); // Firebaseに即保存
 };
@@ -785,8 +787,19 @@ function _saveEntryToState() {
     state.oppMatrix = {};
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
-        const resting = entryRestingPids.has(p.pid);
-        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 });
+        const resting = p.isGuest ? false : entryRestingPids.has(p.pid);
+        const player = { id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 };
+        // ゲストフィールドをstateに引き継ぎ
+        if (p.isGuest) {
+            player.isGuest        = true;
+            player.guestName      = p.guestName || p.name;
+            player.guestKana      = p.guestKana  || p.kana || '';
+            player.guestGender    = p.guestGender    || '';
+            player.guestBirthdate = p.guestBirthdate || '';
+            player.guestClass     = p.guestClass     || '';
+            player.guestClub      = p.guestClub      || '';
+        }
+        state.players.push(player);
         state.playerNames[id] = p.name;
         state.playerKana[id]  = p.kana || p.name || '';
         if (p.clubName) state.playerClubs[id] = p.clubName;
@@ -814,10 +827,28 @@ function _rebuildEntryPlayers() {
         const name = playerNames[id];
         if (!name) continue;
         const rp = roster.find(r => r.name === name);
-        if (rp) {
+        const sp = players.find(p => p.id === id);
+        if (sp && sp.isGuest) {
+            // ゲスト参加者の復元
+            const guestKey = 'guest_' + id;
+            entryPlayers.push({
+                _guestKey:    guestKey,
+                isGuest:      true,
+                name:         name,
+                kana:         state.playerKana?.[id] || '',
+                mu:           state.tsMap?.[id]?.mu,
+                sigma:        state.tsMap?.[id]?.sigma,
+                guestName:    sp.guestName      || name,
+                guestKana:    sp.guestKana      || '',
+                guestGender:  sp.guestGender    || '',
+                guestBirthdate: sp.guestBirthdate || '',
+                guestClass:   sp.guestClass     || '',
+                guestClub:    sp.guestClub      || '',
+                clubName:     sp.guestClub      || '',
+            });
+        } else if (rp) {
             entryPlayers.push(rp);
             // 休憩状態を復元
-            const sp = players.find(p => p.id === id);
             if (sp && sp.resting && rp.pid) entryRestingPids.add(rp.pid);
             // 旧イベント（kana未保存）のマイグレーション: rosterのkanaで補完
             if (!state.playerKana[id] && rp.kana) state.playerKana[id] = rp.kana;
@@ -845,10 +876,16 @@ function renderEntryList() {
         const div = document.createElement('div');
         div.className = 'entry-confirmed-row';
         div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0f0f0;';
-        const isResting = entryRestingPids.has(p.pid);
+        // ゲストはpidなし、_guestKeyで識別
+        const isGuest  = !!p.isGuest;
+        const entryKey = isGuest ? p._guestKey : p.pid;
+        const isResting = isGuest ? false : entryRestingPids.has(p.pid);
         let actionBtns;
         if (isActive) {
             actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:0.6875rem;white-space:nowrap;">🔒 参加済</span>`;
+        } else if (isGuest) {
+            // ゲストは削除ボタンのみ（休憩は試合開始後に設定）
+            actionBtns = `<button type="button" class="rest-btn delete-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(entryKey)}')">削除</button>`;
         } else {
             const restBtn = isResting
                 ? `<button type="button" class="rest-btn resting" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">復帰</button>`
@@ -859,10 +896,11 @@ function renderEntryList() {
         const clubBadge = p.clubName
             ? ` <span style="font-size:0.6875rem;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
             : '';
+        const guestBadge = isGuest ? `<span class="guest-badge">ゲスト</span>` : '';
         div.style.opacity = isResting ? '0.5' : '1';
         div.innerHTML = `
             <div style="flex:1;">
-                <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${clubBadge}</div>
+                <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${guestBadge}${clubBadge}</div>
                 <div style="font-size:0.6875rem;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
             </div>
             <div style="display:flex;gap:6px;">${actionBtns}</div>`;
@@ -892,8 +930,18 @@ function applyEntryPlayers() {
     state.matchingRule = matchingRule;
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
-        const resting = entryRestingPids.has(p.pid);
-        state.players.push({ id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 });
+        const resting = p.isGuest ? false : entryRestingPids.has(p.pid);
+        const player = { id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 };
+        if (p.isGuest) {
+            player.isGuest        = true;
+            player.guestName      = p.guestName || p.name;
+            player.guestKana      = p.guestKana  || p.kana || '';
+            player.guestGender    = p.guestGender    || '';
+            player.guestBirthdate = p.guestBirthdate || '';
+            player.guestClass     = p.guestClass     || '';
+            player.guestClub      = p.guestClub      || '';
+        }
+        state.players.push(player);
         state.playerNames[id] = p.name;
         if (p.clubName) state.playerClubs[id] = p.clubName;
         state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
@@ -1396,14 +1444,28 @@ function addPlayer() {
 // =====================================================================
 // ゲスト追加
 // =====================================================================
-function addGuestPlayer() {
-    if (isEventLocked()) return;
+// _guestModalMode: 'live'=試合開始後にstate直接追加 / 'entry'=準備中にentryPlayersへ追加
+let _guestModalMode = 'live';
+
+function _openGuestModal(mode) {
+    _guestModalMode = mode || 'live';
     ['gf-name','gf-kana','gf-birthdate','gf-club'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
     const gs = document.getElementById('gf-gender'); if (gs) gs.value = '';
     const cs = document.getElementById('gf-class');  if (cs) cs.value = '';
     document.getElementById('guestModal').classList.add('show');
+}
+
+// 試合開始後（liveSetup）からのゲスト追加
+function addGuestPlayer() {
+    if (isEventLocked()) return;
+    _openGuestModal('live');
+}
+
+// 準備中（entryListCard）からのゲスト追加
+function addEntryGuestPlayer() {
+    _openGuestModal('entry');
 }
 
 function closeGuestModal() {
@@ -1427,6 +1489,34 @@ function confirmGuestAdd() {
     const muMap    = { high: 32.0, mid: 25.0, low: 18.0 };
     const sigmaMap = { high: 8.3,  mid: 7.0,  low: 7.0  };
 
+    closeGuestModal();
+
+    if (_guestModalMode === 'entry') {
+        // ── 準備中：entryPlayers に追加 ──
+        const guestKey = 'guest_' + Date.now();
+        entryPlayers.push({
+            _guestKey:    guestKey,
+            isGuest:      true,
+            pid:          null,
+            name,
+            kana,
+            mu:           muMap[cls],
+            sigma:        sigmaMap[cls],
+            guestName:    name,
+            guestKana:    kana,
+            guestGender:  gender,
+            guestBirthdate: birthdate.replace(/-/g, '/'),
+            guestClass:   cls,
+            guestClub:    club,
+            clubName:     club,
+        });
+        renderEntryList();
+        _saveEntryToState();
+        showToast(`${name} さんをゲストとして追加しました`);
+        return;
+    }
+
+    // ── 試合開始後：state.players に直接追加 ──
     const newId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
     addPlayerToState(newId, true);
     state.playerNames[newId] = name;
@@ -1442,11 +1532,10 @@ function confirmGuestAdd() {
         player.guestGender    = gender;
         player.guestBirthdate = birthdate.replace(/-/g, '/');
         player.guestClass     = cls;
-        player.guestClub      = club; // 任意・空文字の場合もあり
+        player.guestClub      = club;
     }
     state.tsMap[newId] = { mu: muMap[cls], sigma: sigmaMap[cls] };
 
-    closeGuestModal();
     renderPlayerList();
     saveState();
     showToast(`${name} さんをゲストとして追加しました`);
