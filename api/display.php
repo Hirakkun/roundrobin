@@ -54,7 +54,14 @@ body.light {
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* 横長デフォルト */
 html { font-size: min(2.8vw, 5vh); }
+
+/* 縦長（スマホ）：カード5枚が縦に収まるサイズに調整 */
+@media (orientation: portrait) {
+    html { font-size: min(4.5vw, 2.8vh); }
+}
+
 body {
     height: 100vh; width: 100%;
     font-family: 'Arial', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
@@ -109,7 +116,6 @@ body {
     font-weight: bold;
     color: var(--ticker-fg);
     will-change: transform;
-    /* アニメーションはJS（Web Animations API）で制御 */
 }
 
 /* ── ヘッダー右 ── */
@@ -168,7 +174,30 @@ body.light #theme-thumb { left: 1.15em; }
 #courts-grid.cols-5 { grid-template-columns: 1fr 1fr 1fr; }
 #courts-grid.cols-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
-/* ── コートカード ── */
+/* ── 横長：カードが縦長にならないよう制限 ── */
+@media (orientation: landscape) {
+    /* 1行グリッドでカードが縦長化しやすい cols-2/3 のみ制限 */
+    #courts-grid {
+        align-content: center;  /* 行全体を中央寄せ */
+    }
+    #courts-grid.cols-2 .court-card {
+        max-height: 48vw;       /* 横幅(50vw)を超えないよう制限 */
+        align-self: center;
+    }
+    #courts-grid.cols-3 .court-card {
+        max-height: 32vw;       /* 横幅(33vw)を超えないよう制限 */
+        align-self: center;
+    }
+}
+
+/* ── 縦長：1列レイアウト ── */
+@media (orientation: portrait) {
+    #courts-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ── コートカード（共通） ── */
 .court-card {
     border-radius: 0.4em;
     padding: 0.2em 0.45em 0.3em;
@@ -237,8 +266,11 @@ body.light .court-card.status-calling {
 body.light .status-calling .card-head {
     animation: pulse-head-calling-light 1.2s ease-in-out infinite;
 }
+body.light .status-calling .pc-head {
+    animation: pulse-head-calling-light 1.2s ease-in-out infinite;
+}
 
-/* ── カードヘッダーバー（全幅色帯） ── */
+/* ── 横長カード：カードヘッダーバー（全幅色帯） ── */
 .card-head {
     display: flex;
     align-items: stretch;
@@ -314,7 +346,7 @@ body.light .status-calling .card-head {
 .team-block {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;   /* 左詰め */
+    align-items: flex-start;
     justify-content: center;
     gap: 0.05em;
     flex: 1;
@@ -330,12 +362,12 @@ body.light .status-calling .card-head {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    justify-content: flex-start;   /* 左詰め */
+    justify-content: flex-start;
     gap: 0.25em;
     max-width: 100%;
 }
 
-/* 選手番号バッジ：○（1・2桁とも同じサイズの円） */
+/* 選手番号バッジ */
 .player-num {
     display: inline-flex;
     align-items: center;
@@ -345,7 +377,7 @@ body.light .status-calling .card-head {
     border-radius: 50%;
     width: 1.55em;
     height: 1.55em;
-    font-size: 0.68em;   /* player-name の 0.68倍 → 2桁でも収まる */
+    font-size: 0.68em;
     font-weight: 900;
     flex-shrink: 0;
     line-height: 1;
@@ -393,6 +425,146 @@ body.light .status-calling .card-head {
     line-height: 1.2;
     padding-bottom: 0.1em;
     color: var(--sub-calling);
+}
+
+/* ══════════════════════════════════════════════
+   縦長（スマホ）コンパクトカード  .pc-*
+   ══════════════════════════════════════════════ */
+
+/* 縦長カード：padding なし（pc-head が色帯を担う） */
+.court-card.pc {
+    padding: 0;
+    gap: 0;
+}
+
+/* ── ヘッダー帯 ── */
+.pc-head {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.2em 0.45em;
+    flex-shrink: 0;
+    border-radius: 0.35em 0.35em 0 0;
+    min-height: 1.9em;
+}
+.status-calling .pc-head {
+    background: #f59f00;
+    animation: pulse-head-calling 1.2s ease-in-out infinite;
+}
+.status-playing .pc-head { background: #388e3c; }
+.status-done    .pc-head { background: #666; }
+.status-empty   .pc-head { background: #444; }
+
+/* コートバッジ（A/B/C…） */
+.pc-badge {
+    font-size: 1.55em;
+    font-weight: 900;
+    color: #fff;
+    background: rgba(0,0,0,0.22);
+    padding: 0 0.28em;
+    border-radius: 0.2em;
+    line-height: 1.3;
+    flex-shrink: 0;
+}
+
+/* ステータスラベル */
+.pc-status {
+    font-size: 0.82em;
+    font-weight: bold;
+    color: #fff;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    letter-spacing: 0.03em;
+}
+
+/* 呼び出し中メッセージ（右端） */
+.pc-msg {
+    font-size: 0.62em;
+    color: rgba(255,255,255,0.92);
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+}
+
+/* インラインスコア（右端） */
+.pc-score {
+    font-size: 1.5em;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+.pc-score-hyphen {
+    font-size: 0.7em;
+    margin: 0 0.08em;
+    opacity: 0.7;
+}
+
+/* ── チーム行 ── */
+.pc-teams {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0 0.45em;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* チーム名ブロック */
+.pc-team {
+    flex: 1;
+    font-size: 0.97em;
+    font-weight: bold;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    color: var(--text-main);
+}
+.pc-team.pc-left  { text-align: right; }
+.pc-team.pc-right { text-align: left; }
+
+/* VS ラベル */
+.pc-vs {
+    font-size: 0.68em;
+    font-weight: 900;
+    color: var(--text-dim);
+    flex-shrink: 0;
+}
+
+/* 選手番号バッジ（縦長カード内） */
+.pc-pnum {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--num-bg);
+    color: var(--num-fg);
+    border-radius: 50%;
+    width: 1.4em;
+    height: 1.4em;
+    font-size: 0.65em;
+    font-weight: 900;
+    margin-right: 0.12em;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* スラッシュ区切り */
+.pc-slash { opacity: 0.45; font-weight: normal; }
+
+/* 空コート待機テキスト */
+.pc-empty-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65em;
+    color: var(--text-dim);
 }
 
 /* ── 待機画面 ── */
@@ -451,8 +623,7 @@ const firebaseConfig = {
 
 const COURT_ALPHA = ['A','B','C','D','E','F','G','H'];
 
-// ── アイコンSVG（絵文字に依存しないSVG） ──
-// コートを上から見た形（バドミントンコート）
+// ── アイコンSVG ──
 const ICON_PLAYING = `<svg viewBox="0 0 28 20" fill="none" stroke="white" stroke-linecap="square">
   <rect x="1" y="1" width="26" height="18" stroke-width="1.8"/>
   <line x1="1"  y1="10" x2="27" y2="10" stroke-width="2.8"/>
@@ -531,6 +702,14 @@ onValue(ref(db, 'sessions/' + encodeURIComponent(sid)), snap => {
     render();
 });
 
+// ── 向き変更で再描画 ──
+window.matchMedia('(orientation: portrait)').addEventListener('change', () => { if (state) render(); });
+
+// ── 縦長モード判定 ──
+function isPortraitMode() {
+    return window.matchMedia('(orientation: portrait)').matches;
+}
+
 // ── 選手名取得 ──
 function getPlayerName(id) {
     if (!state) return '';
@@ -554,7 +733,6 @@ function getCourtLabel(physIdx) {
 function getCourtStatus(mid) {
     const sc = state.scores?.[mid];
     if (sc?.done) return 'done';
-    // status フィールドを優先、なければスコアで後方互換判定
     if (sc?.status) return sc.status;
     if (sc && (sc.s1 > 0 || sc.s2 > 0)) return 'playing';
     return 'calling';
@@ -564,7 +742,7 @@ function _esc(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── チームHTML ──
+// ── 横長用：チームHTML（複数行） ──
 function teamHTML(ids) {
     return ids.map(id => {
         const name = getPlayerName(id);
@@ -575,7 +753,66 @@ function teamHTML(ids) {
     }).join('');
 }
 
-// ── テキスト自動縮小 ──
+// ── 縦長用：チーム名を1行に（スラッシュ区切り） ──
+function teamNamesPortrait(ids) {
+    if (!ids || ids.length === 0) return '';
+    return ids.map(id => {
+        const name = getPlayerName(id);
+        if (state.showPlayerNum) {
+            return `<span class="pc-pnum">${id}</span>${_esc(name)}`;
+        }
+        return _esc(name);
+    }).join('<span class="pc-slash"> / </span>');
+}
+
+// ── 縦長コンパクトカードのHTML生成 ──
+function buildPortraitCard(item, physIdx) {
+    if (!item) {
+        const lbl = getCourtLabel(physIdx);
+        return `
+            <div class="pc-head">
+                <span class="pc-badge">${_esc(String(lbl.big))}</span>
+            </div>
+            <div class="pc-empty-body">待機中</div>`;
+    }
+
+    const { rd, ct, ci, mid, physIdx: pi } = item;
+    const status = getCourtStatus(mid);
+    const lbl    = getCourtLabel(pi);
+    const sc     = state.scores?.[mid] || {};
+    const s1     = sc.s1 ?? 0;
+    const s2     = sc.s2 ?? 0;
+
+    const statusLabels = {
+        calling: '🔔 呼び出し中',
+        playing: '▶ 試合中',
+        done:    '✓ 終了',
+    };
+
+    let headRight = '';
+    if (status === 'calling') {
+        headRight = `<span class="pc-msg">コートへお集まりください</span>`;
+    } else if (status === 'playing' || status === 'done') {
+        headRight = `<span class="pc-score">${s1}<span class="pc-score-hyphen">−</span>${s2}</span>`;
+    }
+
+    const t1 = teamNamesPortrait(ct.team1 || []);
+    const t2 = teamNamesPortrait(ct.team2 || []);
+
+    return `
+        <div class="pc-head">
+            <span class="pc-badge">${_esc(String(lbl.big))}</span>
+            <span class="pc-status">${statusLabels[status] || ''}</span>
+            ${headRight}
+        </div>
+        <div class="pc-teams">
+            <div class="pc-team pc-left">${t1}</div>
+            <div class="pc-vs">VS</div>
+            <div class="pc-team pc-right">${t2}</div>
+        </div>`;
+}
+
+// ── テキスト自動縮小（横長のみ） ──
 function fitPlayerNames() {
     requestAnimationFrame(() => {
         document.querySelectorAll('.player-name').forEach(el => {
@@ -595,14 +832,12 @@ function fitPlayerNames() {
 }
 window.addEventListener('resize', () => { fitPlayerNames(); updateTicker(); });
 
-// ── ペア内の○バッジサイズを統一（小さい方に合わせる） ──
+// ── ペア内の○バッジサイズを統一 ──
 function normalizeBadgeSizes() {
     document.querySelectorAll('.team-block').forEach(block => {
         const badges = Array.from(block.querySelectorAll('.player-num'));
         if (badges.length < 2) return;
-        // リセット
         badges.forEach(b => { b.style.width = ''; b.style.height = ''; });
-        // 最小px幅を取得して揃える
         const sizes = badges.map(b => b.getBoundingClientRect().width);
         const minSz = Math.min(...sizes);
         if (minSz > 0) {
@@ -614,15 +849,13 @@ function normalizeBadgeSizes() {
     });
 }
 
-// ── テロップ更新（休憩中選手のみ） ──
-// Web Animations API を使用：テキストを1本だけ表示し右→左にスクロール（二重表示なし）
+// ── テロップ更新 ──
 let _tickerAnim = null;
 function updateTicker() {
     const wrap   = document.getElementById('ticker-wrap');
     const ticker = document.getElementById('ticker-inner');
     if (!ticker || !wrap || !state) return;
 
-    // 既存アニメーション停止
     if (_tickerAnim) { _tickerAnim.cancel(); _tickerAnim = null; }
 
     const resting = (state.players || []).filter(p => p.resting);
@@ -634,16 +867,14 @@ function updateTicker() {
     const names = resting.map(p => getPlayerName(p.id)).join('　・　');
     ticker.textContent = '休憩中：' + names;
 
-    // レイアウト確定後にサイズを取得してアニメーション開始
     requestAnimationFrame(() => {
         const wrapW = wrap.clientWidth;
         const textW = ticker.scrollWidth;
         if (textW <= 0 || wrapW <= 0) return;
 
-        // 右端から左へスクロール：開始=ラップ幅（右外）、終了=テキスト幅分（左外）
         const totalDist = wrapW + textW;
-        const speed     = 90; // px/秒
-        const duration  = (totalDist / speed) * 1000; // ms
+        const speed     = 90;
+        const duration  = (totalDist / speed) * 1000;
 
         _tickerAnim = ticker.animate([
             { transform: `translateX(${wrapW}px)` },
@@ -657,14 +888,23 @@ function render() {
     if (!state) return;
     renderCourts();
     updateTicker();
-    fitPlayerNames();
+    if (!isPortraitMode()) fitPlayerNames();
 }
 
+// ── コートグリッド描画 ──
 function renderCourts() {
-    const grid = document.getElementById('courts-grid');
+    const grid      = document.getElementById('courts-grid');
     const numCourts = state.courts || 1;
-    grid.className = 'cols-' + Math.min(numCourts, 6);
+    const portrait  = isPortraitMode();
 
+    // グリッドクラス設定
+    if (portrait) {
+        grid.className = 'portrait';
+    } else {
+        grid.className = 'cols-' + Math.min(numCourts, 6);
+    }
+
+    // 最新試合を各コートから取得
     const courtCards = [];
     for (let physIdx = 0; physIdx < numCourts; physIdx++) {
         let found = null;
@@ -690,16 +930,22 @@ function renderCourts() {
         card.className = 'court-card';
 
         if (!item) {
+            // 空コート
             card.classList.add('status-empty');
-            const lbl = getCourtLabel(physIdx);
-            card.innerHTML = `<div class="card-head">
-                <div class="court-badge">
-                    <span class="court-letter">${lbl.big}</span>
-                    <span class="court-text">コート</span>
-                </div>
-                <div class="card-head-center"></div>
-                <div class="card-head-icon"></div>
-            </div>`;
+            if (portrait) {
+                card.classList.add('pc');
+                card.innerHTML = buildPortraitCard(null, physIdx);
+            } else {
+                const lbl = getCourtLabel(physIdx);
+                card.innerHTML = `<div class="card-head">
+                    <div class="court-badge">
+                        <span class="court-letter">${lbl.big}</span>
+                        <span class="court-text">コート</span>
+                    </div>
+                    <div class="card-head-center"></div>
+                    <div class="card-head-icon"></div>
+                </div>`;
+            }
             grid.appendChild(card);
             return;
         }
@@ -708,48 +954,53 @@ function renderCourts() {
         const status = getCourtStatus(mid);
         card.classList.add('status-' + status);
 
-        const lbl = getCourtLabel(pi);
-
-        const statusTextMap = { calling: '呼び出し中', playing: '試合中', done: '終了' };
-        const iconMap        = { calling: ICON_CALLING, playing: ICON_PLAYING, done: ICON_DONE };
-
-        const sc = state.scores?.[mid] || {};
-        const s1 = sc.s1 ?? 0;
-        const s2 = sc.s2 ?? 0;
-
-        let bodyHtml = '';
-        if (status === 'playing' || status === 'done') {
-            bodyHtml = `
-                <div class="match-row">
-                    <div class="team-block">${teamHTML(ct.team1 || [])}</div>
-                    <div class="vs-label">VS</div>
-                    <div class="team-block">${teamHTML(ct.team2 || [])}</div>
-                </div>
-                <div class="score-row">
-                    <div class="score-val t1">${s1}</div>
-                    <div class="score-hyphen">−</div>
-                    <div class="score-val t2">${s2}</div>
-                </div>`;
+        if (portrait) {
+            // ── 縦長コンパクトカード ──
+            card.classList.add('pc');
+            card.innerHTML = buildPortraitCard(item, physIdx);
         } else {
-            bodyHtml = `
-                <div class="match-row">
-                    <div class="team-block">${teamHTML(ct.team1 || [])}</div>
-                    <div class="vs-label">VS</div>
-                    <div class="team-block">${teamHTML(ct.team2 || [])}</div>
-                </div>
-                <div class="sub-msg">コートへお集まりください</div>`;
-        }
+            // ── 横長カード（既存レイアウト） ──
+            const lbl = getCourtLabel(pi);
+            const statusTextMap = { calling: '呼び出し中', playing: '試合中', done: '終了' };
+            const iconMap       = { calling: ICON_CALLING, playing: ICON_PLAYING, done: ICON_DONE };
+            const sc = state.scores?.[mid] || {};
+            const s1 = sc.s1 ?? 0;
+            const s2 = sc.s2 ?? 0;
 
-        card.innerHTML = `
-            <div class="card-head">
-                <div class="court-badge">
-                    <span class="court-letter">${lbl.big}</span>
-                    <span class="court-text">コート</span>
+            let bodyHtml = '';
+            if (status === 'playing' || status === 'done') {
+                bodyHtml = `
+                    <div class="match-row">
+                        <div class="team-block">${teamHTML(ct.team1 || [])}</div>
+                        <div class="vs-label">VS</div>
+                        <div class="team-block">${teamHTML(ct.team2 || [])}</div>
+                    </div>
+                    <div class="score-row">
+                        <div class="score-val t1">${s1}</div>
+                        <div class="score-hyphen">−</div>
+                        <div class="score-val t2">${s2}</div>
+                    </div>`;
+            } else {
+                bodyHtml = `
+                    <div class="match-row">
+                        <div class="team-block">${teamHTML(ct.team1 || [])}</div>
+                        <div class="vs-label">VS</div>
+                        <div class="team-block">${teamHTML(ct.team2 || [])}</div>
+                    </div>
+                    <div class="sub-msg">コートへお集まりください</div>`;
+            }
+
+            card.innerHTML = `
+                <div class="card-head">
+                    <div class="court-badge">
+                        <span class="court-letter">${lbl.big}</span>
+                        <span class="court-text">コート</span>
+                    </div>
+                    <div class="card-head-center">${_esc(statusTextMap[status] || '')}</div>
+                    <div class="card-head-icon">${iconMap[status] || ''}</div>
                 </div>
-                <div class="card-head-center">${_esc(statusTextMap[status] || '')}</div>
-                <div class="card-head-icon">${iconMap[status] || ''}</div>
-            </div>
-            ${bodyHtml}`;
+                ${bodyHtml}`;
+        }
 
         grid.appendChild(card);
     });
