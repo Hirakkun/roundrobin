@@ -196,6 +196,7 @@ body.light #theme-thumb { left: 1.15em; }
 @media (orientation: portrait) {
     #courts-grid {
         grid-template-columns: 1fr !important;
+        grid-auto-rows: 1fr;  /* コート数に関わらず各行を等分割（オーバーフロー防止） */
     }
 }
 
@@ -394,13 +395,17 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 .score-hyphen { font-size: 2em; color: var(--text-dim); font-weight: bold; }
 
 /* ── サブメッセージ（コートへお集まりください） ── */
+/* min-height を score-row に合わせることで呼び出し中も試合中も
+   match-row の高さ（＝選手名の縦位置）が揃う */
 .sub-msg {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 0.72em;
     font-weight: bold;
     flex-shrink: 0;
     line-height: 1.2;
-    padding-bottom: 0.1em;
+    min-height: 3em;          /* score-val が 3em なので揃える */
     color: var(--sub-calling);
 }
 
