@@ -144,8 +144,10 @@ body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; backgro
 .team { width: 40%; text-align: center; font-weight: bold; font-size: 1.25rem; padding: 1.5rem 0.25rem 0.625rem; border: 2.5px solid #aaa; border-radius: 0.625rem; background: #fafafa; min-height: 5.5rem; position: relative; display: flex; flex-direction: column; justify-content: center; }
 .team::before { content: "＋"; position: absolute; top: 0; left: 0; font-size: 1rem; color: #fff; background: #2e7d32; padding: 2px 7px; border-bottom-right-radius: 0.5rem; }
 .team::after  { content: "ー"; position: absolute; top: 0; right: 0; font-size: 1rem; color: #fff; background: #c62828; padding: 2px 7px; border-bottom-left-radius: 0.5rem; }
-.score-area { width: 20%; text-align: center; font-size: 2.25rem; font-weight: bold; color: #222; }
-.score-area small { font-size: 1.25rem; color: #888; }
+.score-area { width: 20%; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.score-nums { font-size: 2.25rem; font-weight: bold; color: #222; display: flex; align-items: baseline; gap: 2px; }
+.score-nums small { font-size: 1.25rem; color: #888; }
+.score-pts { display: flex; justify-content: space-around; width: 100%; }
 /* ボールアイコン（組合せ画面） */
 .game-ball { display: inline-block; vertical-align: middle; }
 .rr-balls { display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: center; }
@@ -1751,7 +1753,7 @@ function updatePlayerNumDisplay() {
 }
 
 // バドミントンボールSVG（スコア表示用）
-const BALL_SVG = `<svg class="game-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#ccff33"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>`;
+const BALL_SVG = `<svg class="game-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="46" fill="#ccff33" stroke="#000" stroke-width="6"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>`;
 function ballsHTML(n) {
     if (!n || n <= 0) return '';
     return Array.from({length: n}, () => BALL_SVG).join('');
@@ -3570,7 +3572,7 @@ function renderMatchContainer() {
                                 <div class="team left-side" style="pointer-events:none;">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span>
                                 </div>
-                                <div class="score-area"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div><span>${sc.s1}</span><small>-</small><span>${sc.s2}</span><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div>
+                                <div class="score-area"><div class="score-nums"><span>${sc.s1}</span><small>-</small><span>${sc.s2}</span></div><div class="score-pts"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
                                 <div class="team right-side" style="pointer-events:none;">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span>
                                 </div>
@@ -3616,7 +3618,7 @@ function renderMatchContainer() {
                              data-t2="${ct.team2.join(',')}">
                             <div class="team left-side" data-p="${ct.team1.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span></div>
-                            <div class="score-area"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div><span class="s1">${sc.s1}</span><small>-</small><span class="s2">${sc.s2}</span><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div>
+                            <div class="score-area"><div class="score-nums"><span class="s1">${sc.s1}</span><small>-</small><span class="s2">${sc.s2}</span></div><div class="score-pts"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
                             <div class="team right-side" data-p="${ct.team2.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>
