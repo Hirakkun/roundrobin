@@ -569,6 +569,8 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 
 /* VS表示（ゲーム前） */
 .pc-vs-label {
+    grid-column: 1 / -1;
+    text-align: center;
     font-size: 1.05em;
     font-weight: 900;
     color: var(--text-dim);
@@ -828,7 +830,7 @@ function buildPortraitCard(item, physIdx) {
     if (status === 'calling') {
         scoreRowHtml = `<span class="pc-vs-label">VS</span>`;
     } else {
-        scoreRowHtml = `<span class="pc-balls">${ballsHTML(pt1)}</span><span class="pc-s1">${s1}</span><span class="pc-sv">vs</span><span class="pc-s2">${s2}</span><span class="pc-balls">${ballsHTML(pt2)}</span>`;
+        scoreRowHtml = `<span class="pc-balls">${ballsHTML(pt1)}</span><span class="pc-s1">${s1}</span><span class="pc-sv">−</span><span class="pc-s2">${s2}</span><span class="pc-balls">${ballsHTML(pt2)}</span>`;
     }
 
     const t1 = team1BlockHTML(ct.team1 || []);
