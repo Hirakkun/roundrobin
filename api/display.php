@@ -446,54 +446,63 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     letter-spacing: 0.03em;
 }
 
-/* ── ボディ：左チーム｜中央スコア/VS｜右チーム ── */
+/* ── ボディ：チーム1（上・左詰め）→ スコア（中央）→ チーム2（下・右詰め） ── */
 .pc-body {
     flex: 1;
     display: flex;
-    align-items: center;
-    padding: 0.12em 0.45em;
-    gap: 0.2em;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.12em 0.45em 0.14em;
     min-height: 0;
     overflow: hidden;
 }
 
 /* 空コート */
-.pc-body-empty {
+.pc-empty-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
     justify-content: center;
     font-size: 0.65em;
     color: var(--text-dim);
 }
 
-/* チーム列 */
-.pc-col {
-    flex: 1;
+/* チーム1ブロック（上部・左詰め） */
+.pc-team1-block {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 0.08em;
-    min-width: 0;
-    overflow: hidden;
+    align-items: flex-start;
+    gap: 0.04em;
 }
-.pc-col-left  { align-items: flex-start; }
-.pc-col-right { align-items: flex-end; }
 
-/* 選手名行 */
-.pc-player {
+/* スコア行（中央・横並び） */
+.pc-score-row {
     display: flex;
     align-items: center;
-    gap: 0.15em;
-    font-size: 0.88em;
-    font-weight: bold;
-    line-height: 1.25;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    justify-content: center;
+    gap: 0.38em;
+    flex-shrink: 0;
 }
-/* 右チームはバッジ→名前の順をそのままに右詰め */
-.pc-col-right .pc-player {
-    flex-direction: row-reverse;
-    text-align: right;
+
+/* チーム2ブロック（下部・右詰め） */
+.pc-team2-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.04em;
+}
+
+/* 選手名行（共通） */
+.pc-player {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.18em;
+    font-size: 1em;
+    font-weight: bold;
+    line-height: 1.2;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* 選手番号バッジ（縦長カード） */
@@ -504,23 +513,12 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     background: var(--num-bg);
     color: var(--num-fg);
     border-radius: 50%;
-    width: 1.35em;
-    height: 1.35em;
-    font-size: 0.65em;
+    width: 1.4em;
+    height: 1.4em;
+    font-size: 0.62em;
     font-weight: 900;
     flex-shrink: 0;
     line-height: 1;
-}
-
-/* ── 中央列：スコア or VS ── */
-.pc-center-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    min-width: 3em;
-    gap: 0;
 }
 
 /* VS表示（ゲーム前） */
@@ -531,26 +529,23 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     letter-spacing: 0.04em;
 }
 
-/* スコア数字（縦積み） */
+/* スコア（横並び：s1 | sv | s2） */
 .pc-s1 {
-    font-size: 1.55em;
+    font-size: 1.8em;
     font-weight: 900;
     color: var(--score-t1);
-    line-height: 1.05;
-    text-align: center;
-}
-.pc-sh {
-    font-size: 0.7em;
-    color: var(--text-dim);
-    font-weight: bold;
     line-height: 1;
 }
+.pc-sv {
+    font-size: 0.72em;
+    font-weight: bold;
+    color: var(--text-dim);
+}
 .pc-s2 {
-    font-size: 1.55em;
+    font-size: 1.8em;
     font-weight: 900;
     color: var(--score-t2);
-    line-height: 1.05;
-    text-align: center;
+    line-height: 1;
 }
 
 /* ── 待機画面 ── */
@@ -724,12 +719,21 @@ function teamHTML(ids) {
     }).join('');
 }
 
-// ── 縦長用：チーム列HTML（縦積み、左or右詰め） ──
-function teamColumnHTML(ids) {
+// ── 縦長用：チーム1（バッジ左） ──
+function team1BlockHTML(ids) {
     return ids.map(id => {
-        const name = getPlayerName(id);
+        const name   = getPlayerName(id);
         const numHtml = state.showPlayerNum ? `<span class="pc-pnum">${id}</span>` : '';
-        return `<span class="pc-player">${numHtml}<span>${_esc(name)}</span></span>`;
+        return `<span class="pc-player">${numHtml}${_esc(name)}</span>`;
+    }).join('');
+}
+
+// ── 縦長用：チーム2（バッジ右） ──
+function team2BlockHTML(ids) {
+    return ids.map(id => {
+        const name    = getPlayerName(id);
+        const numHtml = state.showPlayerNum ? `<span class="pc-pnum">${id}</span>` : '';
+        return `<span class="pc-player">${_esc(name)}${numHtml}</span>`;
     }).join('');
 }
 
@@ -741,7 +745,7 @@ function buildPortraitCard(item, physIdx) {
             <div class="pc-head">
                 <span class="pc-badge">${_esc(String(lbl.big))}</span>
             </div>
-            <div class="pc-body pc-body-empty">待機中</div>`;
+            <div class="pc-empty-body">待機中</div>`;
     }
 
     const { rd, ct, ci, mid, physIdx: pi } = item;
@@ -757,19 +761,16 @@ function buildPortraitCard(item, physIdx) {
         done:    '✓ 終了',
     };
 
-    // 中央列：ゲーム前はVS、開始後はスコアを縦積み
-    let centerHtml = '';
+    // 中央スコア行：ゲーム前は VS、開始後は「1 vs 0」横並び
+    let scoreRowHtml = '';
     if (status === 'calling') {
-        centerHtml = `<span class="pc-vs-label">VS</span>`;
+        scoreRowHtml = `<span class="pc-vs-label">VS</span>`;
     } else {
-        centerHtml = `
-            <span class="pc-s1">${s1}</span>
-            <span class="pc-sh">−</span>
-            <span class="pc-s2">${s2}</span>`;
+        scoreRowHtml = `<span class="pc-s1">${s1}</span><span class="pc-sv">vs</span><span class="pc-s2">${s2}</span>`;
     }
 
-    const t1 = teamColumnHTML(ct.team1 || []);
-    const t2 = teamColumnHTML(ct.team2 || []);
+    const t1 = team1BlockHTML(ct.team1 || []);
+    const t2 = team2BlockHTML(ct.team2 || []);
 
     return `
         <div class="pc-head">
@@ -777,9 +778,9 @@ function buildPortraitCard(item, physIdx) {
             <span class="pc-status">${statusLabels[status] || ''}</span>
         </div>
         <div class="pc-body">
-            <div class="pc-col pc-col-left">${t1}</div>
-            <div class="pc-center-col">${centerHtml}</div>
-            <div class="pc-col pc-col-right">${t2}</div>
+            <div class="pc-team1-block">${t1}</div>
+            <div class="pc-score-row">${scoreRowHtml}</div>
+            <div class="pc-team2-block">${t2}</div>
         </div>`;
 }
 
