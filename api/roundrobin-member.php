@@ -364,7 +364,7 @@ function showConfirm(title,msg,okLabel,cb){
     document.getElementById('mc-ok-btn').textContent=okLabel||'削除する';
     document.getElementById('modal-confirm').classList.add('show');
 }
-window.execConfirm=function(){ closeConfirm(); pendingConfirmCb&&pendingConfirmCb(); };
+window.execConfirm=function(){ const cb=pendingConfirmCb; closeConfirm(); cb&&cb(); };
 window.closeConfirm=function(){ document.getElementById('modal-confirm').classList.remove('show'); pendingConfirmCb=null; };
 
 // ═══════════════════════════════════════════════════════════════
