@@ -127,7 +127,7 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.9em; font-weight: bold;
         }
         .role-button.is-serving { color: #1565c0; background: #cce5ff; }
-        .role-button.undo { background: #f8d7da; color: #721c24; cursor: pointer; }
+        .role-button.undo { background: #c62828; color: #fff; cursor: pointer; font-weight: bold; }
 
         /* チーム名 */
         .team-name-row { display: flex; align-items: stretch; flex-shrink: 0; }

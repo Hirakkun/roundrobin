@@ -151,8 +151,10 @@ body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; backgro
 .score-pts-t2 { display: flex; justify-content: flex-end; }
 /* ボールアイコン（組合せ画面） */
 .game-ball { display: inline-block; vertical-align: middle; }
-.rr-balls { display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: center; }
-.rr-balls .game-ball { width: 16px; height: 16px; }
+.rr-balls { display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; width: 100%; }
+.score-pts-t1 .rr-balls { justify-content: flex-start; }
+.score-pts-t2 .rr-balls { justify-content: flex-end; }
+.rr-balls .game-ball { width: 10px; height: 10px; }
 .round-del-btn { font-size: 1.125rem; background: none; border: none; cursor: pointer; padding: 2px 4px; line-height: 1; opacity: 0.7; }
 .next-round-btn { width: 100%; font-size: 1.25rem; font-weight: bold; padding: 0.875rem; background: #2e7d32; color: #fff; border: none; border-radius: 0.75rem; margin-top: 0.625rem; cursor: pointer; box-shadow: 0 3px 8px rgba(46,125,50,.4); }
 .pool-status-bar { display:none; margin-top:0.5rem; padding:0.5rem 0.75rem; background:#e8f5e9; border-radius:0.5rem; border-left:4px solid #2e7d32; font-size:0.8125rem; color:#2e7d32; font-weight:bold; }
