@@ -550,7 +550,8 @@ let state = {
     announcedCourts: {},    // {r${round}c${idx}: timestamp} アナウンス済みコート
     courtNameAlpha: false,  // false=第○コート, true=A・Bコート
     showPlayerNum:  false,  // false=名前のみ, true=番号+名前
-    fixedPairs:     [],     // ペア固定 [[id1,id2], ...]
+    fixedPairs:     [],     // ペア固定 [[id1,id2], ...]（大会中・数値ID）
+    fixedPairPids:  [],     // ペア固定 [[pid1,pid2], ...]（準備中・pid文字列）
     createdAt: '',          // 大会作成日時（ISO文字列）
     autoMatch:  false,      // 自動組合せ ON/OFF
     seqMatch:   false,      // 順次組合せ ON/OFF（プール方式）
@@ -762,6 +763,10 @@ window.removeConfirmedEntry = function(key) {
     // keyはpid（名簿参加者）またはゲストの_guestKey
     entryPlayers = entryPlayers.filter(p => p.pid !== key && p._guestKey !== key);
     entryRestingPids.delete(key);
+    // 削除した選手のペア固定も解除
+    state.fixedPairPids = (state.fixedPairPids || []).filter(pair =>
+        pair[0] !== key && pair[1] !== key
+    );
     renderEntryList();
     _saveEntryToState(); // Firebaseに即保存
 };
@@ -887,27 +892,42 @@ function renderEntryList() {
         const isGuest  = !!p.isGuest;
         const entryKey = isGuest ? p._guestKey : p.pid;
         const isResting = isGuest ? false : entryRestingPids.has(p.pid);
+        // ペア情報（非ゲスト・非開催中のみ）
+        const partnerPid = (!isGuest && !isActive && p.pid) ? getEntryPairPartnerPid(p.pid) : null;
+        const partnerObj = partnerPid ? entryPlayers.find(ep => ep.pid === partnerPid) : null;
+        const pairColor  = partnerPid ? getEntryPairColor(p.pid) : null;
         let actionBtns;
         if (isActive) {
             actionBtns = `<span style="padding:5px 10px;background:#e0e0e0;color:#aaa;border-radius:8px;font-size:0.6875rem;white-space:nowrap;">🔒 参加済</span>`;
         } else if (isGuest) {
-            // ゲストは削除ボタンのみ（休憩は試合開始後に設定）
+            // ゲストは削除ボタンのみ（休憩・ペアは試合開始後に設定）
             actionBtns = `<button type="button" class="rest-btn delete-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(entryKey)}')">削除</button>`;
         } else {
+            const pid = p.pid;
+            const pairBtn = partnerPid
+                ? `<button type="button" class="rest-btn pair-btn paired"
+                       style="font-size:0.75rem;padding:5px 8px;background:${pairColor};border-color:${pairColor};color:#fff;"
+                       data-pid="${_esc(pid)}" onclick="removeEntryPair(this.dataset.pid)">🤝解除</button>`
+                : `<button type="button" class="rest-btn pair-btn"
+                       style="font-size:0.75rem;padding:5px 8px;"
+                       data-pid="${_esc(pid)}" onclick="openEntryPairModal(this.dataset.pid)">🤝ペア</button>`;
             const restBtn = isResting
-                ? `<button type="button" class="rest-btn resting" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">復帰</button>`
-                : `<button type="button" class="rest-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(p.pid)}')">休憩</button>`;
-            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(p.pid)}')">削除</button>`;
-            actionBtns = restBtn + delBtn;
+                ? `<button type="button" class="rest-btn resting" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(pid)}')">復帰</button>`
+                : `<button type="button" class="rest-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="toggleEntryRest('${_esc(pid)}')">休憩</button>`;
+            const delBtn = `<button type="button" class="rest-btn delete-btn" style="font-size:0.75rem;padding:5px 8px;" onclick="removeConfirmedEntry('${_esc(pid)}')">削除</button>`;
+            actionBtns = pairBtn + restBtn + delBtn;
         }
         const clubBadge = p.clubName
             ? ` <span style="font-size:0.6875rem;color:#666;font-weight:normal;">(${_esc(p.clubName)})</span>`
             : '';
         const guestBadge = isGuest ? `<span class="guest-badge">ゲスト</span>` : '';
+        const pairBadge  = partnerObj
+            ? `<span class="pair-badge" style="background:${pairColor};color:#fff;margin-left:4px;">🤝 ${_esc(partnerObj.name)}</span>`
+            : '';
         div.style.opacity = isResting ? '0.5' : '1';
         div.innerHTML = `
             <div style="flex:1;">
-                <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${guestBadge}${clubBadge}</div>
+                <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${guestBadge}${clubBadge}${pairBadge}</div>
                 <div style="font-size:0.6875rem;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
             </div>
             <div style="display:flex;gap:6px;">${actionBtns}</div>`;
@@ -958,6 +978,13 @@ function applyEntryPlayers() {
         state.pairMatrix[i] = {}; state.oppMatrix[i] = {};
         ids.forEach(j => { state.pairMatrix[i][j] = 0; state.oppMatrix[i][j] = 0; });
     });
+    // 準備中に設定したペア（pid）を数値IDに変換して fixedPairs に反映
+    state.fixedPairs = [];
+    for (const [pid1, pid2] of (state.fixedPairPids || [])) {
+        const p1 = state.players.find(p => p.pid === pid1);
+        const p2 = state.players.find(p => p.pid === pid2);
+        if (p1 && p2) state.fixedPairs.push([p1.id, p2.id]);
+    }
     return true;
 }
 
@@ -1349,6 +1376,83 @@ function getPairColor(id) {
     return idx >= 0 ? PAIR_COLORS[idx % PAIR_COLORS.length] : null;
 }
 
+// ── 準備中ペア固定（pid ベース） ─────────────────────────────────
+function getEntryFixedPairPids() {
+    if (!Array.isArray(state.fixedPairPids)) state.fixedPairPids = [];
+    return state.fixedPairPids;
+}
+function getEntryPairPartnerPid(pid) {
+    for (const pair of getEntryFixedPairPids()) {
+        if (pair[0] === pid) return pair[1];
+        if (pair[1] === pid) return pair[0];
+    }
+    return null;
+}
+function getEntryPairIndex(pid) {
+    const pairs = getEntryFixedPairPids();
+    for (let i = 0; i < pairs.length; i++) {
+        if (pairs[i][0] === pid || pairs[i][1] === pid) return i;
+    }
+    return -1;
+}
+function getEntryPairColor(pid) {
+    const idx = getEntryPairIndex(pid);
+    return idx >= 0 ? PAIR_COLORS[idx % PAIR_COLORS.length] : null;
+}
+
+let _entryPairTargetPid = null;
+
+window.openEntryPairModal = function(pid) {
+    _entryPairTargetPid = pid;
+    _pairTargetId = null; // ライブモードとの競合防止
+    const player = entryPlayers.find(p => p.pid === pid);
+    const name = player?.name || pid;
+    document.getElementById('pairModalTitle').textContent = '🤝 ' + name + ' のペア相手を選択';
+    const list = document.getElementById('pairModalList');
+    const candidates = entryPlayers.filter(p =>
+        !p.isGuest && p.pid && p.pid !== pid && getEntryPairPartnerPid(p.pid) == null
+    );
+    if (!candidates.length) {
+        list.innerHTML = '<div style="padding:16px;text-align:center;color:#888;">ペア可能な選手がいません</div>';
+    } else {
+        list.innerHTML = candidates.map(p =>
+            `<div class="pm-item" data-pid="${_esc(p.pid)}" onclick="confirmEntryPair(this.dataset.pid)">
+                <div>
+                    <div class="pm-name">${_esc(p.name)}</div>
+                    ${p.clubName ? '<div class="pm-club">' + _esc(p.clubName) + '</div>' : ''}
+                </div>
+            </div>`
+        ).join('');
+    }
+    document.getElementById('pairModal').classList.add('show');
+};
+
+window.confirmEntryPair = function(partnerPid) {
+    if (_entryPairTargetPid == null) return;
+    const targetPid = _entryPairTargetPid;
+    getEntryFixedPairPids().push([targetPid, partnerPid]);
+    closePairModal();
+    renderEntryList();
+    saveState();
+    const p1 = entryPlayers.find(p => p.pid === targetPid);
+    const p2 = entryPlayers.find(p => p.pid === partnerPid);
+    showToast('🤝 ' + (p1?.name || '') + ' と ' + (p2?.name || '') + ' をペア固定しました');
+};
+
+window.removeEntryPair = function(pid) {
+    const partnerPid = getEntryPairPartnerPid(pid);
+    if (partnerPid == null) return;
+    const p1 = entryPlayers.find(p => p.pid === pid);
+    const p2 = entryPlayers.find(p => p.pid === partnerPid);
+    if (!confirm((p1?.name || pid) + ' と ' + (p2?.name || partnerPid) + ' のペア固定を解除しますか？')) return;
+    state.fixedPairPids = getEntryFixedPairPids().filter(pair =>
+        pair[0] !== pid && pair[1] !== pid
+    );
+    renderEntryList();
+    saveState();
+    showToast('ペア解除しました');
+};
+
 let _pairTargetId = null;
 
 function openPairModal(id) {
@@ -1380,6 +1484,7 @@ function openPairModal(id) {
 window.closePairModal = function() {
     document.getElementById('pairModal').classList.remove('show');
     _pairTargetId = null;
+    _entryPairTargetPid = null;
 };
 
 window.confirmPair = function(partnerId) {
@@ -4493,7 +4598,8 @@ window._fbApply = function(remoteState) {
         if (!Array.isArray(remoteState.players))    remoteState.players    = [];
         if (!Array.isArray(remoteState.roster))     remoteState.roster     = [];
         if (!Array.isArray(remoteState.schedule))   remoteState.schedule   = [];
-        if (!Array.isArray(remoteState.fixedPairs)) remoteState.fixedPairs = [];
+        if (!Array.isArray(remoteState.fixedPairs))    remoteState.fixedPairs    = [];
+        if (!Array.isArray(remoteState.fixedPairPids)) remoteState.fixedPairPids = [];
         if (!Array.isArray(remoteState.matchPool))  remoteState.matchPool  = [];
         if (!remoteState.pairMatrix  || typeof remoteState.pairMatrix  !== 'object') remoteState.pairMatrix  = {};
         if (!remoteState.oppMatrix   || typeof remoteState.oppMatrix   !== 'object') remoteState.oppMatrix   = {};
