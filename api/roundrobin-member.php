@@ -44,7 +44,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .tab-bar { display: flex; background: #fff; border-bottom: 2px solid #d1c4e9; }
 .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-size: 14px; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
 .tab-btn.active { color: #4527a0; border-bottom-color: #4527a0; }
-.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #eee; padding: 10px 14px; box-shadow: 0 -2px 6px rgba(0,0,0,.08); }
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #eee; padding: 10px 14px 14px; box-shadow: 0 -3px 10px rgba(0,0,0,.12); }
 .class-guide { background: #f8f9ff; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #555; border: 1px solid #e8eaf6; }
 .loading-msg, .empty-msg { padding: 30px; text-align: center; color: #aaa; font-size: 15px; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 300; align-items: center; justify-content: center; }
@@ -138,7 +138,7 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div class="bottom-bar" id="main-bottom-bar">
         <div style="display:flex;gap:8px;">
             <!-- btn-add-player removed -->
-            <button class="btn btn-dark" style="flex:1;" id="btn-add-club" onclick="openClubForm(null)">🏢 新規クラブ（チーム）登録</button>
+            <button class="btn btn-purple" style="flex:1;padding:16px;font-size:1.1rem;letter-spacing:1px;box-shadow:0 4px 12px rgba(69,39,160,.45);" id="btn-add-club" onclick="openClubForm(null)">🏢 新規クラブ（チーム）登録</button>
         </div>
     </div>
 </div>
