@@ -939,7 +939,7 @@ window.undoLastPoint = function() {
 function updateDisplay() {
     // ─ 戻る／取消ボタンのラベル切替 ────────────────────────────
     const undoBtn = document.getElementById('btn-undo');
-    undoBtn.textContent = historyStack.length === 0 ? '戻る' : '取消';
+    undoBtn.textContent = '戻る';
 
     // 左右のチーム
     const leftNames  = leftTeam === 1 ? team1Names : team2Names;
