@@ -1056,6 +1056,10 @@ async function writeStatus(status, resetScores = false) {
         // 試合開始時点のサーブ権・コートサイドも Firebase に保存
         upd['scores/' + currentMid + '/server'] = current_server;
         upd['scores/' + currentMid + '/left']   = leftTeam;
+        // s1/s2 が Firebase に未存在の場合（generateNextRound 後など）でも
+        // roundrobin.php に undefined が表示されないよう必ず書き込む
+        upd['scores/' + currentMid + '/s1']     = set_score_t1;
+        upd['scores/' + currentMid + '/s2']     = set_score_t2;
     }
     if (resetScores) {
         upd['scores/' + currentMid + '/s1']     = 0;

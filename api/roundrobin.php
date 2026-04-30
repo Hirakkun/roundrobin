@@ -2848,6 +2848,14 @@ function generateNextRound() {
     state.schedule.push({ round: roundNum, courts: courtsFormatted, playerStates });
     state.roundCount = roundNum;
 
+    // スコアを初期化（s1/s2 を先に確保しないと score-court の writeStatus パッチ後に
+    // roundrobin.php でスコアが undefined になるため）
+    if (!state.scores) state.scores = {};
+    courtsFormatted.forEach((_, ci) => {
+        const newMid = 'r' + roundNum + 'c' + ci;
+        if (!state.scores[newMid]) state.scores[newMid] = { s1: 0, s2: 0, status: 'calling' };
+    });
+
     // 自動組合せ: 出場選手を「試合中」フラグに設定
     if (state.autoMatch) {
         ids.forEach(id => {
@@ -3692,7 +3700,7 @@ function renderMatchContainer() {
                                 <div class="team left-side" style="pointer-events:none;">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span>
                                 </div>
-                                <div class="score-area"><div class="score-pts-t1"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div></div><div class="score-nums"><span>${sc.s1}</span><small>-</small><span>${sc.s2}</span></div><div class="score-pts-t2"><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
+                                <div class="score-area"><div class="score-pts-t1"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div></div><div class="score-nums"><span>${sc.s1 ?? 0}</span><small>-</small><span>${sc.s2 ?? 0}</span></div><div class="score-pts-t2"><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
                                 <div class="team right-side" style="pointer-events:none;">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span>
                                 </div>
@@ -3738,7 +3746,7 @@ function renderMatchContainer() {
                              data-t2="${ct.team2.join(',')}">
                             <div class="team left-side" data-p="${ct.team1.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span></div>
-                            <div class="score-area"><div class="score-pts-t1"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div></div><div class="score-nums"><span class="s1">${sc.s1}</span><small>-</small><span class="s2">${sc.s2}</span></div><div class="score-pts-t2"><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
+                            <div class="score-area"><div class="score-pts-t1"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div></div><div class="score-nums"><span class="s1">${sc.s1 ?? 0}</span><small>-</small><span class="s2">${sc.s2 ?? 0}</span></div><div class="score-pts-t2"><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
                             <div class="team right-side" data-p="${ct.team2.join(',')}"
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>
