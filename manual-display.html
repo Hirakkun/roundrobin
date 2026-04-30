@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スマホ版 使い方ガイド｜交流会テスト</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  background: #eef2f7;
+  color: #222;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* ━━━ ヘッダー ━━━ */
+header {
+  background: linear-gradient(135deg, #0d3b6b 0%, #1565c0 100%);
+  color: #fff;
+  padding: 22px 16px 18px;
+  text-align: center;
+}
+header .ev-tag {
+  font-size: 11px;
+  background: rgba(255,255,255,.22);
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  letter-spacing: 1.5px;
+}
+header h1 { font-size: 21px; font-weight: bold; line-height: 1.4; margin-bottom: 4px; }
+header p  { font-size: 12px; opacity: .8; }
+
+/* ━━━ 目次 ━━━ */
+.toc {
+  background: #fff;
+  margin: 14px 12px 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+}
+.toc h2 { font-size: 13px; color: #1565c0; margin-bottom: 8px; }
+.toc ol  { padding-left: 20px; font-size: 13px; }
+.toc li  { margin-bottom: 4px; }
+.toc a   { color: #1565c0; text-decoration: none; }
+
+/* ━━━ セクション共通 ━━━ */
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 0 48px; }
+
+section {
+  background: #fff;
+  margin: 14px 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.sec-head {
+  display: flex; align-items: center; gap: 10px;
+  background: #0d3b6b;
+  color: #fff;
+  padding: 11px 16px;
+  font-size: 15px; font-weight: bold;
+}
+.sec-head .sec-num {
+  background: rgba(255,255,255,.28);
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.sec-body { padding: 14px 16px; }
+
+/* ━━━ サブ見出し ━━━ */
+.sub-head {
+  font-size: 14px; font-weight: bold;
+  color: #0d3b6b;
+  border-left: 4px solid #1565c0;
+  padding-left: 10px;
+  margin: 14px 0 8px;
+}
+.sub-head:first-child { margin-top: 0; }
+
+/* ━━━ STEP ━━━ */
+.step-list { list-style: none; }
+.step-list li {
+  display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;
+}
+.step-list li:last-child { margin-bottom: 0; }
+.snum {
+  background: #1565c0; color: #fff;
+  min-width: 28px; height: 28px; border-radius: 50%;
+  font-size: 13px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.stxt { flex: 1; }
+.stxt strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.stxt span   { font-size: 13px; color: #555; }
+
+/* ━━━ バッジ ━━━ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: bold; vertical-align: middle;
+  white-space: nowrap;
+}
+.badge-call { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+.badge-play { background: #d4edda; color: #155724; border: 1px solid #28a745; }
+.badge-done { background: #e2e3e5; color: #383d41; border: 1px solid #adb5bd; }
+.badge-wait { background: #e2e3e5; color: #666;    border: 1px solid #ccc; }
+
+/* ━━━ ボタン見本 ━━━ */
+.btn-s {
+  display: inline-flex; align-items: center; justify-content: center;
+  text-align: center; border-radius: 8px; font-weight: bold;
+  font-size: 13px; padding: 7px 14px; line-height: 1.3;
+  vertical-align: middle;
+}
+.btn-yellow  { background: #ffc107; color: #000; }
+.btn-blue    { background: #1565c0; color: #fff; }
+.btn-confirm { background: #ffc107; color: #000; border-radius: 8px; padding: 7px 16px; font-weight: bold; font-size: 13px; }
+.btn-end     { background: #dc3545; color: #fff; border-radius: 8px; padding: 7px 16px; font-weight: bold; font-size: 13px; }
+.btn-undo    { background: #f8d7da; color: #721c24; border-radius: 8px; padding: 7px 14px; font-weight: bold; font-size: 12px; }
+
+/* ━━━ ノートボックス ━━━ */
+.note {
+  background: #fff8e1; border-left: 4px solid #ffc107;
+  border-radius: 0 8px 8px 0; padding: 10px 12px;
+  font-size: 13px; margin-top: 10px;
+}
+.note-t { font-weight: bold; color: #856404; margin-bottom: 3px; }
+.info {
+  background: #e3f2fd; border-left: 4px solid #2196f3;
+  border-radius: 0 8px 8px 0; padding: 10px 12px;
+  font-size: 13px; margin-top: 10px;
+}
+.info-t { font-weight: bold; color: #1565c0; margin-bottom: 3px; }
+.warn {
+  background: #fdecea; border-left: 4px solid #e53935;
+  border-radius: 0 8px 8px 0; padding: 10px 12px;
+  font-size: 13px; margin-top: 10px;
+}
+.warn-t { font-weight: bold; color: #b71c1c; margin-bottom: 3px; }
+
+/* ━━━ 画面モックアップ共通 ━━━ */
+.mock {
+  border: 2px solid #90caf9;
+  border-radius: 10px; overflow: hidden; margin: 10px 0; font-size: 13px;
+}
+.mock-h {
+  background: #1a1a2e; color: #fff;
+  padding: 8px 12px; font-weight: bold; font-size: 13px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.mock-b { background: #fff; padding: 0; }
+
+/* ━━━ コートカード模擬 ━━━ */
+.cc {
+  border: 2px solid #90caf9;
+  border-radius: 10px; overflow: hidden; margin: 10px 0;
+}
+.cc-head-call {
+  background: #f59f00; color: #fff; padding: 6px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: bold; font-size: 13px;
+}
+.cc-head-play {
+  background: #388e3c; color: #fff; padding: 6px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: bold; font-size: 13px;
+}
+.cc-head-done {
+  background: #666; color: #fff; padding: 6px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: bold; font-size: 13px;
+}
+.cc-body { background: #fff; padding: 10px 14px; }
+.cc-team { font-weight: bold; font-size: 14px; color: #333; padding: 3px 0; }
+.cc-team.t1 { color: #0d47a1; }
+.cc-team.t2 { color: #1b5e20; }
+.cc-vs   { text-align: center; font-size: 20px; font-weight: 900; color: #aaa; padding: 3px 0; }
+.cc-score-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 4px 0;
+}
+.cc-score-num {
+  font-size: 26px; font-weight: 900; width: 40px; text-align: center;
+}
+.cc-score-num.t1 { color: #1565c0; }
+.cc-score-num.t2 { color: #2e7d32; }
+.cc-score-sep { font-size: 22px; font-weight: bold; color: #aaa; }
+.cc-balls { font-size: 11px; color: #555; }
+.cc-btn-row {
+  padding: 8px 14px 10px;
+  text-align: center;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+.cc-letter {
+  background: rgba(0,0,0,.25); color: #fff; font-weight: 900;
+  font-size: 15px; padding: 2px 8px; border-radius: 4px;
+}
+
+/* ━━━ スコア入力画面モック ━━━ */
+.sc-bar {
+  background: #283593; color: #fff;
+  padding: 7px 12px; font-size: 12px; font-weight: bold;
+  display: flex; justify-content: space-between;
+}
+.sc-header-row {
+  display: flex; background: #f0f0f0;
+}
+.sc-role {
+  flex: 1; text-align: center; padding: 6px 4px;
+  font-size: 12px; font-weight: bold;
+}
+.sc-role.serving { background: #cce5ff; color: #1565c0; }
+.sc-role.undo    { background: #f8d7da; color: #721c24; }
+.sc-names {
+  display: flex;
+}
+.sc-name {
+  flex: 1; text-align: center; padding: 8px 6px;
+  font-size: 13px; font-weight: bold; line-height: 1.3;
+}
+.sc-name.t1 { background: #e3f2fd; color: #0d47a1; }
+.sc-name.t2 { background: #e8f5e9; color: #1b5e20; }
+.sc-btns {
+  display: flex;
+}
+.sc-btn {
+  flex: 1; text-align: center; padding: 10px 4px;
+  font-size: 13px; font-weight: bold; color: #fff;
+}
+.sc-btn.t1 { background: #1565c0; }
+.sc-btn.t2 { background: #2e7d32; }
+.sc-call {
+  background: #e9f5ff; border: 2px solid #aed9f7;
+  border-radius: 8px; padding: 8px 12px; margin: 8px;
+  font-size: 13px; font-weight: bold; color: #333;
+  text-align: center;
+}
+.sc-points {
+  display: flex; min-height: 80px;
+}
+.sc-pt {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 40px; font-weight: 900;
+}
+.sc-pt.t1 { background: #cce5ff; color: #0d47a1; }
+.sc-pt.t2 { background: #d4edda; color: #1b5e20; }
+.sc-action {
+  padding: 6px 10px;
+}
+.sc-game-area {
+  background: #f9f9f9; padding: 8px 12px; font-size: 13px;
+}
+.sc-game-score { font-size: 20px; font-weight: bold; color: #333; }
+
+/* ━━━ セットアップ画面モック ━━━ */
+.setup-mock {
+  background: #283593; border-radius: 10px;
+  padding: 14px 12px; margin: 8px 0;
+}
+.setup-mock h3 {
+  color: #fff; font-size: 14px; font-weight: bold;
+  text-align: center; margin-bottom: 10px;
+}
+.setup-btn-mock {
+  width: 100%; padding: 10px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: bold; color: #fff;
+  margin-bottom: 8px; text-align: left;
+}
+.setup-btn-mock:last-child { margin-bottom: 0; }
+.setup-btn-mock.t1 { background: #1565c0; }
+.setup-btn-mock.t2 { background: #2e7d32; }
+.setup-side-mock {
+  display: flex; border-radius: 8px; overflow: hidden;
+  border: 2px solid #fff; margin: 8px 0; min-height: 70px;
+}
+.side-half {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-weight: bold; color: #fff; gap: 4px;
+}
+.side-half.left  { background: #1565c0; }
+.side-half.right { background: #2e7d32; }
+.side-half .arrow { font-size: 22px; }
+.side-half .word  { font-size: 14px; }
+.net-div { width: 4px; background: #fff; }
+
+/* ━━━ 完了画面モック ━━━ */
+.done-mock {
+  background: #1b5e20; border-radius: 10px;
+  padding: 24px 12px; margin: 8px 0; text-align: center;
+}
+.done-mock .d-icon  { font-size: 36px; }
+.done-mock .d-title { color: #fff; font-size: 16px; font-weight: bold; margin: 6px 0; }
+.done-mock .d-score { color: #a5d6a7; font-size: 28px; font-weight: bold; }
+.done-mock .d-sub   { color: #a5d6a7; font-size: 12px; margin-top: 6px; }
+
+/* ━━━ フロー ━━━ */
+.flow { display: flex; flex-direction: column; align-items: center; gap: 3px; margin: 10px 0; }
+.flow-box {
+  background: #e3f2fd; border: 1px solid #90caf9;
+  border-radius: 8px; padding: 8px 16px;
+  font-size: 13px; font-weight: bold; color: #0d3b6b;
+  width: 100%; text-align: center;
+}
+.flow-box.active { background: #1565c0; color: #fff; border-color: #1565c0; }
+.flow-box.green  { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.flow-arr { font-size: 18px; color: #90caf9; line-height: 1; }
+
+/* ━━━ QA ━━━ */
+.qa { margin-bottom: 12px; }
+.qa-q {
+  background: #e3f2fd; border-radius: 8px 8px 0 0;
+  padding: 8px 12px; font-weight: bold; font-size: 13px; color: #0d3b6b;
+}
+.qa-q::before { content: "Q. "; }
+.qa-a {
+  background: #f9f9f9; border: 1px solid #d0e8f8; border-top: none;
+  border-radius: 0 0 8px 8px; padding: 8px 12px; font-size: 13px;
+}
+.qa-a::before { content: "A. "; font-weight: bold; color: #1565c0; }
+
+/* ━━━ 凡例行 ━━━ */
+.legend-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 10px; font-size: 13px;
+}
+.legend-row:last-child { margin-bottom: 0; }
+.legend-label { flex-shrink: 0; min-width: 50px; }
+
+/* ━━━ フッター ━━━ */
+footer {
+  text-align: center; padding: 20px 16px;
+  font-size: 12px; color: #888;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ev-tag">交流会テスト</div>
+  <h1>📱 スマホ版 使い方ガイド</h1>
+  <p>案内画面の見かた・スコア入力の操作方法</p>
+</header>
+
+<div class="wrap">
+
+<!-- 目次 -->
+<div class="toc">
+  <h2>📋 目次</h2>
+  <ol>
+    <li><a href="#s1">案内画面を開く</a></li>
+    <li><a href="#s2">案内画面の見かた（全体レイアウト）</a></li>
+    <li><a href="#s3">各コートカードの情報の意味</a></li>
+    <li><a href="#s4">試合の状態（ステータス）一覧</a></li>
+    <li><a href="#s5">主審スコア入力ボタン</a></li>
+    <li><a href="#s6">スコア入力画面の使い方（主審向け）</a></li>
+    <li><a href="#s7">試合終了</a></li>
+    <li><a href="#s8">よくある質問</a></li>
+  </ol>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     1. 案内画面を開く
+══════════════════════════════════════════ -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">1</span>案内画面を開く</div>
+  <div class="sec-body">
+    <ul class="step-list">
+      <li>
+        <span class="snum">1</span>
+        <div class="stxt">
+          <strong>URLまたはQRコードを受け取る</strong>
+          <span>スタッフからURLのリンクまたはQRコードが配られます。</span>
+        </div>
+      </li>
+      <li>
+        <span class="snum">2</span>
+        <div class="stxt">
+          <strong>スマホのブラウザで開く</strong>
+          <span>Safari（iPhone）または Chrome（Android）で開いてください。</span>
+        </div>
+      </li>
+      <li>
+        <span class="snum">3</span>
+        <div class="stxt">
+          <strong>自動で最新情報に更新されます</strong>
+          <span>ページを手動でリロードしなくても、試合状況が自動的に切り替わります。</span>
+        </div>
+      </li>
+    </ul>
+    <div class="note">
+      <div class="note-t">⚠ ご注意</div>
+      Wi-Fiまたはモバイルデータ通信が必要です。機内モードや圏外では使用できません。
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     2. 案内画面の見かた
+══════════════════════════════════════════ -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">2</span>案内画面の見かた（全体レイアウト）</div>
+  <div class="sec-body">
+
+    <p style="font-size:13px; margin-bottom:12px;">画面は <strong>①ヘッダー</strong> と <strong>②コートカード一覧</strong> の2つに分かれています。</p>
+
+    <!-- ヘッダー -->
+    <div class="sub-head">① ヘッダー（画面上部）</div>
+    <div class="mock" style="border-color:#444;">
+      <div class="mock-h">
+        <span>🏸 交流会テスト</span>
+        <span style="font-size:11px; color:#aaa;">☀ &nbsp;10:45</span>
+      </div>
+    </div>
+
+    <div class="legend-row">
+      <div class="legend-label">🏸 イベント名</div>
+      <div>開催中のイベント名が表示されます。</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-label">⏰ 時刻</div>
+      <div>現在時刻がリアルタイムで表示されます。</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-label">☀ / 🌙 切替</div>
+      <div>タップすると画面の色をライト（明るい）↔ ダーク（暗い）に切り替えられます。屋外の明るい場所ではライトモードが見やすいです。</div>
+    </div>
+
+    <!-- コートカード -->
+    <div class="sub-head">② コートカード一覧</div>
+    <p style="font-size:13px; margin-bottom:8px;">各コートの情報がカード形式で縦に並んでいます。コートが多い場合は<strong>上下にスクロール</strong>してすべて確認してください。</p>
+
+    <div class="flow">
+      <div class="flow-box">Aコート（上から1枚目）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">Bコート（上から2枚目）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">Cコート（上から3枚目）…</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     3. コートカードの情報の意味
+══════════════════════════════════════════ -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">3</span>各コートカードの情報の意味</div>
+  <div class="sec-body">
+
+    <!-- 呼び出し中カード -->
+    <div class="sub-head">▼ 呼び出し中のカード</div>
+    <div class="cc">
+      <div class="cc-head-call">
+        <span><span class="cc-letter">A</span> コート</span>
+        <span>🔔 呼び出し中</span>
+      </div>
+      <div class="cc-body">
+        <div class="cc-team t1">① 山田 太郎 ／ 鈴木 花子</div>
+        <div class="cc-vs">② VS</div>
+        <div class="cc-team t2">① 佐藤 一郎 ／ 田中 美咲</div>
+      </div>
+      <div class="cc-btn-row">
+        <span class="btn-s btn-yellow">③ 主審<br>スコア入力</span>
+      </div>
+    </div>
+
+    <div class="legend-row"><div class="legend-label">① 選手名</div><div>上段＝チーム1（青系）、下段＝チーム2（緑系）。ダブルスは「Aさん ／ Bさん」のように表示されます。</div></div>
+    <div class="legend-row"><div class="legend-label">② VS</div><div>呼び出し中の場合、両チームの間に大きく「VS」と表示されます。</div></div>
+    <div class="legend-row"><div class="legend-label">③ ボタン（黄）</div><div>主審担当の方がタップするボタンです（詳しくは<a href="#s5">5章</a>参照）。</div></div>
+
+    <div class="info">
+      <div class="info-t">💡 コートの識別</div>
+      カード左上の <strong>「A」「B」「C」…</strong> がコートの名前です。指定されたコートのカードを見つけてください。
+    </div>
+
+    <!-- 試合中カード -->
+    <div class="sub-head" style="margin-top:16px;">▼ 試合中のカード</div>
+    <div class="cc">
+      <div class="cc-head-play">
+        <span><span class="cc-letter">B</span> コート</span>
+        <span>▶ 試合中</span>
+      </div>
+      <div class="cc-body">
+        <div class="cc-team t1">山田 太郎 ／ 鈴木 花子</div>
+        <div class="cc-score-row">
+          <div class="cc-balls">⚫⚫⚫</div>
+          <div class="cc-score-num t1">① 1</div>
+          <div class="cc-score-sep">② −</div>
+          <div class="cc-score-num t2">③ 2</div>
+          <div class="cc-balls">⚫⚫⚫⚫⚫</div>
+        </div>
+        <div class="cc-team t2">佐藤 一郎 ／ 田中 美咲</div>
+        <p style="font-size:11px; color:#888; text-align:center; padding-top:4px;">④ ⚫ = 現在のゲーム内ポイント数</p>
+      </div>
+      <div class="cc-btn-row">
+        <span class="btn-s btn-blue">主審<br>スコア入力</span>
+      </div>
+    </div>
+
+    <div class="legend-row"><div class="legend-label">① 左の数字</div><div>上段のチーム（チーム1）が取ったゲーム数です。</div></div>
+    <div class="legend-row"><div class="legend-label">② −（ハイフン）</div><div>試合中はVSの代わりに「−」が表示されます。</div></div>
+    <div class="legend-row"><div class="legend-label">③ 右の数字</div><div>下段のチーム（チーム2）が取ったゲーム数です。</div></div>
+    <div class="legend-row"><div class="legend-label">④ ⚫ マーク</div><div>現在のゲーム内のポイント数を表します。⚫ひとつが1ポイントです。左右の数を比べると、今どちらがリードしているかわかります。</div></div>
+
+    <!-- 終了カード -->
+    <div class="sub-head" style="margin-top:16px;">▼ 終了のカード</div>
+    <div class="cc">
+      <div class="cc-head-done">
+        <span><span class="cc-letter">C</span> コート</span>
+        <span>✓ 終了</span>
+      </div>
+      <div class="cc-body" style="opacity:0.6;">
+        <div class="cc-team t1">山田 太郎 ／ 鈴木 花子</div>
+        <div class="cc-score-row">
+          <div class="cc-score-num t1">2</div>
+          <div class="cc-score-sep">−</div>
+          <div class="cc-score-num t2">1</div>
+        </div>
+        <div class="cc-team t2">佐藤 一郎 ／ 田中 美咲</div>
+      </div>
+    </div>
+    <p style="font-size:13px; margin-top:6px;">試合が終了すると最終スコアが残り、カードが少し暗くなります。</p>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     4. ステータス一覧
+══════════════════════════════════════════ -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">4</span>試合の状態（ステータス）一覧</div>
+  <div class="sec-body">
+
+    <div class="legend-row" style="margin-bottom:14px;">
+      <div><span class="badge badge-wait">待機中</span></div>
+      <div>まだ試合が組まれていないコートです。自分の名前が出たらしばらく待ちましょう。</div>
+    </div>
+    <div class="legend-row" style="margin-bottom:14px;">
+      <div><span class="badge badge-call">🔔 呼び出し中</span></div>
+      <div><strong>コートへの移動をうながしています。</strong>自分の名前が表示されていたら、すぐに指定のコートへ向かってください。カードが点滅して目立ちます。</div>
+    </div>
+    <div class="legend-row" style="margin-bottom:14px;">
+      <div><span class="badge badge-play">▶ 試合中</span></div>
+      <div>そのコートで試合が進行中です。スコアがリアルタイムで更新されます。</div>
+    </div>
+    <div class="legend-row">
+      <div><span class="badge badge-done">✓ 終了</span></div>
+      <div>試合完了。最終スコアが表示され、カードが暗くなります。</div>
+    </div>
+
+    <div class="sub-head" style="margin-top:16px;">試合の流れ</div>
+    <div class="flow">
+      <div class="flow-box">（コートに試合が割り当てられる）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box active">🔔 呼び出し中　→　コートへ移動！</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">▶ 試合中　→　スコアが更新される</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">✓ 終了　→　最終スコアが表示</div>
+    </div>
+    <div class="info">
+      <div class="info-t">💡 自動更新</div>
+      画面はリロード不要で自動的に切り替わります。定期的に確認するだけでOKです。
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     5. 主審スコア入力ボタン
+══════════════════════════════════════════ -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">5</span>主審スコア入力ボタン</div>
+  <div class="sec-body">
+
+    <p style="font-size:13px; margin-bottom:12px;">コートカードの下部に「主審スコア入力」ボタンが表示されます。<strong>主審を担当する方のみ</strong>タップしてください。</p>
+
+    <!-- 黄色 -->
+    <div class="sub-head">🟡 呼び出し中のとき（黄色）</div>
+    <div class="cc-btn-row" style="border:1px solid #eee; border-radius:8px; margin:6px 0;">
+      <span class="btn-s btn-yellow">主審<br>スコア入力</span>
+    </div>
+    <p style="font-size:13px;">タップすると、そのままスコア入力画面に移動します。</p>
+
+    <!-- 青色 -->
+    <div class="sub-head" style="margin-top:14px;">🔵 試合中のとき（青色）</div>
+    <div class="cc-btn-row" style="border:1px solid #eee; border-radius:8px; margin:6px 0;">
+      <span class="btn-s btn-blue">主審<br>スコア入力</span>
+    </div>
+    <p style="font-size:13px; margin-bottom:8px;">タップすると、確認メッセージが表示されます。</p>
+
+    <!-- 確認ダイアログ模擬 -->
+    <div style="background:#f0f0f0; border-radius:10px; padding:16px; text-align:center; font-size:14px; margin:8px 0;">
+      試合中ですが、<br>スコア入力を行いますか？
+      <div style="margin-top:12px; display:flex; gap:10px; justify-content:center;">
+        <span class="btn-s btn-blue">はい</span>
+        <span class="btn-s" style="background:#ddd; color:#555;">キャンセル</span>
+      </div>
+    </div>
+
+    <div class="legend-row" style="margin-top:8px;">
+      <div class="legend-label">「はい」</div>
+      <div>途中のスコアを<strong>引き継いだまま</strong>スコア入力画面へ移動します。</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-label">「キャンセル」</div>
+      <div>案内画面に戻ります。何も変わりません。</div>
+    </div>
+
+    <div class="note">
+      <div class="note-t">⚠ 主審以外の方へ</div>
+      誤ってタップしても「キャンセル」を押せば元に戻りますので、ご安心ください。
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     6. スコア入力画面の使い方（主審向け）
+══════════════════════════════════════════ -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">6</span>スコア入力画面の使い方（主審向け）</div>
+  <div class="sec-body">
+
+    <!-- ── STEP 1：サーブチーム選択 ── -->
+    <div class="sub-head">STEP 1　最初にサーブするチームを選ぶ</div>
+    <p style="font-size:13px; margin-bottom:8px;">スコア入力画面を開くと、最初に「どちらのチームがサーブするか」を選ぶ画面が表示されます。</p>
+
+    <div class="setup-mock">
+      <h3>🎾 最初にサーブするチームは？</h3>
+      <div class="setup-btn-mock t1">🏸 山田 太郎 ／ 鈴木 花子（チーム1）</div>
+      <div class="setup-btn-mock t2">🏸 佐藤 一郎 ／ 田中 美咲（チーム2）</div>
+    </div>
+
+    <p style="font-size:13px;">サーブするチーム名のボタンをタップしてください。</p>
+
+    <!-- ── STEP 2：コートの左右選択 ── -->
+    <div class="sub-head" style="margin-top:16px;">STEP 2　サーバーはコートのどちら側か選ぶ</div>
+    <p style="font-size:13px; margin-bottom:8px;">サーブするチームが選手としてコートの「左側」にいるか「右側」にいるかを選びます。</p>
+
+    <div class="setup-mock">
+      <h3>🎾 サーバーはどちら側ですか？</h3>
+      <div class="setup-side-mock">
+        <div class="side-half left">
+          <div class="arrow">←</div>
+          <div class="word">左</div>
+        </div>
+        <div class="net-div"></div>
+        <div class="side-half right">
+          <div class="arrow">→</div>
+          <div class="word">右</div>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:13px;">コートを正面から見て、サーバーがいる側をタップしてください。</p>
+    <div class="info" style="margin-top:8px;">
+      <div class="info-t">💡 試合中に途中から入力する場合</div>
+      試合がすでに始まっている場合（青いボタンから移動した場合）、この設定画面はスキップされ、途中のスコアから再開します。
+    </div>
+
+    <!-- ── STEP 3：メイン画面 ── -->
+    <div class="sub-head" style="margin-top:16px;">STEP 3　スコア入力メイン画面</div>
+    <p style="font-size:13px; margin-bottom:10px;">設定が終わると、スコア入力のメイン画面が表示されます。</p>
+
+    <!-- メイン画面モック -->
+    <div style="border:2px solid #90caf9; border-radius:10px; overflow:hidden; margin-bottom:12px;">
+      <div class="sc-bar">
+        <span>① ラウンド1</span>
+        <span>② Aコート</span>
+        <span>③ 3ゲームマッチ</span>
+      </div>
+      <div class="sc-header-row">
+        <div class="sc-role serving">④ サーブ</div>
+        <div class="sc-role undo">⑤ 戻る</div>
+        <div class="sc-role">レシーブ</div>
+      </div>
+      <div class="sc-names">
+        <div class="sc-name t1">⑥ 山田 太郎<br>鈴木 花子</div>
+        <div class="sc-name t2">佐藤 一郎<br>田中 美咲</div>
+      </div>
+      <div class="sc-btns">
+        <div class="sc-btn t1">⑦ ポイント</div>
+        <div class="sc-btn t2">⑦ ポイント</div>
+      </div>
+      <div class="sc-call">⑧ 14 − 12　山田ペア！</div>
+      <div class="sc-points">
+        <div class="sc-pt t1">⑨ 14</div>
+        <div class="sc-pt t2">12</div>
+      </div>
+      <div style="padding:6px 10px; display:flex; gap:8px;">
+        <span class="btn-confirm" style="display:none;">次ゲームへ</span>
+      </div>
+      <div class="sc-game-area">
+        <div style="font-size:11px; color:#555; margin-bottom:2px;">⑩ ゲームカウント</div>
+        <div class="sc-game-score">1 − 0</div>
+        <div style="font-size:11px; color:#555; margin-top:6px; margin-bottom:2px;">⑪ ゲーム履歴</div>
+        <div style="font-size:12px; color:#666;">21−15</div>
+      </div>
+    </div>
+
+    <!-- 各部位の説明 -->
+    <div class="legend-row"><div class="legend-label">① ラウンド</div><div>何回戦目かを表示します。</div></div>
+    <div class="legend-row"><div class="legend-label">② コート名</div><div>現在担当しているコートのアルファベット。</div></div>
+    <div class="legend-row"><div class="legend-label">③ 形式</div><div>「3ゲームマッチ」など、この試合の形式。</div></div>
+    <div class="legend-row"><div class="legend-label">④ サーブ表示</div><div>青くハイライトされている側が<strong>現在サーブ権を持つチーム</strong>です。ポイントが入ると自動で切り替わります。</div></div>
+    <div class="legend-row"><div class="legend-label">⑤ 戻る</div><div>直前のポイント入力を1回<strong>取り消し</strong>できます。誤入力した時に使います。</div></div>
+    <div class="legend-row"><div class="legend-label">⑥ チーム名</div><div>左（青）＝チーム1、右（緑）＝チーム2の選手名。</div></div>
+    <div class="legend-row"><div class="legend-label">⑦ ポイント<br>ボタン</div><div><strong>得点が入ったチームのボタンをタップ</strong>します。大きいので押しやすくなっています。下の大きな数字エリアもタップできます。</div></div>
+    <div class="legend-row"><div class="legend-label">⑧ 審判コール</div><div>現在のポイントスコアと、サーブ権を持つ選手名が自動表示されます。実際にこのとおりコールしてください。</div></div>
+    <div class="legend-row"><div class="legend-label">⑨ 大きい数字</div><div>現在のゲーム内ポイント数です。左右それぞれタップしてもポイント入力ができます。</div></div>
+    <div class="legend-row"><div class="legend-label">⑩ ゲームカウント</div><div>現在何ゲーム取っているかを表します（例：1−0 は左チームが1ゲーム勝ち）。</div></div>
+    <div class="legend-row"><div class="legend-label">⑪ ゲーム履歴</div><div>これまでに終わったゲームのスコアが記録されています。</div></div>
+
+    <!-- ゲーム終了時 -->
+    <div class="sub-head" style="margin-top:16px;">1ゲームが終わったとき</div>
+    <p style="font-size:13px; margin-bottom:8px;">どちらかのチームが規定ポイントに達すると、黄色の「<strong>次ゲームへ</strong>」ボタンが表示されます。</p>
+    <div style="text-align:center; margin:8px 0;">
+      <span class="btn-confirm">次ゲームへ</span>
+    </div>
+    <p style="font-size:13px;">タップすると次のゲームに移ります。ポイントカウントが 0−0 にリセットされ、サーブ権が自動で引き継がれます。</p>
+
+    <div class="warn">
+      <div class="warn-t">⚠ ご注意：ポイントの入力ミス</div>
+      ミスした場合は <span class="btn-undo">戻る</span> ボタンで1回分だけ取り消せます。「次ゲームへ」を押してしまった後は取り消しができませんのでご注意ください。
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     7. 試合終了
+══════════════════════════════════════════ -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">7</span>試合終了</div>
+  <div class="sec-body">
+
+    <p style="font-size:13px; margin-bottom:10px;">試合のゲーム数が規定数に達すると、赤い「<strong>試合終了</strong>」ボタンが表示されます。</p>
+    <div style="text-align:center; margin:8px 0;">
+      <span class="btn-end">試合終了</span>
+    </div>
+    <p style="font-size:13px; margin-bottom:12px;">ボタンをタップすると、完了画面が表示されます。</p>
+
+    <!-- 完了画面モック -->
+    <div class="done-mock">
+      <div class="d-icon">✅</div>
+      <div class="d-title">試合終了</div>
+      <div class="d-score">2 − 1</div>
+      <div class="d-sub">主審おつかれさまでした。</div>
+      <div class="d-sub" style="margin-top:4px; opacity:0.7;">表示画面に移動します...</div>
+    </div>
+
+    <div class="legend-row" style="margin-top:10px;">
+      <div class="legend-label">スコア表示</div>
+      <div>試合の最終ゲームスコアが大きく表示されます。</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-label">自動で戻る</div>
+      <div>数秒後に自動で案内画面（display）に戻ります。そのままお待ちください。</div>
+    </div>
+
+    <div class="info">
+      <div class="info-t">💡 試合結果はすぐに反映</div>
+      試合終了ボタンを押すと、案内画面のコートカードが「✓ 終了」に切り替わり、最終スコアが全員に表示されます。
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     8. よくある質問
+══════════════════════════════════════════ -->
+<section id="s8">
+  <div class="sec-head"><span class="sec-num">8</span>よくある質問（FAQ）</div>
+  <div class="sec-body">
+
+    <div class="qa">
+      <div class="qa-q">自分の名前が画面に表示されません</div>
+      <div class="qa-a">まだ試合が組まれていない可能性があります。画面を上下にスクロールして全コートを確認してから、スタッフにお声がけください。</div>
+    </div>
+
+    <div class="qa">
+      <div class="qa-q">画面が更新されない・古いままです</div>
+      <div class="qa-a">ブラウザを引っ張って更新（プルトゥリフレッシュ）するか、URLを再度開いてください。Wi-Fiや通信状況もご確認ください。</div>
+    </div>
+
+    <div class="qa">
+      <div class="qa-q">スコア入力中にページを誤って閉じてしまいました</div>
+      <div class="qa-a">同じURLを開き直すか、案内画面の青い「主審スコア入力」ボタンをタップしてください。途中のスコアから再開できます（試合中の場合）。</div>
+    </div>
+
+    <div class="qa">
+      <div class="qa-q">ポイントを誤って入力してしまいました</div>
+      <div class="qa-a">スコア入力画面の「戻る」ボタン（赤いボタン）で1回分だけ取り消しできます。</div>
+    </div>
+
+    <div class="qa">
+      <div class="qa-q">画面が暗くて見づらいです</div>
+      <div class="qa-a">案内画面右上の ☀ / 🌙 アイコンをタップしてライトモード（明るい白背景）に切り替えてください。</div>
+    </div>
+
+    <div class="qa">
+      <div class="qa-q">試合が終わったのに案内画面が「試合中」のままです</div>
+      <div class="qa-a">主審がスコア入力画面で「試合終了」ボタンを押すまで更新されません。主審またはスタッフにご確認ください。</div>
+    </div>
+
+    <div class="qa">
+      <div class="qa-q">サーブチームを間違えて選んでしまいました</div>
+      <div class="qa-a">スコア入力がまだ始まっていない段階（ポイントを入れる前）であれば、スタッフにお声がけください。ポイント入力後は変更できません。</div>
+    </div>
+
+  </div>
+</section>
+
+</div><!-- /wrap -->
+
+<footer>
+  交流会テスト｜スマホ版 使い方ガイド<br>
+  ご不明な点はスタッフまでお声がけください。
+</footer>
+
+</body>
+</html>
