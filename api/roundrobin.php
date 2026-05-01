@@ -5105,11 +5105,49 @@ window._fbStart = function(sessionId) {
     // 上書きする競合が起きる。scores サブパスを独立監視することで：
     //   ① _cid チェックを迂回してリアルタイムに描画
     //   ② _livePtScores を即時更新し次回 push での上書きを防ぐ
+    //   ③ _fbApply より先に発火するため、done 検出 → autoMatch トリガーもここで行う
     if (_scoresRef) off(_scoresRef);
     _scoresRef = ref(db, 'sessions/' + encodeURIComponent(sessionId) + '/scores');
     onValue(_scoresRef, snap => {
         const scores = snap.val();
         if (!scores || typeof scores !== 'object') return;
+
+        // ── 新たに done になったコートを検出 → autoMatch/seqMatch トリガー ──────
+        // _fbApply はメインリスナーの発火順次第で state.scores が更新済みになっている場合があり、
+        // 「新たに done になった」検出ができない（レース条件）。
+        // scores サブパスリスナーは state.scores 更新前に発火するため確実に検出できる。
+        if (isAdmin && (state.autoMatch || state.seqMatch) && Array.isArray(state.schedule)) {
+            state.schedule.forEach(rd => {
+                (rd.courts || []).forEach((ct, ci) => {
+                    const mid = 'r' + rd.round + 'c' + ci;
+                    const alreadyDone = !!state.scores?.[mid]?.done;
+                    const nowDone = !!scores[mid]?.done;
+                    if (nowDone && !alreadyDone) {
+                        // isOnCourt を解放
+                        [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
+                            const p = state.players.find(pp => pp.id === id);
+                            if (p) p.isOnCourt = false;
+                        });
+                        const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+                        if (state.autoMatch) {
+                            if (state.seqMatch) {
+                                // 順次モード: 終了コートで次を投入
+                                setTimeout(() => assignNextPoolMatch(physIdx), 300);
+                            } else {
+                                // 一括モード: ラウンド内の全コートが終了したら次ラウンドを生成
+                                // state.scores はまだ更新前なので incoming scores を参照する
+                                const allDone = (rd.courts || []).every((c, i) => {
+                                    const m = 'r' + rd.round + 'c' + i;
+                                    return !!(scores[m]?.done || state.scores?.[m]?.done);
+                                });
+                                if (allDone) setTimeout(() => generateNextRound(), 300);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
         // _livePtScores キャッシュを最新値で更新（_fbPush 時の上書き防止）
         Object.keys(scores).forEach(mid => {
             const s = scores[mid];
