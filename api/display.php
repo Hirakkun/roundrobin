@@ -1007,9 +1007,9 @@ function renderCourts() {
                 if (pi !== physIdx) continue;
                 const m = `r${rd.round}c${i}`;
                 if (!state.scores?.[m]?.done) { ci = i; break; }  // 未終了を優先
-                doneCi = i;  // 終了済みは「最後の」エントリーを採用（同コートが同ラウンドで再割当された場合、②が①を上書き）
+                if (doneCi < 0) doneCi = i;                        // 終了済みはフォールバック
             }
-            if (ci < 0) ci = doneCi;  // 未終了がなければ最後の終了済みを使用
+            if (ci < 0) ci = doneCi;  // 未終了がなければ終了済みを使用
             if (ci < 0) continue;
             const mid = `r${rd.round}c${ci}`;
             const sc  = state.scores?.[mid];

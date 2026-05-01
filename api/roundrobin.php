@@ -681,8 +681,6 @@ function initTournament() {
     renderPlayerList();
     renderMatchContainer();
     document.getElementById('disp-courts-live').textContent = state.courts;
-    // QR・案内パネルカードを表示（saveState後は _fbApply が CLIENT_ID一致でスキップされるため明示的に呼ぶ）
-    _showQrCards();
     // 設定タブのまま留まる（組合せには自動移動しない）
     showStep('step-setup', document.getElementById('btn-setup'));
 }
@@ -3243,17 +3241,6 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
     }
 }
 
-// QR・案内パネルカードを（管理者かつセッション接続済みのとき）表示する共通ヘルパー
-// _fbApply が CLIENT_ID 一致でスキップされるケースをカバーするため、
-// セッション接続が確定した全コードパスからこの関数を呼ぶ。
-function _showQrCards() {
-    if (!isAdmin || !_sessionId) return;
-    const qrCard = document.getElementById('courtQrCard');
-    if (qrCard) qrCard.style.display = '';
-    const dpCard = document.getElementById('displayPanelCard');
-    if (dpCard) dpCard.style.display = '';
-}
-
 function toggleQrPanel() {
     const body = document.getElementById('qrPanelBody');
     const btn  = document.getElementById('qrToggleBtn');
@@ -4508,12 +4495,12 @@ function selectHistoryId(sid, wasAdmin) {
     saveSessionToHistory(sid, isAdmin);
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
-    // セッション切替後の初回 onValue は CLIENT_ID 一致でもスキップしないよう強制フラグを立てる。
-    // これにより「同一ブラウザセッション内で別イベントを行き来した場合も最新状態を確実に読み込む」
-    if (window._fbForceApplyNext) window._fbForceApplyNext();
     if (window._fbStart) window._fbStart(sid);
-    // QR・案内パネルカードを表示（管理者のみ）
-    _showQrCards();
+    // QRカード表示（管理者のみ）
+    if (isAdmin) {
+        const qrCard = document.getElementById('courtQrCard');
+        if (qrCard) qrCard.style.display = '';
+    }
 }
 
 function clearSessionHistory() {
@@ -4765,8 +4752,13 @@ window._fbApply = function(remoteState) {
             if (changed) saveState();
         }
 
-        // QR・案内パネルカードをセッション接続後に表示
-        _showQrCards();
+        // QRカードをセッション接続後に表示
+        if (isAdmin && _sessionId) {
+            const qrCard = document.getElementById('courtQrCard');
+            if (qrCard) qrCard.style.display = '';
+            const dpCard = document.getElementById('displayPanelCard');
+            if (dpCard) dpCard.style.display = '';
+        }
         // マッチングルールを同期
         matchingRule = state.matchingRule || 'random';
         selectRule(matchingRule);
@@ -4941,16 +4933,9 @@ window.onload = function () {
             localStorage.setItem('rr_admin:' + sid, token);
         }
         updateAdminUI();
-        // ページ読み込み時点でセッションID・管理者が確定しているならカードを表示
-        // （_fbApply が CLIENT_ID 一致でスキップされるケースもカバー）
-        _showQrCards();
 
         if (loadState() && state.roundCount > 0) {
             // 試合データあり → 画面を復元
-            // loadCourtNameSetting() は loadState() より前に呼ばれるため
-            // state がまだ空の状態で showPlayerNum 等を読み込んでしまう。
-            // loadState() 後に再度呼び出して正しい値へ同期する。
-            loadCourtNameSetting();
             document.getElementById('disp-players').textContent = state.players.length;
             document.getElementById('disp-courts').textContent  = state.courts;
             document.getElementById('disp-courts-live').textContent = state.courts;
@@ -5080,13 +5065,6 @@ const db = getDatabase(app);
 let _ref = null;
 
 let _evRef = null;
-
-// セッション切替直後の初回 onValue は CLIENT_ID が一致しても強制適用するためのフラグ。
-// selectHistoryId など「リセット後に別セッションへ再接続」するパスでのみ true にする。
-// initTournament では使用しない（saveState 後の古いデータ上書きを防ぐため）。
-let _fbApplyOnce = false;
-window._fbForceApplyNext = function() { _fbApplyOnce = true; };
-
 window._fbStart = function(sessionId) {
     if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
     if (_ref) off(_ref);
@@ -5096,27 +5074,8 @@ window._fbStart = function(sessionId) {
         // 接続確認できたら常に同期中に更新（自分のデータでも）
         if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
         if (!d) return;
-        // 自分が送ったデータは通常スキップ（エコーループ防止）。
-        // ただし _fbApplyOnce=true の場合（セッション切替直後の初回受信）は強制適用し、
-        // 同一ブラウザセッション内でも Firebase の最新状態を確実に読み込む。
-        // また score-court は update() で pt1/pt2 を書き込むため _cid が変わらない。
-        // スコア値が変化していれば自分のエコーでも _fbApply を呼び出す。
-        if (d._cid === CLIENT_ID && !_fbApplyOnce) {
-            // score-court の update() による pt1/pt2 変化を検出
-            const remoteScores = d.scores || {};
-            const localScores  = (window._fbApply && state) ? (state.scores || {}) : {};
-            let scoresChanged = false;
-            for (const mid of Object.keys(remoteScores)) {
-                const rs = remoteScores[mid];
-                const ls = localScores[mid];
-                if (!ls || rs.pt1 !== ls.pt1 || rs.pt2 !== ls.pt2) {
-                    scoresChanged = true;
-                    break;
-                }
-            }
-            if (!scoresChanged) return;
-        }
-        _fbApplyOnce = false;
+        // 自分が送ったデータは無視して無限ループを防ぐ
+        if (d._cid === CLIENT_ID) return;
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
     });
