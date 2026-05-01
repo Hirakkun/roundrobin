@@ -4508,6 +4508,9 @@ function selectHistoryId(sid, wasAdmin) {
     saveSessionToHistory(sid, isAdmin);
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
+    // セッション切替後の初回 onValue は CLIENT_ID 一致でもスキップしないよう強制フラグを立てる。
+    // これにより「同一ブラウザセッション内で別イベントを行き来した場合も最新状態を確実に読み込む」
+    if (window._fbForceApplyNext) window._fbForceApplyNext();
     if (window._fbStart) window._fbStart(sid);
     // QR・案内パネルカードを表示（管理者のみ）
     _showQrCards();
@@ -5073,6 +5076,13 @@ const db = getDatabase(app);
 let _ref = null;
 
 let _evRef = null;
+
+// セッション切替直後の初回 onValue は CLIENT_ID が一致しても強制適用するためのフラグ。
+// selectHistoryId など「リセット後に別セッションへ再接続」するパスでのみ true にする。
+// initTournament では使用しない（saveState 後の古いデータ上書きを防ぐため）。
+let _fbApplyOnce = false;
+window._fbForceApplyNext = function() { _fbApplyOnce = true; };
+
 window._fbStart = function(sessionId) {
     if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
     if (_ref) off(_ref);
@@ -5082,8 +5092,11 @@ window._fbStart = function(sessionId) {
         // 接続確認できたら常に同期中に更新（自分のデータでも）
         if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
         if (!d) return;
-        // 自分が送ったデータは無視して無限ループを防ぐ
-        if (d._cid === CLIENT_ID) return;
+        // 自分が送ったデータは通常スキップ（エコーループ防止）。
+        // ただし _fbApplyOnce=true の場合（セッション切替直後の初回受信）は強制適用し、
+        // 同一ブラウザセッション内でも Firebase の最新状態を確実に読み込む。
+        if (d._cid === CLIENT_ID && !_fbApplyOnce) return;
+        _fbApplyOnce = false;
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
     });
