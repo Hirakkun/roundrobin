@@ -2905,12 +2905,13 @@ function onNextRoundBtn() {
     if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
         // 自動ON + 順次ON + 2試合目以降:
         // 「終了済みで新ラウンドにまだ割り当てられていない空きコート」がなければブロック
+        // 使用中（未終了＝呼び出し中・試合中）の物理コートを特定
         const inProgressPhy = new Set();
         state.schedule.forEach(rd => {
             rd.courts.forEach((ct, ci) => {
                 const mid = `r${rd.round}c${ci}`;
                 const sc  = state.scores?.[mid];
-                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0 || sc.status === 'playing')) {
+                if (sc && !sc.done) {
                     inProgressPhy.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
                 }
             });
@@ -2923,7 +2924,7 @@ function onNextRoundBtn() {
                 assignedInNew.add(ct.physicalIndex !== undefined ? ct.physicalIndex : ci);
             });
         }
-        // 進行中でも割り当て済みでもない空きコートが1つでもあるか確認
+        // 使用中でも割り当て済みでもない空きコート（終了済み）が1つでもあるか確認
         let hasFreeCourt = false;
         for (let i = 0; i < (state.courts || 2); i++) {
             if (!inProgressPhy.has(i) && !assignedInNew.has(i)) { hasFreeCourt = true; break; }
@@ -3536,13 +3537,14 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
         const canAdd = lastRd && lastRd.courts.length < state.courts;
 
-        // 現在進行中（スコアあり・未終了）の物理コートを特定
+        // 現在使用中（未終了＝呼び出し中・試合中）の物理コートを特定
+        // 'calling'（呼び出し中）も使用中として扱い、終了済みコートのみを空きとみなす
         const inProgressPhy = new Set();
         state.schedule.forEach(rd => {
             rd.courts.forEach((ct, ci) => {
                 const mid = `r${rd.round}c${ci}`;
                 const sc = state.scores?.[mid];
-                if (sc && !sc.done && (sc.s1 > 0 || sc.s2 > 0 || sc.status === 'playing')) {
+                if (sc && !sc.done) {
                     const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
                     inProgressPhy.add(pi);
                 }
@@ -3550,15 +3552,15 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         });
 
         if (canAdd) {
-            // 既存ラウンドに追加 → そのラウンドで未使用 かつ 進行中でない物理コートを先頭から選ぶ
+            // 既存ラウンドに追加 → そのラウンドで未使用 かつ 使用中でない物理コートを先頭から選ぶ
             const usedPhy = new Set(lastRd.courts.map((ct, ci) =>
                 ct.physicalIndex !== undefined ? ct.physicalIndex : ci));
             fromPhysicalIndex = -1;
-            // まず進行中を避けて選ぶ
+            // まず使用中を避けて選ぶ（終了済みコートを優先）
             for (let i = 0; i < (state.courts || 2); i++) {
                 if (!usedPhy.has(i) && !inProgressPhy.has(i)) { fromPhysicalIndex = i; break; }
             }
-            // 全コートが進行中の場合はフォールバック（進行中も含めて選ぶ）
+            // 全コートが使用中の場合はフォールバック（使用中も含めて選ぶ）
             if (fromPhysicalIndex < 0) {
                 for (let i = 0; i < (state.courts || 2); i++) {
                     if (!usedPhy.has(i)) { fromPhysicalIndex = i; break; }
@@ -3566,7 +3568,7 @@ function assignNextPoolMatch(fromPhysicalIndex) {
             }
             if (fromPhysicalIndex < 0) fromPhysicalIndex = 0;
         } else {
-            // 新しいラウンドを開始 → 進行中でない最初のコートから
+            // 新しいラウンドを開始 → 使用中でない（終了済み）最初のコートから
             fromPhysicalIndex = -1;
             for (let i = 0; i < (state.courts || 2); i++) {
                 if (!inProgressPhy.has(i)) { fromPhysicalIndex = i; break; }
