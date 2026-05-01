@@ -4947,6 +4947,10 @@ window.onload = function () {
 
         if (loadState() && state.roundCount > 0) {
             // 試合データあり → 画面を復元
+            // loadCourtNameSetting() は loadState() より前に呼ばれるため
+            // state がまだ空の状態で showPlayerNum 等を読み込んでしまう。
+            // loadState() 後に再度呼び出して正しい値へ同期する。
+            loadCourtNameSetting();
             document.getElementById('disp-players').textContent = state.players.length;
             document.getElementById('disp-courts').textContent  = state.courts;
             document.getElementById('disp-courts-live').textContent = state.courts;
@@ -5095,7 +5099,23 @@ window._fbStart = function(sessionId) {
         // 自分が送ったデータは通常スキップ（エコーループ防止）。
         // ただし _fbApplyOnce=true の場合（セッション切替直後の初回受信）は強制適用し、
         // 同一ブラウザセッション内でも Firebase の最新状態を確実に読み込む。
-        if (d._cid === CLIENT_ID && !_fbApplyOnce) return;
+        // また score-court は update() で pt1/pt2 を書き込むため _cid が変わらない。
+        // スコア値が変化していれば自分のエコーでも _fbApply を呼び出す。
+        if (d._cid === CLIENT_ID && !_fbApplyOnce) {
+            // score-court の update() による pt1/pt2 変化を検出
+            const remoteScores = d.scores || {};
+            const localScores  = (window._fbApply && state) ? (state.scores || {}) : {};
+            let scoresChanged = false;
+            for (const mid of Object.keys(remoteScores)) {
+                const rs = remoteScores[mid];
+                const ls = localScores[mid];
+                if (!ls || rs.pt1 !== ls.pt1 || rs.pt2 !== ls.pt2) {
+                    scoresChanged = true;
+                    break;
+                }
+            }
+            if (!scoresChanged) return;
+        }
         _fbApplyOnce = false;
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
