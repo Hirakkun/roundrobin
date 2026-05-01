@@ -998,10 +998,18 @@ function renderCourts() {
         let found = null;
         for (let ri = state.schedule.length - 1; ri >= 0; ri--) {
             const rd = state.schedule[ri];
-            const ci = rd.courts.findIndex((ct, i) => {
-                const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : i;
-                return pi === physIdx;
-            });
+            // 同一ラウンド内に同じ physicalIndex が複数ある場合（順次モードで同コートが再割当された場合）
+            // 未終了（calling/playing）を優先し、なければ最初の終了済みをフォールバックとする
+            let ci = -1;
+            let doneCi = -1;
+            for (let i = 0; i < rd.courts.length; i++) {
+                const pi = rd.courts[i].physicalIndex !== undefined ? rd.courts[i].physicalIndex : i;
+                if (pi !== physIdx) continue;
+                const m = `r${rd.round}c${i}`;
+                if (!state.scores?.[m]?.done) { ci = i; break; }  // 未終了を優先
+                if (doneCi < 0) doneCi = i;                        // 終了済みはフォールバック
+            }
+            if (ci < 0) ci = doneCi;  // 未終了がなければ終了済みを使用
             if (ci < 0) continue;
             const mid = `r${rd.round}c${ci}`;
             const sc  = state.scores?.[mid];
