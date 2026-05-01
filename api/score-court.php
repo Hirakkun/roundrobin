@@ -382,7 +382,9 @@ const COURT_ALPHA = ['A','B','C','D','E','F'];
 const params     = new URLSearchParams(location.search);
 const sessionId  = params.get('session') || '';
 const courtIndex = parseInt(params.get('court') || '0', 10);
-const courtLabel = COURT_ALPHA[courtIndex]
+// courtLabel は Firebase の courtNameAlpha 設定に応じて onStateUpdate で更新される
+// 初期値はアルファベット表示（設定取得前の暫定値）
+let courtLabel = COURT_ALPHA[courtIndex]
     ? COURT_ALPHA[courtIndex] + 'コート'
     : '第' + (courtIndex + 1) + 'コート';
 
@@ -496,6 +498,16 @@ function onStateUpdate(state) {
     courtChangeEnabled = state.courtChange !== false;
 
     showPlayerNum = !!state.showPlayerNum;
+
+    // コートラベルを courtNameAlpha 設定に合わせて更新
+    const newCourtLabel = state.courtNameAlpha
+        ? (COURT_ALPHA[courtIndex] ? COURT_ALPHA[courtIndex] + 'コート' : '第' + (courtIndex + 1) + 'コート')
+        : '第' + (courtIndex + 1) + 'コート';
+    if (newCourtLabel !== courtLabel) {
+        courtLabel = newCourtLabel;
+        document.getElementById('hd-court').textContent = courtLabel;
+        updateSetupTitles();
+    }
 
     if (!Array.isArray(state.schedule) || state.schedule.length === 0) {
         showWaiting('まだ試合が組まれていません\nしばらくお待ちください');
