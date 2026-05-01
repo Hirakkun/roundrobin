@@ -681,6 +681,8 @@ function initTournament() {
     renderPlayerList();
     renderMatchContainer();
     document.getElementById('disp-courts-live').textContent = state.courts;
+    // QR・案内パネルカードを表示（saveState後は _fbApply が CLIENT_ID 一致でスキップされるため明示的に呼ぶ）
+    _showQrCards();
     // 設定タブのまま留まる（組合せには自動移動しない）
     showStep('step-setup', document.getElementById('btn-setup'));
 }
@@ -4480,12 +4482,12 @@ function selectHistoryId(sid, wasAdmin) {
     saveSessionToHistory(sid, isAdmin);
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
+    // セッション切替後の初回 onValue は CLIENT_ID 一致でもスキップしないよう強制フラグを立てる
+    // （_resetUI() でローカルがクリアされているため、Firebase から正しい状態を取り込む必要がある）
+    if (window._fbForceApplyNext) window._fbForceApplyNext();
     if (window._fbStart) window._fbStart(sid);
-    // QRカード表示（管理者のみ）
-    if (isAdmin) {
-        const qrCard = document.getElementById('courtQrCard');
-        if (qrCard) qrCard.style.display = '';
-    }
+    // QR・案内パネルカードを表示（管理者のみ）
+    _showQrCards();
 }
 
 function clearSessionHistory() {
@@ -4638,6 +4640,19 @@ function updateEventStatus(status) {
 }
 window.updateEventStatus = updateEventStatus;
 
+// =====================================================================
+// QR・案内パネルカード表示ヘルパー
+// =====================================================================
+// _fbApply が CLIENT_ID 一致でスキップされるケースがあるため、
+// セッション接続が確定した全コードパスから呼ぶ。
+function _showQrCards() {
+    if (!isAdmin || !_sessionId) return;
+    const qrCard = document.getElementById('courtQrCard');
+    if (qrCard) qrCard.style.display = '';
+    const dpCard = document.getElementById('displayPanelCard');
+    if (dpCard) dpCard.style.display = '';
+}
+
 window._fbApply = function(remoteState) {
     if (isApplyingRemote) return;
     isApplyingRemote = true;
@@ -4737,13 +4752,8 @@ window._fbApply = function(remoteState) {
             if (changed) saveState();
         }
 
-        // QRカードをセッション接続後に表示
-        if (isAdmin && _sessionId) {
-            const qrCard = document.getElementById('courtQrCard');
-            if (qrCard) qrCard.style.display = '';
-            const dpCard = document.getElementById('displayPanelCard');
-            if (dpCard) dpCard.style.display = '';
-        }
+        // QRカード・案内パネルカードをセッション接続後に表示
+        _showQrCards();
         // マッチングルールを同期
         matchingRule = state.matchingRule || 'random';
         selectRule(matchingRule);
@@ -4921,6 +4931,10 @@ window.onload = function () {
 
         if (loadState() && state.roundCount > 0) {
             // 試合データあり → 画面を復元
+            // loadCourtNameSetting() は loadState() より先に呼ばれるため state がデフォルト値。
+            // loadState() 後に再同期して showPlayerNum・courtNameAlpha を正しく反映する。
+            loadCourtNameSetting();
+            _showQrCards();
             document.getElementById('disp-players').textContent = state.players.length;
             document.getElementById('disp-courts').textContent  = state.courts;
             document.getElementById('disp-courts-live').textContent = state.courts;
@@ -5052,6 +5066,11 @@ let _ref = null;
 let _evRef     = null;
 let _scoresRef = null;   // scores 専用リアルタイムリスナー
 
+// セッション切替直後の初回 onValue は CLIENT_ID 一致でもスキップしないためのフラグ。
+// selectHistoryId など「ローカルをリセットして別セッションへ接続」するパスでのみ true にする。
+let _fbApplyOnce = false;
+window._fbForceApplyNext = function() { _fbApplyOnce = true; };
+
 window._fbStart = function(sessionId) {
     if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
 
@@ -5063,8 +5082,10 @@ window._fbStart = function(sessionId) {
         // 接続確認できたら常に同期中に更新（自分のデータでも）
         if (window.updateSyncStatus) window.updateSyncStatus('🟢 同期中', '#2e7d32');
         if (!d) return;
-        // 自分が送ったデータは無視して無限ループを防ぐ
-        if (d._cid === CLIENT_ID) return;
+        // 自分が送ったデータは通常スキップ（エコーループ防止）。
+        // ただし _fbApplyOnce=true（セッション切替直後）は強制適用して最新状態を読み込む。
+        if (d._cid === CLIENT_ID && !_fbApplyOnce) return;
+        _fbApplyOnce = false;
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
     });
