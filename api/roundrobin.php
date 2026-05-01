@@ -3432,6 +3432,23 @@ function generatePoolBatch() {
     if (_poolGenerating) return false;
     _poolGenerating = true;
 
+    // プール内の未割当試合を matrix に一時的に加算/減算するヘルパー
+    // 新バッチ生成時に「プール内の組み合わせ」も考慮させ、重複を防ぐ
+    const applyPoolToMatrix = (sign) => {
+        state.matchPool.forEach(({ team1, team2 }) => {
+            [[team1[0], team1[1]], [team2[0], team2[1]]].forEach(([a, b]) => {
+                if (a !== undefined && b !== undefined) {
+                    state.pairMatrix[a][b] = (state.pairMatrix[a][b] || 0) + sign;
+                    state.pairMatrix[b][a] = (state.pairMatrix[b][a] || 0) + sign;
+                }
+            });
+            (team1 || []).forEach(a => (team2 || []).forEach(b => {
+                state.oppMatrix[a][b] = (state.oppMatrix[a][b] || 0) + sign;
+                state.oppMatrix[b][a] = (state.oppMatrix[b][a] || 0) + sign;
+            }));
+        });
+    };
+
     // isOnCourt の選手を一時的に休憩扱いにして生成対象から除外
     const tempResting = [];
     state.players.forEach(p => {
@@ -3440,7 +3457,10 @@ function generatePoolBatch() {
             tempResting.push(p.id);
         }
     });
+    let _poolBoosted = false;
     const restore = () => {
+        // 一時加算を元に戻す
+        if (_poolBoosted) { applyPoolToMatrix(-1); _poolBoosted = false; }
         tempResting.forEach(id => {
             const p = state.players.find(pp => pp.id === id);
             if (p) p.resting = false;
@@ -3450,6 +3470,10 @@ function generatePoolBatch() {
 
     const active = state.players.filter(p => !p.resting);
     if (active.length < 4) { restore(); return false; }
+
+    // 生成前: プール内試合を一時的に matrix に加算（生成品質向上）
+    applyPoolToMatrix(+1);
+    _poolBoosted = true;
 
     let courts;
     try {
@@ -3473,29 +3497,15 @@ function generatePoolBatch() {
         return false;
     }
 
+    // 生成後: 一時加算を元に戻す（restore で処理）
     restore();
     if (!courts || courts.length === 0) return false;
 
     const courtsFormatted = courts.map(([t1, t2]) => ({ team1: t1, team2: t2 }));
 
-    // pairMatrix・oppMatrix を更新（generateNextRound と同じタイミング）
-    courtsFormatted.forEach(({ team1, team2 }) => {
-        [[team1[0], team1[1]], [team2[0], team2[1]]].forEach(([a, b]) => {
-            state.pairMatrix[a][b] = (state.pairMatrix[a][b] || 0) + 1;
-            state.pairMatrix[b][a] = (state.pairMatrix[b][a] || 0) + 1;
-        });
-        team1.forEach(a => team2.forEach(b => {
-            state.oppMatrix[a][b] = (state.oppMatrix[a][b] || 0) + 1;
-            state.oppMatrix[b][a] = (state.oppMatrix[b][a] || 0) + 1;
-        }));
-    });
-
-    // playCount 更新
-    const allIds = [...new Set(courtsFormatted.flatMap(c => [...c.team1, ...c.team2]))];
-    allIds.forEach(id => {
-        const p = state.players.find(pp => pp.id === id);
-        if (p) p.playCount++;
-    });
+    // pairMatrix/oppMatrix/playCount の更新はここでは行わない
+    // → assignNextPoolMatch でスケジュールに確定した時点で更新することで
+    //   プールに積んだまま消費されなかった試合の二重カウントを防ぐ
 
     // プールに追加
     courtsFormatted.forEach(c => state.matchPool.push({ team1: c.team1, team2: c.team2 }));
@@ -3563,6 +3573,25 @@ function assignNextPoolMatch(fromPhysicalIndex) {
 
     const nextMatch = state.matchPool.shift();
     const playIds = [...nextMatch.team1, ...nextMatch.team2];
+
+    // スケジュール確定時に pairMatrix/oppMatrix/playCount を更新
+    // （generatePoolBatch ではなくここで更新することで、
+    //   未消費のままプールが破棄された試合の二重カウントを防ぐ）
+    const _mt1 = nextMatch.team1, _mt2 = nextMatch.team2;
+    [[_mt1[0], _mt1[1]], [_mt2[0], _mt2[1]]].forEach(([a, b]) => {
+        if (a !== undefined && b !== undefined) {
+            state.pairMatrix[a][b] = (state.pairMatrix[a][b] || 0) + 1;
+            state.pairMatrix[b][a] = (state.pairMatrix[b][a] || 0) + 1;
+        }
+    });
+    _mt1.forEach(a => _mt2.forEach(b => {
+        state.oppMatrix[a][b] = (state.oppMatrix[a][b] || 0) + 1;
+        state.oppMatrix[b][a] = (state.oppMatrix[b][a] || 0) + 1;
+    }));
+    [...new Set(playIds)].forEach(id => {
+        const p = state.players.find(pp => pp.id === id);
+        if (p) p.playCount = (p.playCount || 0) + 1;
+    });
 
     // 最新ラウンドがまだコート数に満ちていなければ、そこに追加する
     // （physicalIndex は表示名のためだけに使用し、同一コートの再使用を妨げない）
