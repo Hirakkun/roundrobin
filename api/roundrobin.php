@@ -235,10 +235,14 @@ body.viewer-mode .team { pointer-events: none; padding: 0.375rem 0.125rem; }
 body.viewer-mode .team::before { display: none; }
 body.viewer-mode .team::after  { display: none; }
 body.viewer-mode #initialSetup { display: none !important; }
+#toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: #323232; color: #fff; padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 400; transition: transform .3s, opacity .3s; opacity: 0; pointer-events: none; max-width: 90vw; text-align: center; white-space: nowrap; }
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
+
+<div id="toast"></div>
 
 <div class="step-bar">
     <button class="step-btn active" onclick="showStep('step-setup',this)" id="btn-setup">
@@ -561,6 +565,18 @@ let state = {
     matchGames: 3,          // スコアページのゲーム数（奇数: 1,3,5,7）
     courtChange: true,      // コートチェンジあり/なし
 };
+
+// =====================================================================
+// UI: トースト通知
+// =====================================================================
+function showToast(msg, ms = 3000) {
+    const t = document.getElementById('toast');
+    if (!t) { console.warn('[showToast]', msg); return; }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._toastTimer);
+    t._toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
 
 // =====================================================================
 // UI: ステップ切替
