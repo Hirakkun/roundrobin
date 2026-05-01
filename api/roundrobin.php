@@ -2902,7 +2902,6 @@ function generateNextRound() {
 
 // 「次の試合を作る」ボタンのハンドラ（モード対応）
 function onNextRoundBtn() {
-    console.log('[onNextRoundBtn] autoMatch='+state.autoMatch+' seqMatch='+state.seqMatch+' schedLen='+state.schedule.length+' courts='+state.courts);
     if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
         // 自動ON + 順次ON + 2試合目以降:
         // 「終了済みで新ラウンドにまだ割り当てられていない空きコート」がなければブロック
@@ -2930,7 +2929,6 @@ function onNextRoundBtn() {
         for (let i = 0; i < (state.courts || 2); i++) {
             if (!inProgressPhy.has(i) && !assignedInNew.has(i)) { hasFreeCourt = true; break; }
         }
-        console.log('[onNextRoundBtn] branch=auto+seq inProgressPhy='+[...inProgressPhy]+' assignedInNew='+[...assignedInNew]+' hasFreeCourt='+hasFreeCourt+' poolLen='+state.matchPool.length);
         if (!hasFreeCourt) {
             showToast('⚠️ 終了済みのコートがありません。試合が終わってから作成してください');
             return;
@@ -2938,11 +2936,9 @@ function onNextRoundBtn() {
         assignNextPoolMatch();
     } else if (state.seqMatch && state.schedule.length > 0) {
         // 順次モード（自動OFF）・2試合目以降 → プールから1コートずつ投入
-        console.log('[onNextRoundBtn] branch=seqOnly poolLen='+state.matchPool.length);
         assignNextPoolMatch();
     } else {
         // 初回 or 一括モード → 全コートまとめて生成
-        console.log('[onNextRoundBtn] branch=generateNextRound');
         generateNextRound();
     }
 }
@@ -3534,7 +3530,6 @@ function generatePoolBatch() {
 
 // プールから次の1試合を取り出してスケジュールに追加
 function assignNextPoolMatch(fromPhysicalIndex) {
-    console.log('[assignNextPoolMatch] called fromPhysicalIndex='+fromPhysicalIndex+' poolLen='+state.matchPool.length+' autoMatch='+state.autoMatch+' seqMatch='+state.seqMatch);
     if (isEventLocked()) return;
 
     // physicalIndex が未指定の場合 → 直近ラウンドで未割り当ての物理コートを順番に選ぶ
@@ -4742,15 +4737,16 @@ window._fbApply = function(remoteState) {
         }
         // score-court が管理する pt1/pt2 を受信するたびキャッシュに保存
         // （次の _fbPush で set() 上書きされないよう保護するため）
+        // _livePtScores は window プロパティとして公開されているため window._ で参照する
         Object.keys(remoteState.scores || {}).forEach(mid => {
             const s = remoteState.scores[mid];
             if (s && (s.pt1 !== undefined || s.pt2 !== undefined)) {
-                if (!_livePtScores[mid]) _livePtScores[mid] = {};
-                if (s.pt1 !== undefined) _livePtScores[mid].pt1 = s.pt1;
-                if (s.pt2 !== undefined) _livePtScores[mid].pt2 = s.pt2;
+                if (!window._livePtScores[mid]) window._livePtScores[mid] = {};
+                if (s.pt1 !== undefined) window._livePtScores[mid].pt1 = s.pt1;
+                if (s.pt2 !== undefined) window._livePtScores[mid].pt2 = s.pt2;
             }
             // done になったコートはキャッシュをクリア（試合終了後は不要）
-            if (remoteState.scores[mid]?.done) delete _livePtScores[mid];
+            if (remoteState.scores[mid]?.done) delete window._livePtScores[mid];
         });
 
         // スコアが動いたコート（試合開始）のannouncedCourtsを自動クリア
@@ -5121,7 +5117,6 @@ window._fbStart = function(sessionId) {
         // _fbApply はメインリスナーの発火順次第で state.scores が更新済みになっている場合があり、
         // 「新たに done になった」検出ができない（レース条件）。
         // scores サブパスリスナーは state.scores 更新前に発火するため確実に検出できる。
-        console.log('[_scoresRef] fired isAdmin='+isAdmin+' autoMatch='+state.autoMatch+' seqMatch='+state.seqMatch+' schedLen='+(Array.isArray(state.schedule)?state.schedule.length:'N/A'));
         if (isAdmin && (state.autoMatch || state.seqMatch) && Array.isArray(state.schedule)) {
             state.schedule.forEach(rd => {
                 (rd.courts || []).forEach((ct, ci) => {
@@ -5129,7 +5124,6 @@ window._fbStart = function(sessionId) {
                     const alreadyDone = !!state.scores?.[mid]?.done;
                     const nowDone = !!scores[mid]?.done;
                     if (nowDone && !alreadyDone) {
-                        console.log('[_scoresRef] newlyDone detected mid='+mid+' physIdx='+(ct.physicalIndex !== undefined ? ct.physicalIndex : ci)+' autoMatch='+state.autoMatch);
                         // isOnCourt を解放
                         [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
                             const p = state.players.find(pp => pp.id === id);
@@ -5160,11 +5154,11 @@ window._fbStart = function(sessionId) {
             const s = scores[mid];
             if (!s) return;
             if (s.pt1 !== undefined || s.pt2 !== undefined) {
-                if (!_livePtScores[mid]) _livePtScores[mid] = {};
-                if (s.pt1 !== undefined) _livePtScores[mid].pt1 = s.pt1;
-                if (s.pt2 !== undefined) _livePtScores[mid].pt2 = s.pt2;
+                if (!window._livePtScores[mid]) window._livePtScores[mid] = {};
+                if (s.pt1 !== undefined) window._livePtScores[mid].pt1 = s.pt1;
+                if (s.pt2 !== undefined) window._livePtScores[mid].pt2 = s.pt2;
             }
-            if (s.done) delete _livePtScores[mid];
+            if (s.done) delete window._livePtScores[mid];
         });
         // state.scores を最新値にマージ
         if (!state.scores) state.scores = {};
@@ -5187,18 +5181,20 @@ window._fbStart = function(sessionId) {
 
 // score-court が update() で書き込む pt1/pt2 を保護するキャッシュ
 // _fbApply 受信時に更新し、_fbPush 時にマージすることで set() による上書きを防ぐ
-let _livePtScores = {};
+// _livePtScores は _fbApply（メインスクリプト）からも参照するため window プロパティとして公開する。
+// モジュールスコープの let では _fbApply からアクセスできず ReferenceError になるため。
+window._livePtScores = {};
 
 window._fbPush = function(data) {
     if (!_ref) return;
     // pt1/pt2 キャッシュをマージして送信（score-court の書き込みを保護）
     let mergedData = data;
-    if (Object.keys(_livePtScores).length > 0) {
+    if (Object.keys(window._livePtScores).length > 0) {
         const mergedScores = { ...(data.scores || {}) };
-        Object.keys(_livePtScores).forEach(mid => {
+        Object.keys(window._livePtScores).forEach(mid => {
             if (mergedScores[mid]) {
-                if (_livePtScores[mid].pt1 !== undefined) mergedScores[mid].pt1 = _livePtScores[mid].pt1;
-                if (_livePtScores[mid].pt2 !== undefined) mergedScores[mid].pt2 = _livePtScores[mid].pt2;
+                if (window._livePtScores[mid].pt1 !== undefined) mergedScores[mid].pt1 = window._livePtScores[mid].pt1;
+                if (window._livePtScores[mid].pt2 !== undefined) mergedScores[mid].pt2 = window._livePtScores[mid].pt2;
             }
         });
         mergedData = { ...data, scores: mergedScores };
