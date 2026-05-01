@@ -681,6 +681,8 @@ function initTournament() {
     renderPlayerList();
     renderMatchContainer();
     document.getElementById('disp-courts-live').textContent = state.courts;
+    // QR・案内パネルカードを表示（saveState後は _fbApply が CLIENT_ID一致でスキップされるため明示的に呼ぶ）
+    _showQrCards();
     // 設定タブのまま留まる（組合せには自動移動しない）
     showStep('step-setup', document.getElementById('btn-setup'));
 }
@@ -3241,6 +3243,17 @@ async function announceMatch(roundNum, courtIdx, physIdx, btn) {
     }
 }
 
+// QR・案内パネルカードを（管理者かつセッション接続済みのとき）表示する共通ヘルパー
+// _fbApply が CLIENT_ID 一致でスキップされるケースをカバーするため、
+// セッション接続が確定した全コードパスからこの関数を呼ぶ。
+function _showQrCards() {
+    if (!isAdmin || !_sessionId) return;
+    const qrCard = document.getElementById('courtQrCard');
+    if (qrCard) qrCard.style.display = '';
+    const dpCard = document.getElementById('displayPanelCard');
+    if (dpCard) dpCard.style.display = '';
+}
+
 function toggleQrPanel() {
     const body = document.getElementById('qrPanelBody');
     const btn  = document.getElementById('qrToggleBtn');
@@ -4496,11 +4509,8 @@ function selectHistoryId(sid, wasAdmin) {
     updateAdminUI();
     updateSyncStatus('🟡 接続中...', '#e65100');
     if (window._fbStart) window._fbStart(sid);
-    // QRカード表示（管理者のみ）
-    if (isAdmin) {
-        const qrCard = document.getElementById('courtQrCard');
-        if (qrCard) qrCard.style.display = '';
-    }
+    // QR・案内パネルカードを表示（管理者のみ）
+    _showQrCards();
 }
 
 function clearSessionHistory() {
@@ -4752,13 +4762,8 @@ window._fbApply = function(remoteState) {
             if (changed) saveState();
         }
 
-        // QRカードをセッション接続後に表示
-        if (isAdmin && _sessionId) {
-            const qrCard = document.getElementById('courtQrCard');
-            if (qrCard) qrCard.style.display = '';
-            const dpCard = document.getElementById('displayPanelCard');
-            if (dpCard) dpCard.style.display = '';
-        }
+        // QR・案内パネルカードをセッション接続後に表示
+        _showQrCards();
         // マッチングルールを同期
         matchingRule = state.matchingRule || 'random';
         selectRule(matchingRule);
@@ -4933,6 +4938,9 @@ window.onload = function () {
             localStorage.setItem('rr_admin:' + sid, token);
         }
         updateAdminUI();
+        // ページ読み込み時点でセッションID・管理者が確定しているならカードを表示
+        // （_fbApply が CLIENT_ID 一致でスキップされるケースもカバー）
+        _showQrCards();
 
         if (loadState() && state.roundCount > 0) {
             // 試合データあり → 画面を復元
