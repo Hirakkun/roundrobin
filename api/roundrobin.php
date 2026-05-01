@@ -2858,13 +2858,11 @@ function generateNextRound() {
         if (!state.scores[newMid]) state.scores[newMid] = { s1: 0, s2: 0, status: 'calling' };
     });
 
-    // 自動組合せ: 出場選手を「試合中」フラグに設定
-    if (state.autoMatch) {
-        ids.forEach(id => {
-            const p = state.players.find(pp => pp.id === id);
-            if (p) p.isOnCourt = true;
-        });
-    }
+    // 出場選手を「試合中」フラグに設定（autoMatch/seqMatch 問わず常に設定）
+    ids.forEach(id => {
+        const p = state.players.find(pp => pp.id === id);
+        if (p) p.isOnCourt = true;
+    });
 
     // 初回組合せ作成でイベント状態を「開催中」に変更
     if (roundNum === 1 && _sessionId && window._fbSetEventStatus) {
@@ -2988,7 +2986,8 @@ function _recalcIsOnCourt() {
     state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const sc = state.scores[`r${rd.round}c${ci}`];
-            if (!sc || (sc.s1 === 0 && sc.s2 === 0)) {
+            // done=true のコートは終了済みなので isOnCourt=true にしない（0-0終了でも同様）
+            if (!sc?.done && (!sc || (sc.s1 === 0 && sc.s2 === 0))) {
                 [...ct.team1, ...ct.team2].forEach(id => {
                     const p = state.players.find(pp => pp.id === id);
                     if (p) p.isOnCourt = true;
@@ -3568,7 +3567,13 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     // 最新ラウンドがまだコート数に満ちていなければ、そこに追加する
     // （physicalIndex は表示名のためだけに使用し、同一コートの再使用を妨げない）
     const lastRd = state.schedule.length > 0 ? state.schedule[state.schedule.length - 1] : null;
-    const canAddToLast = lastRd && lastRd.courts.length < state.courts;
+    // 同じ physicalIndex が lastRd にすでに未終了で存在する場合は新ラウンドへ（重複防止）
+    const physAlreadyActive = lastRd && lastRd.courts.some((ct, ci) => {
+        const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+        if (pi !== fromPhysicalIndex) return false;
+        return !state.scores?.[`r${lastRd.round}c${ci}`]?.done;
+    });
+    const canAddToLast = lastRd && lastRd.courts.length < state.courts && !physAlreadyActive;
 
     let newMid;
     if (canAddToLast) {
@@ -3849,7 +3854,8 @@ function deleteRound(e, roundNum) {
     state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const sc = state.scores[`r${rd.round}c${ci}`];
-            if (!sc || (sc.s1 === 0 && sc.s2 === 0)) {
+            // done=true のコートは終了済みなので isOnCourt=true にしない
+            if (!sc?.done && (!sc || (sc.s1 === 0 && sc.s2 === 0))) {
                 [...ct.team1, ...ct.team2].forEach(id => {
                     const p = state.players.find(pp => pp.id === id);
                     if (p) p.isOnCourt = true;
@@ -4672,6 +4678,19 @@ window._fbApply = function(remoteState) {
             Object.assign(state, remoteState);
             localStorage.setItem('rr_state_v2', JSON.stringify(state));
         }
+        // score-court が管理する pt1/pt2 を受信するたびキャッシュに保存
+        // （次の _fbPush で set() 上書きされないよう保護するため）
+        Object.keys(remoteState.scores || {}).forEach(mid => {
+            const s = remoteState.scores[mid];
+            if (s && (s.pt1 !== undefined || s.pt2 !== undefined)) {
+                if (!_livePtScores[mid]) _livePtScores[mid] = {};
+                if (s.pt1 !== undefined) _livePtScores[mid].pt1 = s.pt1;
+                if (s.pt2 !== undefined) _livePtScores[mid].pt2 = s.pt2;
+            }
+            // done になったコートはキャッシュをクリア（試合終了後は不要）
+            if (remoteState.scores[mid]?.done) delete _livePtScores[mid];
+        });
+
         // スコアが動いたコート（試合開始）のannouncedCourtsを自動クリア
         if (state.announcedCourts) {
             let changed = false;
@@ -5020,9 +5039,25 @@ window._fbStart = function(sessionId) {
     });
 };
 
+// score-court が update() で書き込む pt1/pt2 を保護するキャッシュ
+// _fbApply 受信時に更新し、_fbPush 時にマージすることで set() による上書きを防ぐ
+let _livePtScores = {};
+
 window._fbPush = function(data) {
     if (!_ref) return;
-    set(_ref, { ...data, _cid: CLIENT_ID });
+    // pt1/pt2 キャッシュをマージして送信（score-court の書き込みを保護）
+    let mergedData = data;
+    if (Object.keys(_livePtScores).length > 0) {
+        const mergedScores = { ...(data.scores || {}) };
+        Object.keys(_livePtScores).forEach(mid => {
+            if (mergedScores[mid]) {
+                if (_livePtScores[mid].pt1 !== undefined) mergedScores[mid].pt1 = _livePtScores[mid].pt1;
+                if (_livePtScores[mid].pt2 !== undefined) mergedScores[mid].pt2 = _livePtScores[mid].pt2;
+            }
+        });
+        mergedData = { ...data, scores: mergedScores };
+    }
+    set(_ref, { ...mergedData, _cid: CLIENT_ID });
 };
 
 window._fbSetEventStatus = async function(sessionId, status) {
