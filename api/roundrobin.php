@@ -3437,14 +3437,17 @@ function generatePoolBatch() {
     const applyPoolToMatrix = (sign) => {
         state.matchPool.forEach(({ team1, team2 }) => {
             [[team1[0], team1[1]], [team2[0], team2[1]]].forEach(([a, b]) => {
-                if (a !== undefined && b !== undefined) {
+                if (a !== undefined && b !== undefined
+                    && state.pairMatrix[a] && state.pairMatrix[b]) {
                     state.pairMatrix[a][b] = (state.pairMatrix[a][b] || 0) + sign;
                     state.pairMatrix[b][a] = (state.pairMatrix[b][a] || 0) + sign;
                 }
             });
             (team1 || []).forEach(a => (team2 || []).forEach(b => {
-                state.oppMatrix[a][b] = (state.oppMatrix[a][b] || 0) + sign;
-                state.oppMatrix[b][a] = (state.oppMatrix[b][a] || 0) + sign;
+                if (state.oppMatrix[a] && state.oppMatrix[b]) {
+                    state.oppMatrix[a][b] = (state.oppMatrix[a][b] || 0) + sign;
+                    state.oppMatrix[b][a] = (state.oppMatrix[b][a] || 0) + sign;
+                }
             }));
         });
     };
