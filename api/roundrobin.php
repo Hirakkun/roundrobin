@@ -2902,6 +2902,7 @@ function generateNextRound() {
 
 // 「次の試合を作る」ボタンのハンドラ（モード対応）
 function onNextRoundBtn() {
+    console.log('[onNextRoundBtn] autoMatch='+state.autoMatch+' seqMatch='+state.seqMatch+' schedLen='+state.schedule.length+' courts='+state.courts);
     if (state.autoMatch && state.seqMatch && state.schedule.length > 0) {
         // 自動ON + 順次ON + 2試合目以降:
         // 「終了済みで新ラウンドにまだ割り当てられていない空きコート」がなければブロック
@@ -2929,6 +2930,7 @@ function onNextRoundBtn() {
         for (let i = 0; i < (state.courts || 2); i++) {
             if (!inProgressPhy.has(i) && !assignedInNew.has(i)) { hasFreeCourt = true; break; }
         }
+        console.log('[onNextRoundBtn] branch=auto+seq inProgressPhy='+[...inProgressPhy]+' assignedInNew='+[...assignedInNew]+' hasFreeCourt='+hasFreeCourt+' poolLen='+state.matchPool.length);
         if (!hasFreeCourt) {
             showToast('⚠️ 終了済みのコートがありません。試合が終わってから作成してください');
             return;
@@ -2936,9 +2938,11 @@ function onNextRoundBtn() {
         assignNextPoolMatch();
     } else if (state.seqMatch && state.schedule.length > 0) {
         // 順次モード（自動OFF）・2試合目以降 → プールから1コートずつ投入
+        console.log('[onNextRoundBtn] branch=seqOnly poolLen='+state.matchPool.length);
         assignNextPoolMatch();
     } else {
         // 初回 or 一括モード → 全コートまとめて生成
+        console.log('[onNextRoundBtn] branch=generateNextRound');
         generateNextRound();
     }
 }
@@ -3530,6 +3534,7 @@ function generatePoolBatch() {
 
 // プールから次の1試合を取り出してスケジュールに追加
 function assignNextPoolMatch(fromPhysicalIndex) {
+    console.log('[assignNextPoolMatch] called fromPhysicalIndex='+fromPhysicalIndex+' poolLen='+state.matchPool.length+' autoMatch='+state.autoMatch+' seqMatch='+state.seqMatch);
     if (isEventLocked()) return;
 
     // physicalIndex が未指定の場合 → 直近ラウンドで未割り当ての物理コートを順番に選ぶ
@@ -5116,6 +5121,7 @@ window._fbStart = function(sessionId) {
         // _fbApply はメインリスナーの発火順次第で state.scores が更新済みになっている場合があり、
         // 「新たに done になった」検出ができない（レース条件）。
         // scores サブパスリスナーは state.scores 更新前に発火するため確実に検出できる。
+        console.log('[_scoresRef] fired isAdmin='+isAdmin+' autoMatch='+state.autoMatch+' seqMatch='+state.seqMatch+' schedLen='+(Array.isArray(state.schedule)?state.schedule.length:'N/A'));
         if (isAdmin && (state.autoMatch || state.seqMatch) && Array.isArray(state.schedule)) {
             state.schedule.forEach(rd => {
                 (rd.courts || []).forEach((ct, ci) => {
@@ -5123,6 +5129,7 @@ window._fbStart = function(sessionId) {
                     const alreadyDone = !!state.scores?.[mid]?.done;
                     const nowDone = !!scores[mid]?.done;
                     if (nowDone && !alreadyDone) {
+                        console.log('[_scoresRef] newlyDone detected mid='+mid+' physIdx='+(ct.physicalIndex !== undefined ? ct.physicalIndex : ci)+' autoMatch='+state.autoMatch);
                         // isOnCourt を解放
                         [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
                             const p = state.players.find(pp => pp.id === id);
