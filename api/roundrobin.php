@@ -1896,11 +1896,18 @@ function updateCourtNames() {
 function loadCourtNameSetting() {
     const toggle = document.getElementById('courtNameToggle');
     if (!toggle) return;
+    // コート名トグル
     toggle.checked = !!state.courtNameAlpha;
     // 選手番号表示の復元
     showPlayerNum = !!state.showPlayerNum;
     const numToggle = document.getElementById('playerNumToggle');
     if (numToggle) numToggle.checked = showPlayerNum;
+    // 自動/順次トグルの復元
+    const autoToggle = document.getElementById('autoMatchToggle');
+    if (autoToggle) autoToggle.checked = !!state.autoMatch;
+    const seqToggle = document.getElementById('seqMatchToggle');
+    if (seqToggle) seqToggle.checked = !!state.seqMatch;
+    updateAutoMatchUI();
 }
 
 function shuffle(arr) {
