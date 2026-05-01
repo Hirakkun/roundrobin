@@ -259,12 +259,29 @@ header('Content-Type: text/html; charset=UTF-8');
             position: fixed; inset: 0; z-index: 45; background: #1b5e20;
             display: none; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 0.8em; padding: 1.5em;
+            gap: 0.7em; padding: 1.5em; text-align: center;
         }
-        #done-screen .icon  { font-size: 3.5em; }
-        #done-screen .title { color: #fff; font-size: 1.3em; font-weight: bold; }
-        #done-screen .score { color: #a5d6a7; font-size: 2.8em; font-weight: bold; }
-        #done-screen .sub   { color: #a5d6a7; font-size: 0.8em; }
+        #done-screen .done-icon  { font-size: 3em; }
+        #done-screen .done-title { color: #fff; font-size: 1.15em; font-weight: bold; }
+        .done-teams-score {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.4em; flex-wrap: wrap; width: 100%; max-width: 520px;
+        }
+        .done-team-name {
+            color: #a5d6a7; font-size: 0.88em; font-weight: bold;
+            line-height: 1.4; flex: 1; min-width: 0;
+        }
+        .done-team-name.left  { text-align: right; }
+        .done-team-name.right { text-align: left; }
+        .done-score-num { color: #fff; font-size: 2.6em; font-weight: bold; white-space: nowrap; }
+        .done-countdown { color: #a5d6a7; font-size: 0.78em; margin-top: 0.3em; }
+        .done-next-btn {
+            background: rgba(255,255,255,0.18); color: #fff;
+            border: 2px solid rgba(255,255,255,0.45); border-radius: 0.65em;
+            padding: 0.65em 2.2em; font-size: 0.95em; font-weight: bold;
+            cursor: pointer; margin-top: 0.4em; letter-spacing: 0.05em;
+        }
+        .done-next-btn:active { opacity: 0.75; }
     </style>
 </head>
 <body>
@@ -311,12 +328,15 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <!-- 完了 -->
 <div id="done-screen">
-    <div class="icon">✅</div>
-    <div class="title">試合終了</div>
-    <div class="score" id="done-score-text">-</div>
-    <div class="sub">主審おつかれさまでした。</div>
-    <div class="sub" id="done-redirect-msg" style="opacity:0.6;margin-top:0.5em;">表示画面に移動します...</div>
-    <div class="sub" id="done-stay-msg"     style="opacity:0.6;margin-top:0.5em;display:none;">次の試合が始まるまでお待ちください...</div>
+    <div class="done-icon">✅</div>
+    <div class="done-title">主審おつかれさまでした</div>
+    <div class="done-teams-score">
+        <div class="done-team-name left"  id="done-left-name">-</div>
+        <div class="done-score-num"       id="done-score-text">-</div>
+        <div class="done-team-name right" id="done-right-name">-</div>
+    </div>
+    <div class="done-countdown" id="done-countdown"></div>
+    <button class="done-next-btn" onclick="doneNext()">次へ進む</button>
 </div>
 
 <!-- メイン試合画面 -->
@@ -540,7 +560,8 @@ function onStateUpdate(state) {
     // 完了画面表示中 → 新しい試合が来たら移行、なければそのまま
     if (document.getElementById('done-screen').style.display === 'flex') {
         if (found && found.mid !== currentMid) {
-            // 新しい試合が割り当てられた → 完了画面を閉じてリセット
+            // 新しい試合が割り当てられた → カウントダウン停止・完了画面を閉じてリセット
+            _clearDoneTimer();
             document.getElementById('done-screen').style.display = 'none';
             currentMid = found.mid;
             MATCH_GAMES = newMatchGames;
@@ -870,6 +891,39 @@ window.handleGameConfirm = async function() {
     saveLocalState();
 };
 
+// ── 完了画面カウントダウン停止 ─────────────────────────────────
+let _doneTimer = null;
+function _clearDoneTimer() {
+    if (_doneTimer) { clearInterval(_doneTimer); _doneTimer = null; }
+}
+
+// ── 「次へ進む」ボタン / カウントダウン満了時の処理 ─────────────
+window.doneNext = function() {
+    _clearDoneTimer();
+    if (stayMode) {
+        // stayMode: 完了画面を閉じて待機状態へ
+        document.getElementById('done-screen').style.display = 'none';
+        // onStateUpdate が次の試合を検知したら自動切り替えされる
+        showWaiting('次の試合が始まるまでお待ちください');
+    } else {
+        // 通常モード: 案内パネルへ移動
+        location.href = '/display?sid=' + encodeURIComponent(sessionId);
+    }
+};
+
+// ── 完了画面カウントダウン開始（30秒） ─────────────────────────
+function _startDoneCountdown() {
+    _clearDoneTimer();
+    let sec = 30;
+    const cdEl = document.getElementById('done-countdown');
+    if (cdEl) cdEl.textContent = sec + ' 秒後に自動で次へ進みます';
+    _doneTimer = setInterval(() => {
+        sec--;
+        if (cdEl) cdEl.textContent = sec + ' 秒後に自動で次へ進みます';
+        if (sec <= 0) { _clearDoneTimer(); window.doneNext(); }
+    }, 1000);
+}
+
 // ── 試合終了 ──────────────────────────────────────────────────
 window.handleMatchEnd = async function() {
     if (!game_is_over) return;
@@ -885,28 +939,29 @@ window.handleMatchEnd = async function() {
     // done-screen を先に flex にしておくことで、onStateUpdate が呼ばれたとき
     // 「done-screen が表示中」と判断して waiting overlay を出さずに return する。
     clearLocalState();
+
+    // スコア（左チーム基準）
     const finalScore =
         (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' +
         (leftTeam === 1 ? set_score_t2 : set_score_t1);
     document.getElementById('done-score-text').textContent = finalScore;
+
+    // チーム名（左右）
+    const leftNames  = (leftTeam === 1 ? team1Names : team2Names).map(n => n.name).join(' ・ ');
+    const rightNames = (leftTeam === 1 ? team2Names : team1Names).map(n => n.name).join(' ・ ');
+    document.getElementById('done-left-name').textContent  = leftNames;
+    document.getElementById('done-right-name').textContent = rightNames;
+
     document.getElementById('done-screen').style.display = 'flex';
-    // stayMode: display へ戻らずこのページに留まる（QRコード直接起動時）
-    document.getElementById('done-redirect-msg').style.display = stayMode ? 'none' : '';
-    document.getElementById('done-stay-msg').style.display     = stayMode ? ''     : 'none';
 
     try {
         await writeScore(true);
-        if (!stayMode) {
-            // 通常モード: 3秒後に display 画面へ移動
-            setTimeout(() => {
-                location.href = '/display?sid=' + encodeURIComponent(sessionId);
-            }, 3000);
-        }
-        // stayMode: display へ移動しない。Firebase の onStateUpdate が
-        // 新しい試合を検知したとき自動的に次の試合画面へ切り替わる
+        // Firebase 書き込み成功後にカウントダウン開始
+        _startDoneCountdown();
     } catch(e) {
         console.error(e);
         // 書き込み失敗時は完了画面を隠してロールバック
+        _clearDoneTimer();
         document.getElementById('done-screen').style.display = 'none';
         alert('送信に失敗しました。再度お試しください。');
         if (winner === 1) set_score_t1--;
