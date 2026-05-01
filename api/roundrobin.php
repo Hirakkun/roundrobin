@@ -5049,9 +5049,13 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 let _ref = null;
 
-let _evRef = null;
+let _evRef     = null;
+let _scoresRef = null;   // scores 専用リアルタイムリスナー
+
 window._fbStart = function(sessionId) {
     if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+
+    // ── メインセッションリスナー ──────────────────────────────────
     if (_ref) off(_ref);
     _ref = ref(db, 'sessions/' + encodeURIComponent(sessionId));
     onValue(_ref, snap => {
@@ -5064,7 +5068,41 @@ window._fbStart = function(sessionId) {
         const { _cid, ...stateData } = d;
         if (window._fbApply) window._fbApply(stateData);
     });
-    // イベント情報（名前・日付・状態）を監視
+
+    // ── スコア専用リアルタイムリスナー ──────────────────────────
+    // score-court は update() で scores だけ書き換えるため _cid が変わらない場合がある。
+    // また roundrobin.php の _fbPush(set) がタイミングによって pt1/pt2 を古い値で
+    // 上書きする競合が起きる。scores サブパスを独立監視することで：
+    //   ① _cid チェックを迂回してリアルタイムに描画
+    //   ② _livePtScores を即時更新し次回 push での上書きを防ぐ
+    if (_scoresRef) off(_scoresRef);
+    _scoresRef = ref(db, 'sessions/' + encodeURIComponent(sessionId) + '/scores');
+    onValue(_scoresRef, snap => {
+        const scores = snap.val();
+        if (!scores || typeof scores !== 'object') return;
+        // _livePtScores キャッシュを最新値で更新（_fbPush 時の上書き防止）
+        Object.keys(scores).forEach(mid => {
+            const s = scores[mid];
+            if (!s) return;
+            if (s.pt1 !== undefined || s.pt2 !== undefined) {
+                if (!_livePtScores[mid]) _livePtScores[mid] = {};
+                if (s.pt1 !== undefined) _livePtScores[mid].pt1 = s.pt1;
+                if (s.pt2 !== undefined) _livePtScores[mid].pt2 = s.pt2;
+            }
+            if (s.done) delete _livePtScores[mid];
+        });
+        // state.scores を最新値にマージ
+        if (!state.scores) state.scores = {};
+        Object.assign(state.scores, scores);
+        // 試合進行中なら組合せ画面を再描画
+        if (!isApplyingRemote &&
+            typeof renderMatchContainer === 'function' &&
+            Array.isArray(state.schedule) && state.schedule.length > 0) {
+            renderMatchContainer();
+        }
+    });
+
+    // ── イベント情報リスナー ─────────────────────────────────────
     if (_evRef) off(_evRef);
     _evRef = ref(db, 'events/' + encodeURIComponent(sessionId));
     onValue(_evRef, snap => {
