@@ -316,6 +316,7 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="score" id="done-score-text">-</div>
     <div class="sub">主審おつかれさまでした。</div>
     <div class="sub" id="done-redirect-msg" style="opacity:0.6;margin-top:0.5em;">表示画面に移動します...</div>
+    <div class="sub" id="done-stay-msg"     style="opacity:0.6;margin-top:0.5em;display:none;">次の試合が始まるまでお待ちください...</div>
 </div>
 
 <!-- メイン試合画面 -->
@@ -382,6 +383,8 @@ const COURT_ALPHA = ['A','B','C','D','E','F'];
 const params     = new URLSearchParams(location.search);
 const sessionId  = params.get('session') || '';
 const courtIndex = parseInt(params.get('court') || '0', 10);
+// stay=1: QRコード等から直接起動した場合。試合終了後も display へ戻らずこのページに留まる
+const stayMode   = params.get('stay') === '1';
 // courtLabel は Firebase の courtNameAlpha 設定に応じて onStateUpdate で更新される
 // 初期値はアルファベット表示（設定取得前の暫定値）
 let courtLabel = COURT_ALPHA[courtIndex]
@@ -887,13 +890,20 @@ window.handleMatchEnd = async function() {
         (leftTeam === 1 ? set_score_t2 : set_score_t1);
     document.getElementById('done-score-text').textContent = finalScore;
     document.getElementById('done-screen').style.display = 'flex';
+    // stayMode: display へ戻らずこのページに留まる（QRコード直接起動時）
+    document.getElementById('done-redirect-msg').style.display = stayMode ? 'none' : '';
+    document.getElementById('done-stay-msg').style.display     = stayMode ? ''     : 'none';
 
     try {
         await writeScore(true);
-        // 3秒後に display 画面へ移動
-        setTimeout(() => {
-            location.href = '/display?sid=' + encodeURIComponent(sessionId);
-        }, 3000);
+        if (!stayMode) {
+            // 通常モード: 3秒後に display 画面へ移動
+            setTimeout(() => {
+                location.href = '/display?sid=' + encodeURIComponent(sessionId);
+            }, 3000);
+        }
+        // stayMode: display へ移動しない。Firebase の onStateUpdate が
+        // 新しい試合を検知したとき自動的に次の試合画面へ切り替わる
     } catch(e) {
         console.error(e);
         // 書き込み失敗時は完了画面を隠してロールバック

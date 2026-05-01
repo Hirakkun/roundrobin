@@ -3013,7 +3013,8 @@ function renderCourtQRCodes() {
 
     const courtCount = state.courts || setupCourts || 2;
     const ALPHA = ['A','B','C','D','E','F'];
-    const baseUrl = location.origin + '/score/court?session=' + encodeURIComponent(_sessionId) + '&court=';
+    // stay=1: QRコードから起動したスコア入力は試合終了後も display へ戻らずそのコートに留まる
+    const baseUrl = location.origin + '/score/court?session=' + encodeURIComponent(_sessionId) + '&stay=1&court=';
 
     for (let i = 0; i < courtCount; i++) {
         const url = baseUrl + i;
