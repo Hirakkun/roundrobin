@@ -521,7 +521,7 @@ setInterval(() => {
 setInterval(() => {
     dIdx = (dIdx + 1) % D_FRAMES.length;
     applyFrame('d', D_FRAMES[dIdx]);
-}, 3300);
+}, 5200);
 </script>
 </body>
 </html>
