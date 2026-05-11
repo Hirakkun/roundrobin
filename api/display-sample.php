@@ -190,7 +190,7 @@ body {
     0%, 100% { background: #ffd700; box-shadow: 0 0 0 0.2em #ff4444, 0 0 0.8em 0.2em rgba(255,68,68,0.5); }
     50%       { background: #ff6600; color: #fff; box-shadow: 0 0 0 0.2em #ff4444, 0 0 1.3em 0.5em rgba(255,100,0,0.8); }
 }
-.btn-blink { animation: btn-blink 0.8s ease-in-out infinite; }
+.btn-blink { animation: btn-blink 5.3s ease-in-out infinite; }
 
 /* ── ボディ ── */
 .pc-body {
@@ -511,12 +511,17 @@ let dIdx = 9;
 applyFrame('c', C_FRAMES[cIdx]);
 applyFrame('d', D_FRAMES[dIdx]);
 
+// Cコート：2秒ごと
 setInterval(() => {
     cIdx = (cIdx + 1) % C_FRAMES.length;
-    dIdx = (dIdx + 1) % D_FRAMES.length;
     applyFrame('c', C_FRAMES[cIdx]);
-    applyFrame('d', D_FRAMES[dIdx]);
 }, 2000);
+
+// Dコート：3.3秒ごと
+setInterval(() => {
+    dIdx = (dIdx + 1) % D_FRAMES.length;
+    applyFrame('d', D_FRAMES[dIdx]);
+}, 3300);
 </script>
 </body>
 </html>
