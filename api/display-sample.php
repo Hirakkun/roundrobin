@@ -402,7 +402,7 @@ body {
             </div>
         </div>
 
-        <!-- ====== C コート：試合中 ====== -->
+        <!-- ====== C コート：試合中（アニメーション） ====== -->
         <div class="court-card status-playing">
             <div class="pc-head">
                 <span class="pc-badge">C</span>
@@ -415,15 +415,11 @@ body {
                     <span class="pc-player"><span class="pc-pnum">11</span>木村さくら</span>
                 </div>
                 <div class="pc-score-row">
-                    <span class="pc-balls">
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                    </span>
-                    <span class="pc-s1">1</span>
+                    <span class="pc-balls" id="c-balls1"></span>
+                    <span class="pc-s1"    id="c-s1">0</span>
                     <span class="pc-sv">−</span>
-                    <span class="pc-s2">0</span>
-                    <span class="pc-balls"></span>
+                    <span class="pc-s2"    id="c-s2">0</span>
+                    <span class="pc-balls" id="c-balls2"></span>
                 </div>
                 <div class="pc-team2-block">
                     <span class="pc-player">加藤雄介<span class="pc-pnum">18</span></span>
@@ -432,7 +428,7 @@ body {
             </div>
         </div>
 
-        <!-- ====== D コート：試合中 ====== -->
+        <!-- ====== D コート：試合中（アニメーション） ====== -->
         <div class="court-card status-playing">
             <div class="pc-head">
                 <span class="pc-badge">D</span>
@@ -445,17 +441,11 @@ body {
                     <span class="pc-player"><span class="pc-pnum">14</span>林美里</span>
                 </div>
                 <div class="pc-score-row">
-                    <span class="pc-balls">
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                    </span>
-                    <span class="pc-s1">0</span>
+                    <span class="pc-balls" id="d-balls1"></span>
+                    <span class="pc-s1"    id="d-s1">0</span>
                     <span class="pc-sv">−</span>
-                    <span class="pc-s2">1</span>
-                    <span class="pc-balls">
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                        <svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
-                    </span>
+                    <span class="pc-s2"    id="d-s2">0</span>
+                    <span class="pc-balls" id="d-balls2"></span>
                 </div>
                 <div class="pc-team2-block">
                     <span class="pc-player">清水拓実<span class="pc-pnum">16</span></span>
@@ -468,7 +458,7 @@ body {
 </div><!-- /app -->
 
 <script>
-// 時計
+// ── 時計 ──
 function updateClock() {
     const now = new Date();
     document.getElementById('current-time').textContent =
@@ -476,6 +466,57 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+// ── スコアアニメーション ──
+const BALL = `<svg class="ball-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#ccff33" stroke="#000" stroke-width="3"/><path d="M 20 25 Q 50 50 20 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M 80 25 Q 50 50 80 75" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>`;
+
+function balls(n) { return Array.from({length: n}, () => BALL).join(''); }
+
+// Cコートの進行シーケンス（pt1=左ボール数, s1=左ゲーム数, pt2=右ボール数, s2=右ゲーム数）
+const C_FRAMES = [
+    {pt1:1, s1:0, pt2:0, s2:0},
+    {pt1:2, s1:0, pt2:0, s2:0},
+    {pt1:2, s1:0, pt2:1, s2:0},
+    {pt1:3, s1:0, pt2:1, s2:0},
+    {pt1:0, s1:1, pt2:0, s2:0},
+    {pt1:1, s1:1, pt2:0, s2:0},
+    {pt1:1, s1:1, pt2:1, s2:0},
+    {pt1:1, s1:1, pt2:2, s2:0},
+    {pt1:2, s1:1, pt2:2, s2:0},
+    {pt1:3, s1:1, pt2:2, s2:0},
+    {pt1:3, s1:1, pt2:3, s2:0},
+    {pt1:3, s1:1, pt2:4, s2:0},
+    {pt1:0, s1:1, pt2:0, s2:1},
+    {pt1:1, s1:1, pt2:0, s2:1},
+    {pt1:1, s1:1, pt2:1, s2:1},
+    {pt1:1, s1:1, pt2:2, s2:1},
+    {pt1:1, s1:1, pt2:3, s2:1},
+    {pt1:1, s1:1, pt2:4, s2:2},
+];
+
+// DコートはCの左右反転
+const D_FRAMES = C_FRAMES.map(f => ({pt1: f.pt2, s1: f.s2, pt2: f.pt1, s2: f.s1}));
+
+function applyFrame(prefix, frame) {
+    document.getElementById(prefix + '-balls1').innerHTML = balls(frame.pt1);
+    document.getElementById(prefix + '-s1').textContent   = frame.s1;
+    document.getElementById(prefix + '-s2').textContent   = frame.s2;
+    document.getElementById(prefix + '-balls2').innerHTML = balls(frame.pt2);
+}
+
+// Dは9フレームずらして別の局面を表示
+let cIdx = 0;
+let dIdx = 9;
+
+applyFrame('c', C_FRAMES[cIdx]);
+applyFrame('d', D_FRAMES[dIdx]);
+
+setInterval(() => {
+    cIdx = (cIdx + 1) % C_FRAMES.length;
+    dIdx = (dIdx + 1) % D_FRAMES.length;
+    applyFrame('c', C_FRAMES[cIdx]);
+    applyFrame('d', D_FRAMES[dIdx]);
+}, 2000);
 </script>
 </body>
 </html>
