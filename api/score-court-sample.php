@@ -167,6 +167,22 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.9em; font-weight: bold; cursor: pointer;
         }
         #done-countdown { font-size: 0.75em; color: #a5d6a7; opacity: 0.8; }
+
+        /* 完了画面：チーム名＋スコア横並び */
+        .done-teams-score {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.4em; flex-wrap: wrap; width: 100%; max-width: 520px;
+        }
+        .done-team-name {
+            color: #a5d6a7; font-size: 0.75em; font-weight: bold;
+            line-height: 1.6; flex: 1; min-width: 0;
+        }
+        .done-team-name.left  { text-align: right; }
+        .done-team-name.right { text-align: left; }
+        /* 完了画面内の番号バッジは白ベースに変更 */
+        #done-screen .num-badge {
+            background: rgba(255,255,255,0.25); color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -204,7 +220,11 @@ header('Content-Type: text/html; charset=UTF-8');
 <div id="done-screen">
     <div class="icon">✅</div>
     <div class="title">試合終了</div>
-    <div class="score" id="done-score-text">-</div>
+    <div class="done-teams-score">
+        <div class="done-team-name left"  id="done-left-name"></div>
+        <div class="score"                id="done-score-text">-</div>
+        <div class="done-team-name right" id="done-right-name"></div>
+    </div>
     <div class="sub">お疲れ様でした！</div>
     <div class="sub" id="done-countdown"></div>
     <button class="restart-btn" onclick="restartMatch()">🔄 もう一度練習する</button>
@@ -549,6 +569,17 @@ window.handleMatchEnd = function() {
         (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' +
         (leftTeam === 1 ? set_score_t2 : set_score_t1);
     document.getElementById('done-score-text').textContent = finalScore;
+
+    // 選手名を番号バッジ付きで完了画面に表示
+    const leftNames  = leftTeam === 1 ? TEAM1 : TEAM2;
+    const rightNames = leftTeam === 1 ? TEAM2 : TEAM1;
+    const buildDoneNames = (names) => names.map(p =>
+        `<span style="display:inline-flex;align-items:center;gap:0.2em;white-space:nowrap;">` +
+        `<span class="num-badge">${p.id}</span>${p.name}</span>`
+    ).join('<br>');
+    document.getElementById('done-left-name').innerHTML  = buildDoneNames(leftNames);
+    document.getElementById('done-right-name').innerHTML = buildDoneNames(rightNames);
+
     document.getElementById('done-screen').style.display  = 'flex';
 
     // 10秒カウントダウン後に自動で最初の画面に戻る
