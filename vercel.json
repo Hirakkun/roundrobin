@@ -10,6 +10,7 @@
     { "src": "/roundrobin-member.php",  "dest": "/api/roundrobin-member.php" },
     { "src": "/score/court",            "dest": "/api/score-court.php" },
     { "src": "/score-court-sample.php","dest": "/api/score-court-sample.php" },
+    { "src": "/display-sample.php",    "dest": "/api/display-sample.php" },
     { "src": "/display",               "dest": "/api/display.php" },
     { "src": "/(.*)", "dest": "/api/roundrobin.php" }
   ]

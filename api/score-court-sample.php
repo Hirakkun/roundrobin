@@ -582,12 +582,12 @@ window.handleMatchEnd = function() {
 
     document.getElementById('done-screen').style.display  = 'flex';
 
-    // 10秒カウントダウン後に自動で最初の画面に戻る
+    // 10秒カウントダウン後に案内パネルへ戻る
     let sec = 10;
     const countEl = document.getElementById('done-countdown');
     function tick() {
-        countEl.textContent = sec + '秒後に自動で戻ります...';
-        if (sec <= 0) { restartMatch(); return; }
+        countEl.textContent = sec + '秒後に案内パネルへ戻ります...';
+        if (sec <= 0) { window.location.href = 'display-sample.php'; return; }
         sec--;
         _countdownTimer = setTimeout(tick, 1000);
     }
@@ -599,22 +599,7 @@ window.handleMatchEnd = function() {
 // ══════════════════════════════════════════════════════════════
 window.restartMatch = function() {
     if (_countdownTimer) { clearTimeout(_countdownTimer); _countdownTimer = null; }
-    document.getElementById('done-screen').style.display = 'none';
-    document.getElementById('btn-undo').style.display    = '';
-
-    // 状態リセット
-    leftTeam       = 1;
-    current_server = 1;
-    game_score_t1  = 0; game_score_t2  = 0;
-    set_score_t1   = 0; set_score_t2   = 0;
-    game_is_over   = false; matchStarted = false;
-    historyStack   = [];
-    document.getElementById('game-history').innerHTML  = '';
-    document.getElementById('btn-confirm').style.display = 'none';
-    document.getElementById('btn-end').style.display    = 'none';
-    togglePointButtons(false);
-
-    showServeSetup();
+    window.location.href = 'display-sample.php';
 };
 
 // ══════════════════════════════════════════════════════════════
