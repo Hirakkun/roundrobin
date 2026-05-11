@@ -1290,6 +1290,10 @@ async function endEvent() {
     if (!state.players || state.players.length === 0) { showToast('参加者がいません'); return; }
     if (!confirm('⚠️ このイベントを終了しますか？\n・終了後は管理者でも編集できません。\n・各選手の最終 μ/σ が元の選手データに上書き反映されます。')) return;
 
+    // 保存前に最新スコアから μ/σ を再計算（state.tsMap が古い値のまま保存されるのを防ぐ）
+    // _fbApply が古い tsMap を Firebase から上書きしている場合でも正しい値を使う
+    recalcAllTrueSkill();
+
     // 元の選手データへ mu/sigma を上書き
     const updates = [];
     state.players.forEach(p => {
