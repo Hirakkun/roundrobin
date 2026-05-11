@@ -282,6 +282,44 @@ header('Content-Type: text/html; charset=UTF-8');
             cursor: pointer; margin-top: 0.4em; letter-spacing: 0.05em;
         }
         .done-next-btn:active { opacity: 0.75; }
+
+        /* ===== ダークモード ===== */
+        body.dark { background: #111827; }
+        body.dark .container { background: #1f2937; }
+        body.dark .header-row { background: #111827; }
+        body.dark .role-button { color: #bbb; }
+        body.dark .role-button.is-serving { color: #64b5f6; background: #0d2b50; }
+        body.dark .team-name-block.t1 { background: #0d2137; color: #64b5f6; }
+        body.dark .team-name-block.t2 { background: #0a1f0d; color: #81c784; }
+        body.dark .score-point { color: #fff; }
+        body.dark .score-point.p1-bg { background: #0d2137; }
+        body.dark .score-point.p2-bg { background: #0a1f0d; }
+        body.dark .umpire-call-area { background: #162035; border-color: #1565c0; color: #ddd; }
+        body.dark .umpire-call-area::after { border-color: #162035 transparent transparent; }
+        body.dark .set-score-area { background: #111827; }
+        body.dark .current-set-display { color: #e0e0e0; }
+        body.dark .set-history-display { color: #999; }
+        body.dark .set-score-label { color: #888; }
+        body.dark hr { background: #374151; }
+        body.dark .score-button:disabled { background: #374151; color: #6b7280; }
+
+        /* ===== テーマ切替スイッチ ===== */
+        .theme-toggle {
+            display: flex; align-items: center; gap: 0.25em;
+            cursor: pointer; user-select: none; font-size: 0.85em;
+        }
+        .theme-track {
+            position: relative; width: 1.9em; height: 1.05em;
+            background: #777; border-radius: 1em;
+            transition: background 0.3s; flex-shrink: 0;
+        }
+        body.dark .theme-track { background: #90caf9; }
+        .theme-thumb {
+            position: absolute; left: 0.1em; top: 0.1em;
+            width: 0.85em; height: 0.85em;
+            background: #fff; border-radius: 50%; transition: left 0.3s;
+        }
+        body.dark .theme-thumb { left: 0.95em; }
     </style>
 </head>
 <body>
@@ -344,7 +382,14 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="court-info-bar">
         <span class="round-name" id="hd-round">-</span>
         <span class="court-name"  id="hd-court">-</span>
-        <span class="games-badge" id="hd-games">3ゲームマッチ</span>
+        <div style="display:flex; align-items:center; gap:0.5em;">
+            <span class="games-badge" id="hd-games">3ゲームマッチ</span>
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <span>🌙</span>
+                <div class="theme-track"><div class="theme-thumb"></div></div>
+                <span>☀️</span>
+            </div>
+        </div>
     </div>
 
     <div class="header-row">
@@ -383,6 +428,17 @@ header('Content-Type: text/html; charset=UTF-8');
         <div id="game-history" class="set-history-display"></div>
     </div>
 </div>
+
+<script>
+// ── テーマ切替（ページ読み込み時に即時適用してちらつき防止） ──
+(function() {
+    if (localStorage.getItem('sc_theme') === 'dark') document.body.classList.add('dark');
+})();
+function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark');
+    localStorage.setItem('sc_theme', isDark ? 'dark' : 'light');
+}
+</script>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
