@@ -426,7 +426,7 @@ body {
                     <span class="pc-balls"></span>
                 </div>
                 <div class="pc-team2-block">
-                    <span class="pc-player">加藤雄介<span class="pc-pnum">12</span></span>
+                    <span class="pc-player">加藤雄介<span class="pc-pnum">18</span></span>
                     <span class="pc-player">吉田菜々<span class="pc-pnum">15</span></span>
                 </div>
             </div>
