@@ -887,7 +887,10 @@ window.handleGameConfirm = async function() {
     }
 
     updateDisplay();
-    setUmpire('ゲームカウント ' + (leftTeam === 1 ? set_score_t1 : set_score_t2) + ' - ' + (leftTeam === 1 ? set_score_t2 : set_score_t1));
+    // ゲームカウントはサーバー側を先に呼ぶ（ポイントコールと同じルール）
+    const _svGames = current_server === 1 ? set_score_t1 : set_score_t2;
+    const _rcGames = current_server === 1 ? set_score_t2 : set_score_t1;
+    setUmpire('ゲームカウント ' + _svGames + ' - ' + _rcGames);
     saveLocalState();
 };
 
