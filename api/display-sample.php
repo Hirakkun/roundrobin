@@ -390,7 +390,7 @@ body {
             <div class="pc-body">
                 <div class="pc-team1-block">
                     <span class="pc-player"><span class="pc-pnum">1</span>佐藤健太</span>
-                    <span class="pc-player"><span class="pc-pnum">2</span>鈴木結衣</span>
+                    <span class="pc-player"><span class="pc-pnum">12</span>鈴木結衣</span>
                 </div>
                 <div class="pc-score-row">
                     <span class="pc-vs-label">VS</span>
