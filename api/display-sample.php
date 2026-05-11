@@ -376,7 +376,7 @@ body {
         <div class="court-card status-calling" style="position:relative; overflow:visible;">
             <!-- 吹き出し＋矢印 -->
             <div class="callout-wrap">
-                <div class="callout-bubble">ここからBコートの<br>主審を始める</div>
+                <div class="callout-bubble">ここから各コートの主審を始める。クリック！</div>
                 <div class="callout-arrow-down">
                     <div class="arr-line"></div>
                     <div class="arr-head"></div>
