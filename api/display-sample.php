@@ -433,7 +433,17 @@ body {
             <div class="pc-head">
                 <span class="pc-badge">D</span>
                 <span class="pc-status">▶ 試合中</span>
-                <button class="pc-score-btn pc-score-btn-playing">主審<br>スコア入力</button>
+                <a class="pc-score-btn pc-score-btn-playing" href="score-court-sample2.php">主審<br>スコア入力</a>
+            </div>
+            <!-- 吹き出し（ボタン下・上向き矢印） -->
+            <div style="display:flex; flex-direction:column; align-items:flex-end; padding:0 0.45em; margin-top:0.1em;">
+                <div style="display:flex; flex-direction:column; align-items:center; margin-right:1.5em;">
+                    <div style="width:0; height:0; border-left:0.5em solid transparent; border-right:0.5em solid transparent; border-bottom:0.8em solid #ff4444;"></div>
+                    <div style="width:0.25em; height:0.7em; background:#ff4444; border-radius:0.1em;"></div>
+                </div>
+                <div style="background:#fff200; color:#b71c1c; font-size:0.65em; font-weight:900; padding:0.45em 0.7em; border-radius:0.6em; border:0.18em solid #ff4444; white-space:nowrap; box-shadow:0 0.3em 0.9em rgba(0,0,0,0.55); line-height:1.45; margin-bottom:0.2em;">
+                    試合中の審判を引き継ぐ場合はここをクリック
+                </div>
             </div>
             <div class="pc-body">
                 <div class="pc-team1-block">
