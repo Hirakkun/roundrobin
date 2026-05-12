@@ -22,86 +22,6 @@ header('Content-Type: text/html; charset=UTF-8');
             pointer-events: none;
         }
 
-        /* ── セットアップ画面（共通） ── */
-        .setup-screen {
-            position: fixed; inset: 0; z-index: 40; background: #283593;
-            display: none; flex-direction: column;
-            align-items: stretch; justify-content: center;
-            gap: 0.8em; padding: 1.2em 1em;
-            padding-top: 2em;
-        }
-        .setup-screen h2 {
-            color: #fff; font-size: 1.35em; text-align: center;
-            font-weight: bold; line-height: 1.3;
-        }
-        .setup-screen .sub {
-            color: #c5cae9; font-size: 0.82em;
-            text-align: center; line-height: 1.6;
-        }
-        .setup-match-title {
-            text-align: center; font-size: 1em; font-weight: 900; color: #fff;
-            letter-spacing: 0.06em; background: rgba(255,255,255,0.12);
-            border-radius: 0.5em; padding: 0.35em 0.9em; align-self: center; line-height: 1.5;
-        }
-        .setup-match-title .title-games {
-            display: block; font-size: 0.82em; font-weight: bold;
-            opacity: 0.85; letter-spacing: 0.04em;
-        }
-
-        /* ── 現在の試合状況カード ── */
-        .takeover-info {
-            background: rgba(255,255,255,0.12);
-            border-radius: 0.55em;
-            padding: 0.5em 0.9em;
-            display: flex; flex-direction: column; gap: 0.3em;
-        }
-        .ti-row {
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .ti-label { font-size: 0.72em; color: #c5cae9; }
-        .ti-val   { font-size: 0.9em; font-weight: bold; color: #fff; }
-
-        /* ── サーブ選択ボタン ── */
-        .setup-btn {
-            width: 100%; border: none; border-radius: 0.65em;
-            font-size: 1.3em; font-weight: bold; cursor: pointer;
-            line-height: 1.5; text-align: left;
-            padding: 0.9em 0.7em;
-        }
-        .setup-btn:active { opacity: .8; }
-        .setup-btn.t1 { background: #1565c0; color: #fff; }
-        .setup-btn.t2 { background: #2e7d32; color: #fff; }
-        .setup-btn .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
-        .setup-btn.t2 .num-badge { color: #2e7d32; }
-        .serve-btn-lines {
-            display: flex; flex-direction: column;
-            align-items: flex-start; width: 100%; gap: 0.02em;
-        }
-        .serve-line {
-            display: flex; align-items: center; gap: 0.25em;
-            line-height: 1.1; white-space: nowrap;
-        }
-        .serve-col1 { width: 1.5em; flex-shrink: 0; text-align: center; }
-        .serve-col2 { display: flex; align-items: center; gap: 0.2em; }
-
-        /* ── コート左右選択 ── */
-        .court-side-select {
-            display: flex; width: 100%; flex: 1;
-            min-height: 10em; max-height: 18em;
-            border-radius: 0.65em; overflow: hidden; border: 3px solid #fff;
-        }
-        .court-half {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            border: none; cursor: pointer; gap: 0.4em; transition: opacity .15s;
-        }
-        .court-half:active { opacity: .75; }
-        .court-half.left-half  { background: #1565c0; color: #fff; }
-        .court-half.right-half { background: #2e7d32; color: #fff; }
-        .half-arrow { font-size: 2.5em; font-weight: 900; line-height: 1; opacity: 0.8; }
-        .half-word  { font-size: 6em;   font-weight: 900; line-height: 1; }
-        .court-net-div { width: 5px; background: #fff; flex-shrink: 0; }
-
         /* ── コート情報バー ── */
         .court-info-bar {
             background: #283593; color: #fff;
@@ -193,49 +113,6 @@ header('Content-Type: text/html; charset=UTF-8');
 <!-- 練習モードバナー -->
 <div id="sample-banner">🔄 審判引き継ぎ 練習モード</div>
 
-<!-- ① サーブ選択画面 -->
-<div class="setup-screen" id="serve-setup">
-    <div class="setup-match-title">
-        第3試合　Dコート
-        <span class="title-games">3ゲームマッチ</span>
-    </div>
-    <h2>🎾 現在サーブしているチームは？</h2>
-    <!-- 現在の試合状況 -->
-    <div class="takeover-info">
-        <div class="ti-row">
-            <span class="ti-label">ゲームカウント（第2ゲーム途中）</span>
-            <span class="ti-val">0 &nbsp;–&nbsp; 1</span>
-        </div>
-        <div class="ti-row">
-            <span class="ti-label">現在のポイント</span>
-            <span class="ti-val">3 &nbsp;–&nbsp; 4</span>
-        </div>
-    </div>
-    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)"></button>
-    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)"></button>
-</div>
-
-<!-- ② サーバー位置選択画面 -->
-<div class="setup-screen" id="court-setup">
-    <div class="setup-match-title">
-        第3試合　Dコート
-        <span class="title-games">3ゲームマッチ</span>
-    </div>
-    <h2>🎾 サーバーはどちら側ですか？</h2>
-    <div class="sub" id="court-sub"></div>
-    <div class="court-side-select">
-        <button class="court-half left-half" onclick="onCourtSideSelect('left')">
-            <div class="half-arrow">←</div>
-            <div class="half-word">左</div>
-        </button>
-        <div class="court-net-div"></div>
-        <button class="court-half right-half" onclick="onCourtSideSelect('right')">
-            <div class="half-arrow">→</div>
-            <div class="half-word">右</div>
-        </button>
-    </div>
-</div>
-
 <!-- 完了画面 -->
 <div id="done-screen">
     <div class="done-icon">✅</div>
@@ -250,7 +127,7 @@ header('Content-Type: text/html; charset=UTF-8');
 </div>
 
 <!-- メイン試合画面 -->
-<div class="container" id="main-container" style="display:none;">
+<div class="container" id="main-container">
     <div class="court-info-bar">
         <span class="round-name">第3試合</span>
         <span class="court-name">Dコート</span>
@@ -315,115 +192,81 @@ const TEAM2 = [
 ];
 
 // ══════════════════════════════════════════════════════════════
-// ■ 引き継ぎ時の固定初期状態（第2ゲーム途中）
-//   第1ゲーム: 清水/山口が 5-3 で勝利
-//   第2ゲーム: 現在 西村/林 3 - 清水/山口 4、清水/山口サーブ
+// ■ 引き継ぎ初期状態（第2ゲーム途中）
+//   第1ゲーム: 清水/山口 が 5-3 で勝利
+//   第2ゲーム: 西村/林 3 - 清水/山口 4、清水/山口サーブ
+//   leftTeam=1（西村/林が左）固定
 // ══════════════════════════════════════════════════════════════
 const TAKEOVER_STATE = {
+    leftTeam:      1,
+    current_server: 2,   // 清水/山口がサーブ
     set_score_t1:  0,
     set_score_t2:  1,
     game_score_t1: 3,
     game_score_t2: 4,
-    current_server: 2,   // 清水/山口がサーブ
     game1_t1: 3, game1_t2: 5   // 第1ゲーム: 清水/山口が 5-3 で勝利
 };
 
 // ══════════════════════════════════════════════════════════════
 // ■ 状態変数
 // ══════════════════════════════════════════════════════════════
-let leftTeam       = 1;
+let leftTeam       = TAKEOVER_STATE.leftTeam;
 let current_server = TAKEOVER_STATE.current_server;
 let game_score_t1  = TAKEOVER_STATE.game_score_t1;
 let game_score_t2  = TAKEOVER_STATE.game_score_t2;
 let set_score_t1   = TAKEOVER_STATE.set_score_t1;
 let set_score_t2   = TAKEOVER_STATE.set_score_t2;
 let game_is_over   = false;
-let matchStarted   = false;
 let historyStack   = [];
 let _doneTimer     = null;
 
 // ══════════════════════════════════════════════════════════════
-// ■ 初期化
+// ■ 初期化：開いた瞬間から引き継ぎ状態のメイン画面
 // ══════════════════════════════════════════════════════════════
 (function init() {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
         try {
             const d = JSON.parse(raw);
-            leftTeam       = d.leftTeam       ?? 1;
+            leftTeam       = d.leftTeam       ?? TAKEOVER_STATE.leftTeam;
             current_server = d.current_server ?? TAKEOVER_STATE.current_server;
             set_score_t1   = d.set_score_t1   ?? TAKEOVER_STATE.set_score_t1;
             set_score_t2   = d.set_score_t2   ?? TAKEOVER_STATE.set_score_t2;
             game_score_t1  = d.game_score_t1  ?? TAKEOVER_STATE.game_score_t1;
             game_score_t2  = d.game_score_t2  ?? TAKEOVER_STATE.game_score_t2;
             game_is_over   = d.game_is_over   ?? false;
-            matchStarted   = d.matchStarted   ?? false;
             historyStack   = Array.isArray(d.historyStack) ? d.historyStack : [];
-            if (matchStarted) {
-                hideAll();
-                showMain();
-                const histEl = document.getElementById('game-history');
-                if (histEl) histEl.innerHTML = d.historyHTML || '';
-                const msgEl = document.getElementById('umpire-msg');
-                if (msgEl) msgEl.textContent = d.umpireMsg || '';
-                updateDisplay();
-                if (game_is_over) {
-                    togglePointButtons(true);
-                    checkGameWinner();
-                }
-                return;
+            const histEl = document.getElementById('game-history');
+            if (histEl && d.historyHTML) histEl.innerHTML = d.historyHTML;
+            const msgEl = document.getElementById('umpire-msg');
+            if (msgEl && d.umpireMsg)    msgEl.textContent = d.umpireMsg;
+            updateDisplay();
+            if (game_is_over) {
+                togglePointButtons(true);
+                checkGameWinner();
             }
+            return;
         } catch(e) {}
     }
-    showServeSetup();
+    // localStorage なし → 引き継ぎ初期状態をセット
+    resetToTakeover();
 })();
 
 // ══════════════════════════════════════════════════════════════
-// ■ 画面制御
+// ■ 引き継ぎ初期状態にリセット（戻るを押し続けた最終地点）
 // ══════════════════════════════════════════════════════════════
-function hideAll() {
-    ['serve-setup', 'court-setup', 'main-container'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-    });
-}
-
-function showServeSetup() {
-    hideAll();
-    document.getElementById('serve-btn-t1').innerHTML = buildServeHTML(TEAM1);
-    document.getElementById('serve-btn-t2').innerHTML = buildServeHTML(TEAM2);
-    document.getElementById('serve-setup').style.display = 'flex';
-}
-
-function showCourtSetup() {
-    hideAll();
-    const serverTeam = current_server === 1 ? TEAM1 : TEAM2;
-    const sub = document.getElementById('court-sub');
-    if (sub) sub.textContent = '「' + teamNamesToText(serverTeam) + '」がサーブしています';
-    document.getElementById('court-setup').style.display = 'flex';
-}
-
-function showMain() {
-    document.getElementById('main-container').style.display = 'flex';
-    updateDisplay();
-}
-
-// ══════════════════════════════════════════════════════════════
-// ■ ① サーブチーム選択
-// ══════════════════════════════════════════════════════════════
-window.onServeSelect = function(team) {
-    current_server = team;
-    showCourtSetup();
-};
-
-// ══════════════════════════════════════════════════════════════
-// ■ ② コートサイド選択 → 試合再開
-// ══════════════════════════════════════════════════════════════
-window.onCourtSideSelect = function(side) {
-    leftTeam     = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
-    matchStarted = true;
+function resetToTakeover() {
+    leftTeam       = TAKEOVER_STATE.leftTeam;
+    current_server = TAKEOVER_STATE.current_server;
+    set_score_t1   = TAKEOVER_STATE.set_score_t1;
+    set_score_t2   = TAKEOVER_STATE.set_score_t2;
+    game_score_t1  = TAKEOVER_STATE.game_score_t1;
+    game_score_t2  = TAKEOVER_STATE.game_score_t2;
+    game_is_over   = false;
+    historyStack   = [];
 
     // 第1ゲーム履歴を注入（清水/山口 team2 が 5-3 で勝利）
+    document.getElementById('game-history').innerHTML = '';
     const cur1 = game_score_t1, cur2 = game_score_t2;
     game_score_t1 = TAKEOVER_STATE.game1_t1;
     game_score_t2 = TAKEOVER_STATE.game1_t2;
@@ -431,26 +274,20 @@ window.onCourtSideSelect = function(side) {
     game_score_t1 = cur1;
     game_score_t2 = cur2;
 
-    hideAll();
-    showMain();
+    document.getElementById('btn-confirm').style.display = 'none';
+    document.getElementById('btn-end').style.display     = 'none';
+    document.getElementById('btn-undo').style.display    = '';
+    document.getElementById('tennis-ball').style.display = 'none';
+    togglePointButtons(false);
+
+    updateDisplay();
     updateUmpireCall();
     saveLocalState();
-};
+}
 
 // ══════════════════════════════════════════════════════════════
 // ■ 選手名ヘルパー
 // ══════════════════════════════════════════════════════════════
-function buildServeHTML(team) {
-    const lines = team.map((p, i) => {
-        const col1 = i === 0 ? '🎾' : '';
-        return `<div class="serve-line">
-                    <span class="serve-col1">${col1}</span>
-                    <span class="serve-col2"><span class="num-badge">${p.id}</span>${p.name}</span>
-                </div>`;
-    });
-    return `<div class="serve-btn-lines">${lines.join('')}</div>`;
-}
-
 function renderName(p) {
     return `<span class="pname"><span class="num-badge">${p.id}</span>${p.name}</span>`;
 }
@@ -629,24 +466,17 @@ window.doneNext = function() {
 // ■ 戻る（undo）
 // ══════════════════════════════════════════════════════════════
 window.undoLastPoint = function() {
-    if (historyStack.length === 0) {
-        // 引き継ぎ初期状態に戻す → サーブ選択画面へ
-        matchStarted   = false;
-        current_server = TAKEOVER_STATE.current_server;
-        game_score_t1  = TAKEOVER_STATE.game_score_t1;
-        game_score_t2  = TAKEOVER_STATE.game_score_t2;
-        set_score_t1   = TAKEOVER_STATE.set_score_t1;
-        set_score_t2   = TAKEOVER_STATE.set_score_t2;
-        document.getElementById('game-history').innerHTML = '';
-        clearLocalState();
-        showServeSetup();
-        return;
-    }
     if (game_is_over) {
         game_is_over = false;
         togglePointButtons(false);
         document.getElementById('btn-confirm').style.display = 'none';
         document.getElementById('btn-end').style.display     = 'none';
+    }
+    if (historyStack.length === 0) {
+        // スタックが空 = 引き継ぎ初期状態に戻す
+        clearLocalState();
+        resetToTakeover();
+        return;
     }
     const last = historyStack.pop();
     if (last.type === 'confirm') {
@@ -751,13 +581,12 @@ function swapHistoryRows() {
 // ■ localStorage 保存 / クリア
 // ══════════════════════════════════════════════════════════════
 function saveLocalState() {
-    if (!matchStarted) return;
     try {
         localStorage.setItem(LS_KEY, JSON.stringify({
             leftTeam, current_server,
             set_score_t1, set_score_t2,
             game_score_t1, game_score_t2,
-            game_is_over, matchStarted,
+            game_is_over,
             historyStack,
             historyHTML: document.getElementById('game-history')?.innerHTML || '',
             umpireMsg:   document.getElementById('umpire-msg')?.textContent  || ''
