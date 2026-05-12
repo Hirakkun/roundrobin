@@ -13,6 +13,7 @@
     { "src": "/score-court-sample2.php","dest": "/api/score-court-sample2.php" },
     { "src": "/display-sample.php",    "dest": "/api/display-sample.php" },
     { "src": "/display",               "dest": "/api/display.php" },
+    { "src": "/guide",                 "dest": "/api/guide.php" },
     { "src": "/(.*)", "dest": "/api/roundrobin.php" }
   ]
 }
