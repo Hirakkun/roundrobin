@@ -457,7 +457,7 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     background: #ffd700;
     color: #333;
     border-radius: 0.3em;
-    padding: 0.22em 0.45em;
+    padding: 0.22em 0.55em;
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
@@ -465,14 +465,24 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
     text-align: center;
     display: inline-block;
     font-family: inherit;
-    border: none;
+    border: 0.18em solid #b8860b;
+    box-shadow: 0 0.15em 0 #b8860b, 0 0.2em 0.4em rgba(0,0,0,0.35);
     cursor: pointer;
 }
-.pc-score-btn:active { opacity: 0.75; }
+.pc-score-btn:active {
+    opacity: 0.85;
+    transform: translateY(0.1em);
+    box-shadow: 0 0.05em 0 #b8860b, 0 0.1em 0.2em rgba(0,0,0,0.25);
+}
 /* 試合中は青色 */
 .pc-score-btn-playing {
     background: #1565c0;
     color: #fff;
+    border-color: #0d47a1;
+    box-shadow: 0 0.15em 0 #0d47a1, 0 0.2em 0.4em rgba(0,0,0,0.35);
+}
+.pc-score-btn-playing:active {
+    box-shadow: 0 0.05em 0 #0d47a1, 0 0.1em 0.2em rgba(0,0,0,0.25);
 }
 
 /* 確認モーダル */
@@ -897,10 +907,10 @@ function buildPortraitCard(item, physIdx) {
     // 終了以外のコートに主審スコア入力ボタンを表示
     let scoreBtnHtml = '';
     if (status === 'calling') {
-        scoreBtnHtml = `<a class="pc-score-btn" href="/score/court?session=${encodeURIComponent(sid)}&court=${pi}">主審<br>スコア入力</a>`;
+        scoreBtnHtml = `<a class="pc-score-btn" href="/score/court?session=${encodeURIComponent(sid)}&court=${pi}">主審として<br>試合を開始する</a>`;
     } else if (status === 'playing') {
         const url = `/score/court?session=${encodeURIComponent(sid)}&court=${pi}`;
-        scoreBtnHtml = `<button class="pc-score-btn pc-score-btn-playing" data-url="${_esc(url)}" onclick="window.confirmScoreEntry(this.dataset.url)">主審<br>スコア入力</button>`;
+        scoreBtnHtml = `<button class="pc-score-btn pc-score-btn-playing" data-url="${_esc(url)}" onclick="window.confirmScoreEntry(this.dataset.url)">引き継いで<br>主審をする</button>`;
     }
 
     return `
