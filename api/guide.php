@@ -634,39 +634,9 @@ body {
     <!-- 引き継ぎ後のスコア画面 -->
     <div class="mockup-wrap">
       <div class="mockup-label">② 引き継ぎ後のスコア画面</div>
-      <div class="phone-frame">
-        <div class="score-screen phone-screen">
-          <div class="score-banner">試合引き継ぎ中</div>
-          <div class="score-court-label">🅑 Bコート｜第1ゲーム</div>
-          <div class="score-header">
-            <div class="score-game-count">ゲームカウント 0 - 0</div>
-            <div class="score-game-label">第1ゲーム</div>
-          </div>
-          <div class="score-teams-row">
-            <div class="score-team-label t1">① 山田・中村</div>
-            <div class="score-team-label t2">② 伊藤・渡辺</div>
-          </div>
-          <div class="score-main">
-            <div class="score-side">
-              <button class="score-btn t1" style="flex:1">◀<br><span>山田・中村</span><br><small>の得点</small></button>
-            </div>
-            <div class="score-center">
-              <div class="score-big-num">
-                <span class="s1">3</span><span class="sep"> - </span><span class="s2">2</span>
-              </div>
-              <div class="score-serve-ind">🟡 山田・中村 のサーブ</div>
-            </div>
-            <div class="score-side">
-              <button class="score-btn t2" style="flex:1">▶<br><span>伊藤・渡辺</span><br><small>の得点</small></button>
-            </div>
-          </div>
-          <div style="padding:.3em .5em .5em">
-            <button style="width:100%;padding:.5em;background:#546e7a;color:#fff;border:none;border-radius:.4em;font-size:.72em;font-weight:bold">
-              ↩ 直前の得点を取り消す
-            </button>
-          </div>
-        </div>
-      </div>
+      <img src="/images/screen-score.jpg"
+           style="width:220px;border-radius:1.2rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
+           alt="スコア入力画面">
     </div>
 
   </div>
