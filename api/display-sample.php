@@ -447,6 +447,21 @@ body {
                     <span class="pc-s2"    id="c-s2">0</span>
                     <span class="pc-balls" id="c-balls2"></span>
                 </div>
+                <!-- ── フロート説明ラベル ── -->
+                <div style="display:flex; padding:0.08em 0.4em 0.15em; gap:0.3em; align-items:flex-start;">
+                    <!-- ゲーム内ポイント：左ボール列の下 -->
+                    <div style="width:34%; flex-shrink:0; display:flex; flex-direction:column; align-items:center;">
+                        <div style="width:0; height:0; border-left:0.4em solid transparent; border-right:0.4em solid transparent; border-bottom:0.65em solid #e65100;"></div>
+                        <div style="background:#fff3cd; color:#7b3f00; font-size:0.5em; font-weight:900; padding:0.3em 0.5em; border-radius:0.45em; border:0.14em solid #e65100; box-shadow:0 0.15em 0.5em rgba(0,0,0,0.35); white-space:nowrap; line-height:1.35; text-align:center;">ゲーム内<br>ポイント</div>
+                    </div>
+                    <!-- ゲームカウント：中央スコア数字の下 -->
+                    <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+                        <div style="width:0; height:0; border-left:0.4em solid transparent; border-right:0.4em solid transparent; border-bottom:0.65em solid #1565c0;"></div>
+                        <div style="background:#e3f2fd; color:#0d47a1; font-size:0.5em; font-weight:900; padding:0.3em 0.5em; border-radius:0.45em; border:0.14em solid #1565c0; box-shadow:0 0.15em 0.5em rgba(0,0,0,0.35); white-space:nowrap; line-height:1.35; text-align:center;">ゲームカウント</div>
+                    </div>
+                    <!-- 右ボール列分の余白 -->
+                    <div style="width:26%; flex-shrink:0;"></div>
+                </div>
                 <div class="pc-team2-block">
                     <span class="pc-player">加藤雄介<span class="pc-pnum">18</span></span>
                     <span class="pc-player">吉田菜々<span class="pc-pnum">15</span></span>
