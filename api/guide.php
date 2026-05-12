@@ -255,6 +255,7 @@ body {
   <a href="#step3"><span class="toc-num">3</span>試合中のスコア操作</a>
   <a href="#step4"><span class="toc-num">4</span>試合終了処理</a>
   <a href="#step5"><span class="toc-num">引</span>審判の引き継ぎ</a>
+  <a href="#step6"><span class="toc-num">6</span>管理システム操作</a>
 </nav>
 
 <!-- ═══════════════════════════
@@ -693,6 +694,120 @@ body {
         </div>
       </li>
     </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     STEP 6: 管理システム操作（メインPC）
+═══════════════════════════ -->
+<div class="section" id="step6">
+  <div class="section-title">
+    <span class="step-num">6</span>
+    イベント管理システムの操作
+    <span class="role-badge staff">💻 メインPC操作</span>
+  </div>
+
+  <!-- ══ ⑥-1 ペア設定・休憩 ══ -->
+  <div class="card">
+    <div class="card-title"><span class="icon">⑥-1</span>ペア設定・休憩／復帰の仕方</div>
+
+    <p style="font-size:.875rem;color:#37474f;margin-bottom:.8rem">
+      管理画面の<strong>「設定」タブ</strong>からペアの登録・変更や、選手の休憩・復帰を行います。
+    </p>
+
+    <!-- 設定画面 -->
+    <div class="mockup-row" style="align-items:flex-start;gap:1.4rem;flex-wrap:wrap">
+      <div class="mockup-wrap" style="flex:1;min-width:260px;align-items:flex-start">
+        <div class="mockup-label">設定タブ（全体）</div>
+        <img src="/images/mgmt-settings.jpg"
+             style="width:100%;max-width:560px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+             alt="管理画面 設定">
+      </div>
+      <div class="mockup-wrap" style="flex:1;min-width:260px;align-items:flex-start">
+        <div class="mockup-label">ペア設定</div>
+        <img src="/images/mgmt-settings-pairs.jpg"
+             style="width:100%;max-width:560px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+             alt="管理画面 設定 ペア設定">
+      </div>
+    </div>
+
+    <ul class="steps" style="margin-top:1rem">
+      <li>
+        <span class="s-num">①</span>
+        <span><strong>ペア設定</strong><br>「設定」タブ →「ペア設定」で参加ペアを登録・編集します。大会前に確定させておいてください。</span>
+      </li>
+      <li>
+        <span class="s-num orange">②</span>
+        <span><strong>休憩（棄権・欠席）</strong><br>該当ペアの行にある「休憩」ボタンを押すと、そのペアが組み合わせから除外されます。</span>
+      </li>
+      <li>
+        <span class="s-num green">③</span>
+        <span><strong>復帰</strong><br>「復帰」ボタンを押すと組み合わせに戻ります。次のラウンドから自動的に組み合わせに含まれます。</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ══ ⑥-2 手動操作 ══ -->
+  <div class="card">
+    <div class="card-title"><span class="icon">⑥-2</span>手動での試合開始・スコア入力・試合終了</div>
+
+    <p style="font-size:.875rem;color:#37474f;margin-bottom:.8rem">
+      スマートフォンが使えない場合や、スコアを修正したい場合は管理画面の<strong>「組合」タブ</strong>から直接操作できます。
+    </p>
+
+    <!-- 組合 全体 -->
+    <div class="mockup-wrap" style="align-items:flex-start;margin-bottom:1rem">
+      <div class="mockup-label">組合タブ（全体）</div>
+      <img src="/images/mgmt-draw.jpg"
+           style="width:100%;max-width:720px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+           alt="管理画面 組合">
+    </div>
+
+    <!-- 3ステップ横並び -->
+    <div class="mockup-row" style="align-items:flex-start;gap:1.2rem;flex-wrap:wrap">
+
+      <div class="mockup-wrap" style="flex:1;min-width:220px;align-items:flex-start">
+        <div class="mockup-label">① 手動で試合開始</div>
+        <img src="/images/mgmt-draw-manual-start.jpg"
+             style="width:100%;max-width:420px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+             alt="手動試合開始">
+      </div>
+
+      <div class="mockup-wrap" style="flex:1;min-width:220px;align-items:flex-start">
+        <div class="mockup-label">② 手動スコア入力</div>
+        <img src="/images/mgmt-draw-manual-score.jpg"
+             style="width:100%;max-width:420px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+             alt="手動スコア入力">
+      </div>
+
+      <div class="mockup-wrap" style="flex:1;min-width:220px;align-items:flex-start">
+        <div class="mockup-label">③ 手動で試合終了</div>
+        <img src="/images/mgmt-draw-manual-end.jpg"
+             style="width:100%;max-width:420px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+             alt="手動試合終了">
+      </div>
+
+    </div>
+
+    <ul class="steps" style="margin-top:1rem">
+      <li>
+        <span class="s-num green">①</span>
+        <span><strong>手動で試合開始</strong><br>「組合」タブで該当の試合行にある<strong>「試合開始」</strong>ボタンを押します。スマートフォンなしでも試合を呼び出し状態にできます。</span>
+      </li>
+      <li>
+        <span class="s-num green">②</span>
+        <span><strong>手動スコア入力</strong><br>試合中の行の<strong>「スコア入力」</strong>ボタンから得点を直接入力・修正できます。スコアの修正にも使用できます。</span>
+      </li>
+      <li>
+        <span class="s-num green">③</span>
+        <span><strong>手動で試合終了</strong><br>「試合終了」ボタンを押し、最終スコアを確認して確定します。試合が完了状態になり次の組み合わせに反映されます。</span>
+      </li>
+    </ul>
+
+    <div class="note warn" style="margin-top:.8rem">
+      <span class="note-icon">⚠️</span>
+      <span>手動操作とスマートフォンからの操作を<strong>同時に行うと二重カウントになる</strong>ことがあります。どちらか一方に統一してください。</span>
+    </div>
   </div>
 </div>
 
