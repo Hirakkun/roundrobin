@@ -777,7 +777,7 @@ body {
     <ul class="steps" style="margin-top:1rem">
       <li>
         <span class="s-num green">①</span>
-        <span><strong>手動で試合開始</strong><br>試合行の右上にある<strong>「試合開始」</strong>ボタンを押します。スマートフォンなしでも試合を呼び出し状態にできます。</span>
+        <span><strong>手動で試合開始</strong><br>試合行の右上にある<strong>「試合開始」</strong>ボタンを押します。主審用のスマホ操作なしでも試合を呼び出し状態にできます。</span>
       </li>
       <li>
         <span class="s-num green">②</span>
