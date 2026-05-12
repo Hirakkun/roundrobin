@@ -609,7 +609,7 @@ body {
         <span class="s-num orange">Q</span>
         <div>
           <strong>間違えてスコアを入力してしまった</strong><br>
-          <span style="color:#546e7a;font-size:.875rem">→「↩ 直前の得点を取り消す」ボタンを使ってください。複数回押すと複数戻せます。</span>
+          <span style="color:#546e7a;font-size:.875rem">→ 画面上部赤色の「戻る」ボタンを使ってください。複数回押すと複数戻せます。</span>
         </div>
       </li>
       <li>
