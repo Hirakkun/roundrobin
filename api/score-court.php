@@ -127,7 +127,16 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.9em; font-weight: bold;
         }
         .role-button.is-serving { color: #1565c0; background: #cce5ff; }
-        .role-button.undo { background: #c62828; color: #fff; cursor: pointer; font-weight: bold; }
+        .role-button.undo {
+            background: #c62828; color: #fff; cursor: pointer; font-weight: bold;
+            border-radius: 0.4em;
+            box-shadow: 0 0.2em 0 #7b0000, 0 0.25em 0.5em rgba(0,0,0,.4);
+            transition: transform .08s, box-shadow .08s;
+        }
+        .role-button.undo:active {
+            transform: translateY(0.13em);
+            box-shadow: 0 0.07em 0 #7b0000, 0 0.08em 0.2em rgba(0,0,0,.25);
+        }
 
         /* チーム名 */
         .team-name-row { display: flex; align-items: stretch; flex-shrink: 0; }
@@ -181,9 +190,25 @@ header('Content-Type: text/html; charset=UTF-8');
         .action-button {
             width: 100%; padding: 0.8em; border: none; cursor: pointer;
             font-size: 1.3em; font-weight: bold; display: none; flex-shrink: 0;
+            border-radius: 0.5em;
+            transition: transform .08s, box-shadow .08s;
         }
-        .action-button.confirm { background: #ffc107; }
-        .action-button.end     { background: #dc3545; color: #fff; padding: 1em; }
+        .action-button.confirm {
+            background: #ffc107; color: #333;
+            box-shadow: 0 0.22em 0 #a07800, 0 0.3em 0.7em rgba(0,0,0,.3);
+            animation: pulse-confirm 1.5s ease-in-out infinite;
+        }
+        .action-button.end {
+            background: #dc3545; color: #fff; padding: 1em;
+            box-shadow: 0 0.22em 0 #8b0000, 0 0.3em 0.7em rgba(0,0,0,.4);
+            animation: pulse-end 1.5s ease-in-out infinite;
+        }
+        .action-button:active {
+            transform: translateY(0.14em);
+            animation-play-state: paused;
+        }
+        .action-button.confirm:active { box-shadow: 0 0.08em 0 #a07800, 0 0.1em 0.2em rgba(0,0,0,.2); }
+        .action-button.end:active     { box-shadow: 0 0.08em 0 #8b0000, 0 0.1em 0.2em rgba(0,0,0,.2); }
 
         /* ポイント大表示 */
         .point-score-row { position: relative; display: flex; flex: 1; min-height: 0; }
@@ -320,6 +345,15 @@ header('Content-Type: text/html; charset=UTF-8');
             background: #fff; border-radius: 50%; transition: left 0.3s;
         }
         body.dark .theme-thumb { left: 0.95em; }
+
+        @keyframes pulse-confirm {
+            0%, 100% { background: #ffc107; box-shadow: 0 0.22em 0 #a07800, 0 0.3em 0.7em rgba(0,0,0,.3); }
+            50%       { background: #ffd04c; box-shadow: 0 0.22em 0 #a07800, 0 0.5em 1.6em rgba(255,193,7,.75), 0 0 22px rgba(255,193,7,.55); }
+        }
+        @keyframes pulse-end {
+            0%, 100% { background: #dc3545; box-shadow: 0 0.22em 0 #8b0000, 0 0.3em 0.7em rgba(0,0,0,.4); }
+            50%       { background: #f04858; box-shadow: 0 0.22em 0 #8b0000, 0 0.5em 1.6em rgba(220,53,69,.75), 0 0 22px rgba(220,53,69,.55); }
+        }
     </style>
 </head>
 <body>
