@@ -170,19 +170,30 @@ body {
     background: #ffd700;
     color: #333;
     border-radius: 0.3em;
-    padding: 0.22em 0.45em;
+    padding: 0.22em 0.55em;
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
     line-height: 1.35;
     text-align: center;
     display: inline-block;
-    border: none;
+    border: 0.18em solid #b8860b;
+    box-shadow: 0 0.15em 0 #b8860b, 0 0.2em 0.4em rgba(0,0,0,0.35);
     cursor: pointer;
+}
+.pc-score-btn:active {
+    opacity: 0.85;
+    transform: translateY(0.1em);
+    box-shadow: 0 0.05em 0 #b8860b, 0 0.1em 0.2em rgba(0,0,0,0.25);
 }
 .pc-score-btn-playing {
     background: #1565c0;
     color: #fff;
+    border-color: #0d47a1;
+    box-shadow: 0 0.15em 0 #0d47a1, 0 0.2em 0.4em rgba(0,0,0,0.35);
+}
+.pc-score-btn-playing:active {
+    box-shadow: 0 0.05em 0 #0d47a1, 0 0.1em 0.2em rgba(0,0,0,0.25);
 }
 
 /* ボタン点滅 */
@@ -411,7 +422,7 @@ body {
             <div class="pc-head">
                 <span class="pc-badge">B</span>
                 <span class="pc-status">🔔 呼び出し中</span>
-                <a class="pc-score-btn btn-blink" href="score-court-sample.php">主審<br>スコア入力</a>
+                <a class="pc-score-btn btn-blink" href="score-court-sample.php">主審として<br>試合を開始する</a>
             </div>
             <div class="pc-body">
                 <div class="pc-team1-block">
@@ -433,7 +444,7 @@ body {
             <div class="pc-head">
                 <span class="pc-badge">C</span>
                 <span class="pc-status">▶ 試合中</span>
-                <button class="pc-score-btn pc-score-btn-playing">主審<br>スコア入力</button>
+                <button class="pc-score-btn pc-score-btn-playing">引き継いで<br>主審をする</button>
             </div>
             <div class="pc-body">
                 <div class="pc-team1-block">
@@ -474,7 +485,7 @@ body {
             <div class="pc-head">
                 <span class="pc-badge">D</span>
                 <span class="pc-status">▶ 試合中</span>
-                <button class="pc-score-btn pc-score-btn-playing" onclick="openTakeoverModal('score-court-sample2.php')">主審<br>スコア入力</button>
+                <button class="pc-score-btn pc-score-btn-playing" onclick="openTakeoverModal('score-court-sample2.php')">引き継いで<br>主審をする</button>
             </div>
             <!-- 吹き出し（ボタン下・上向き矢印） -->
             <div style="display:flex; flex-direction:column; align-items:flex-end; padding:0 0.45em; margin-top:0.1em;">
