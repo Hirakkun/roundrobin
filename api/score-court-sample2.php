@@ -22,7 +22,7 @@ header('Content-Type: text/html; charset=UTF-8');
             pointer-events: none;
         }
 
-        /* ── セットアップ画面 ── */
+        /* ── セットアップ画面（共通） ── */
         .setup-screen {
             position: fixed; inset: 0; z-index: 40; background: #283593;
             display: none; flex-direction: column;
@@ -48,19 +48,41 @@ header('Content-Type: text/html; charset=UTF-8');
             opacity: 0.85; letter-spacing: 0.04em;
         }
 
-        /* ── 引き継ぎ情報カード ── */
+        /* ── 現在の試合状況カード ── */
         .takeover-info {
             background: rgba(255,255,255,0.12);
             border-radius: 0.55em;
-            padding: 0.65em 1em;
-            display: flex; flex-direction: column; gap: 0.35em;
+            padding: 0.5em 0.9em;
+            display: flex; flex-direction: column; gap: 0.3em;
         }
         .ti-row {
             display: flex; justify-content: space-between; align-items: center;
         }
-        .ti-label { font-size: 0.78em; color: #c5cae9; }
-        .ti-val   { font-size: 0.95em; font-weight: bold; color: #fff; }
-        .ti-server { font-size: 0.78em; color: #ffe082; font-weight: bold; }
+        .ti-label { font-size: 0.72em; color: #c5cae9; }
+        .ti-val   { font-size: 0.9em; font-weight: bold; color: #fff; }
+
+        /* ── サーブ選択ボタン ── */
+        .setup-btn {
+            width: 100%; border: none; border-radius: 0.65em;
+            font-size: 1.3em; font-weight: bold; cursor: pointer;
+            line-height: 1.5; text-align: left;
+            padding: 0.9em 0.7em;
+        }
+        .setup-btn:active { opacity: .8; }
+        .setup-btn.t1 { background: #1565c0; color: #fff; }
+        .setup-btn.t2 { background: #2e7d32; color: #fff; }
+        .setup-btn .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
+        .setup-btn.t2 .num-badge { color: #2e7d32; }
+        .serve-btn-lines {
+            display: flex; flex-direction: column;
+            align-items: flex-start; width: 100%; gap: 0.02em;
+        }
+        .serve-line {
+            display: flex; align-items: center; gap: 0.25em;
+            line-height: 1.1; white-space: nowrap;
+        }
+        .serve-col1 { width: 1.5em; flex-shrink: 0; text-align: center; }
+        .serve-col2 { display: flex; align-items: center; gap: 0.2em; }
 
         /* ── コート左右選択 ── */
         .court-side-select {
@@ -146,17 +168,23 @@ header('Content-Type: text/html; charset=UTF-8');
             position: fixed; inset: 0; z-index: 45; background: #1b5e20;
             display: none; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 0.8em; padding: 1.5em;
+            gap: 0.7em; padding: 1.5em; text-align: center;
         }
-        #done-screen .icon  { font-size: 3.5em; }
-        #done-screen .title { color: #fff; font-size: 1.3em; font-weight: bold; }
-        #done-screen .score { color: #a5d6a7; font-size: 2.8em; font-weight: bold; }
-        #done-screen .sub   { color: #a5d6a7; font-size: 0.8em; }
-        #done-countdown { font-size: 0.75em; color: #a5d6a7; opacity: 0.8; }
+        #done-screen .done-icon  { font-size: 3em; }
+        #done-screen .done-title { color: #fff; font-size: 1.15em; font-weight: bold; }
         .done-teams-score { display: flex; align-items: center; justify-content: center; gap: 0.4em; flex-wrap: wrap; width: 100%; max-width: 520px; }
         .done-team-name { color: #a5d6a7; font-size: 0.75em; font-weight: bold; line-height: 1.6; flex: 1; min-width: 0; }
         .done-team-name.left  { text-align: right; }
         .done-team-name.right { text-align: left; }
+        .done-score-num { color: #fff; font-size: 2.6em; font-weight: bold; white-space: nowrap; }
+        .done-countdown { color: #a5d6a7; font-size: 0.78em; margin-top: 0.3em; }
+        .done-next-btn {
+            background: rgba(255,255,255,0.18); color: #fff;
+            border: 2px solid rgba(255,255,255,0.45); border-radius: 0.65em;
+            padding: 0.65em 2.2em; font-size: 0.95em; font-weight: bold;
+            cursor: pointer; margin-top: 0.4em; letter-spacing: 0.05em;
+        }
+        .done-next-btn:active { opacity: 0.75; }
         #done-screen .num-badge { background: rgba(255,255,255,0.25); color: #fff; }
     </style>
 </head>
@@ -165,39 +193,43 @@ header('Content-Type: text/html; charset=UTF-8');
 <!-- 練習モードバナー -->
 <div id="sample-banner">🔄 審判引き継ぎ 練習モード</div>
 
-<!-- 引き継ぎ確認画面 -->
-<div class="setup-screen" id="takeover-setup">
+<!-- ① サーブ選択画面 -->
+<div class="setup-screen" id="serve-setup">
     <div class="setup-match-title">
         第3試合　Dコート
         <span class="title-games">3ゲームマッチ</span>
     </div>
-    <h2>🔄 審判を引き継ぎます</h2>
-
+    <h2>🎾 現在サーブしているチームは？</h2>
     <!-- 現在の試合状況 -->
     <div class="takeover-info">
         <div class="ti-row">
-            <span class="ti-label">ゲームカウント</span>
+            <span class="ti-label">ゲームカウント（第2ゲーム途中）</span>
             <span class="ti-val">0 &nbsp;–&nbsp; 1</span>
         </div>
         <div class="ti-row">
             <span class="ti-label">現在のポイント</span>
             <span class="ti-val">3 &nbsp;–&nbsp; 4</span>
         </div>
-        <div class="ti-row">
-            <span class="ti-label">現在のサーバー</span>
-            <span class="ti-server">⑯清水拓実 / ⑰山口彩花</span>
-        </div>
     </div>
+    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)"></button>
+    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)"></button>
+</div>
 
-    <div class="sub">サーバー（清水拓実チーム）はどちら側にいますか？</div>
-
+<!-- ② サーバー位置選択画面 -->
+<div class="setup-screen" id="court-setup">
+    <div class="setup-match-title">
+        第3試合　Dコート
+        <span class="title-games">3ゲームマッチ</span>
+    </div>
+    <h2>🎾 サーバーはどちら側ですか？</h2>
+    <div class="sub" id="court-sub"></div>
     <div class="court-side-select">
-        <button class="court-half left-half" onclick="onTakeoverSideSelect('left')">
+        <button class="court-half left-half" onclick="onCourtSideSelect('left')">
             <div class="half-arrow">←</div>
             <div class="half-word">左</div>
         </button>
         <div class="court-net-div"></div>
-        <button class="court-half right-half" onclick="onTakeoverSideSelect('right')">
+        <button class="court-half right-half" onclick="onCourtSideSelect('right')">
             <div class="half-arrow">→</div>
             <div class="half-word">右</div>
         </button>
@@ -206,15 +238,15 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <!-- 完了画面 -->
 <div id="done-screen">
-    <div class="icon">✅</div>
-    <div class="title">試合終了</div>
+    <div class="done-icon">✅</div>
+    <div class="done-title">主審おつかれさまでした</div>
     <div class="done-teams-score">
         <div class="done-team-name left"  id="done-left-name"></div>
-        <div class="score"                id="done-score-text">-</div>
+        <div class="done-score-num"       id="done-score-text">-</div>
         <div class="done-team-name right" id="done-right-name"></div>
     </div>
-    <div class="sub">お疲れ様でした！</div>
-    <div class="sub" id="done-countdown"></div>
+    <div class="done-countdown" id="done-countdown"></div>
+    <button class="done-next-btn" onclick="doneNext()">案内パネルへ戻る</button>
 </div>
 
 <!-- メイン試合画面 -->
@@ -271,8 +303,6 @@ header('Content-Type: text/html; charset=UTF-8');
 const MATCH_GAMES        = 3;
 const WIN_GAMES          = 2;
 const courtChangeEnabled = true;
-const courtLabel         = 'Dコート';
-const currentRoundLabel  = '第3試合';
 const LS_KEY             = 'sc_sample2_v1';
 
 const TEAM1 = [
@@ -285,16 +315,17 @@ const TEAM2 = [
 ];
 
 // ══════════════════════════════════════════════════════════════
-// ■ 引き継ぎ時の初期状態（第2ゲーム途中：清水/山口が第1ゲームを勝利）
+// ■ 引き継ぎ時の固定初期状態（第2ゲーム途中）
+//   第1ゲーム: 清水/山口が 5-3 で勝利
+//   第2ゲーム: 現在 西村/林 3 - 清水/山口 4、清水/山口サーブ
 // ══════════════════════════════════════════════════════════════
 const TAKEOVER_STATE = {
-    set_score_t1:  0,   // 西村/林: 0ゲーム
-    set_score_t2:  1,   // 清水/山口: 1ゲーム
-    game_score_t1: 3,   // 現在のポイント
+    set_score_t1:  0,
+    set_score_t2:  1,
+    game_score_t1: 3,
     game_score_t2: 4,
-    current_server: 2,  // 清水/山口サーブ
-    // 第1ゲーム履歴用スコア
-    game1_t1: 3, game1_t2: 5  // 清水/山口が5-3で勝利
+    current_server: 2,   // 清水/山口がサーブ
+    game1_t1: 3, game1_t2: 5   // 第1ゲーム: 清水/山口が 5-3 で勝利
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -309,7 +340,7 @@ let set_score_t2   = TAKEOVER_STATE.set_score_t2;
 let game_is_over   = false;
 let matchStarted   = false;
 let historyStack   = [];
-let _countdownTimer = null;
+let _doneTimer     = null;
 
 // ══════════════════════════════════════════════════════════════
 // ■ 初期化
@@ -344,20 +375,32 @@ let _countdownTimer = null;
             }
         } catch(e) {}
     }
-    showTakeoverSetup();
+    showServeSetup();
 })();
 
 // ══════════════════════════════════════════════════════════════
 // ■ 画面制御
 // ══════════════════════════════════════════════════════════════
 function hideAll() {
-    document.getElementById('takeover-setup').style.display  = 'none';
-    document.getElementById('main-container').style.display  = 'none';
+    ['serve-setup', 'court-setup', 'main-container'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
 }
 
-function showTakeoverSetup() {
+function showServeSetup() {
     hideAll();
-    document.getElementById('takeover-setup').style.display = 'flex';
+    document.getElementById('serve-btn-t1').innerHTML = buildServeHTML(TEAM1);
+    document.getElementById('serve-btn-t2').innerHTML = buildServeHTML(TEAM2);
+    document.getElementById('serve-setup').style.display = 'flex';
+}
+
+function showCourtSetup() {
+    hideAll();
+    const serverTeam = current_server === 1 ? TEAM1 : TEAM2;
+    const sub = document.getElementById('court-sub');
+    if (sub) sub.textContent = '「' + teamNamesToText(serverTeam) + '」がサーブしています';
+    document.getElementById('court-setup').style.display = 'flex';
 }
 
 function showMain() {
@@ -366,18 +409,25 @@ function showMain() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ■ 引き継ぎ：コート側選択
+// ■ ① サーブチーム選択
 // ══════════════════════════════════════════════════════════════
-window.onTakeoverSideSelect = function(side) {
-    // current_server=2（清水/山口）がどちら側か
-    leftTeam = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
+window.onServeSelect = function(team) {
+    current_server = team;
+    showCourtSetup();
+};
+
+// ══════════════════════════════════════════════════════════════
+// ■ ② コートサイド選択 → 試合再開
+// ══════════════════════════════════════════════════════════════
+window.onCourtSideSelect = function(side) {
+    leftTeam     = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
     matchStarted = true;
 
-    // 第1ゲーム履歴を追加（清水/山口が勝利）
+    // 第1ゲーム履歴を注入（清水/山口 team2 が 5-3 で勝利）
     const cur1 = game_score_t1, cur2 = game_score_t2;
     game_score_t1 = TAKEOVER_STATE.game1_t1;
     game_score_t2 = TAKEOVER_STATE.game1_t2;
-    addGameHistoryRow(2); // team2（清水/山口）が第1ゲーム勝利
+    addGameHistoryRow(2);
     game_score_t1 = cur1;
     game_score_t2 = cur2;
 
@@ -390,10 +440,21 @@ window.onTakeoverSideSelect = function(side) {
 // ══════════════════════════════════════════════════════════════
 // ■ 選手名ヘルパー
 // ══════════════════════════════════════════════════════════════
+function buildServeHTML(team) {
+    const lines = team.map((p, i) => {
+        const col1 = i === 0 ? '🎾' : '';
+        return `<div class="serve-line">
+                    <span class="serve-col1">${col1}</span>
+                    <span class="serve-col2"><span class="num-badge">${p.id}</span>${p.name}</span>
+                </div>`;
+    });
+    return `<div class="serve-btn-lines">${lines.join('')}</div>`;
+}
+
 function renderName(p) {
     return `<span class="pname"><span class="num-badge">${p.id}</span>${p.name}</span>`;
 }
-function teamNamesToText(names) { return names.map(p => p.name).join(' / '); }
+function teamNamesToText(team) { return team.map(p => p.name).join(' / '); }
 
 // ══════════════════════════════════════════════════════════════
 // ■ ポイント追加
@@ -531,26 +592,37 @@ window.handleMatchEnd = function() {
         (leftTeam === 1 ? set_score_t2 : set_score_t1);
     document.getElementById('done-score-text').textContent = finalScore;
 
-    const leftNames  = leftTeam === 1 ? TEAM1 : TEAM2;
-    const rightNames = leftTeam === 1 ? TEAM2 : TEAM1;
-    const buildDoneNames = (names) => names.map(p =>
+    const leftTeamArr  = leftTeam === 1 ? TEAM1 : TEAM2;
+    const rightTeamArr = leftTeam === 1 ? TEAM2 : TEAM1;
+    const buildDoneNames = (arr) => arr.map(p =>
         `<span style="display:inline-flex;align-items:center;gap:0.2em;white-space:nowrap;">` +
         `<span class="num-badge">${p.id}</span>${p.name}</span>`
     ).join('<br>');
-    document.getElementById('done-left-name').innerHTML  = buildDoneNames(leftNames);
-    document.getElementById('done-right-name').innerHTML = buildDoneNames(rightNames);
+    document.getElementById('done-left-name').innerHTML  = buildDoneNames(leftTeamArr);
+    document.getElementById('done-right-name').innerHTML = buildDoneNames(rightTeamArr);
 
     document.getElementById('done-screen').style.display = 'flex';
+    _startDoneCountdown();
+};
 
+// ══════════════════════════════════════════════════════════════
+// ■ 完了カウントダウン
+// ══════════════════════════════════════════════════════════════
+function _startDoneCountdown() {
+    if (_doneTimer) { clearInterval(_doneTimer); _doneTimer = null; }
     let sec = 10;
-    const countEl = document.getElementById('done-countdown');
-    function tick() {
-        countEl.textContent = sec + '秒後に案内パネルへ戻ります...';
-        if (sec <= 0) { window.location.href = 'display-sample.php'; return; }
+    const cdEl = document.getElementById('done-countdown');
+    if (cdEl) cdEl.textContent = sec + '秒後に案内パネルへ戻ります...';
+    _doneTimer = setInterval(() => {
         sec--;
-        _countdownTimer = setTimeout(tick, 1000);
-    }
-    tick();
+        if (cdEl) cdEl.textContent = sec + '秒後に案内パネルへ戻ります...';
+        if (sec <= 0) { clearInterval(_doneTimer); _doneTimer = null; window.doneNext(); }
+    }, 1000);
+}
+
+window.doneNext = function() {
+    if (_doneTimer) { clearInterval(_doneTimer); _doneTimer = null; }
+    window.location.href = 'display-sample.php';
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -558,15 +630,16 @@ window.handleMatchEnd = function() {
 // ══════════════════════════════════════════════════════════════
 window.undoLastPoint = function() {
     if (historyStack.length === 0) {
-        // 初期引き継ぎ状態に戻す
+        // 引き継ぎ初期状態に戻す → サーブ選択画面へ
         matchStarted   = false;
         current_server = TAKEOVER_STATE.current_server;
         game_score_t1  = TAKEOVER_STATE.game_score_t1;
         game_score_t2  = TAKEOVER_STATE.game_score_t2;
         set_score_t1   = TAKEOVER_STATE.set_score_t1;
         set_score_t2   = TAKEOVER_STATE.set_score_t2;
+        document.getElementById('game-history').innerHTML = '';
         clearLocalState();
-        showTakeoverSetup();
+        showServeSetup();
         return;
     }
     if (game_is_over) {
@@ -600,17 +673,17 @@ window.undoLastPoint = function() {
 // ■ 表示更新
 // ══════════════════════════════════════════════════════════════
 function updateDisplay() {
-    const leftNames  = leftTeam === 1 ? TEAM1 : TEAM2;
-    const rightNames = leftTeam === 1 ? TEAM2 : TEAM1;
+    const leftArr  = leftTeam === 1 ? TEAM1 : TEAM2;
+    const rightArr = leftTeam === 1 ? TEAM2 : TEAM1;
 
-    document.getElementById('name-left').innerHTML  = leftNames.map(renderName).join('');
-    document.getElementById('name-right').innerHTML = rightNames.map(renderName).join('');
+    document.getElementById('name-left').innerHTML  = leftArr.map(renderName).join('');
+    document.getElementById('name-right').innerHTML = rightArr.map(renderName).join('');
 
     document.getElementById('btn-left').innerHTML =
-        '<span class="btn-team-name">'  + teamNamesToText(leftNames)  + '</span>' +
+        '<span class="btn-team-name">'  + teamNamesToText(leftArr)  + '</span>' +
         '<span class="btn-point-label">ポイント</span>';
     document.getElementById('btn-right').innerHTML =
-        '<span class="btn-team-name">'  + teamNamesToText(rightNames) + '</span>' +
+        '<span class="btn-team-name">'  + teamNamesToText(rightArr) + '</span>' +
         '<span class="btn-point-label">ポイント</span>';
 
     const leftPt  = leftTeam === 1 ? game_score_t1 : game_score_t2;
