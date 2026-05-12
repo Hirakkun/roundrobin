@@ -332,6 +332,32 @@ body {
     border-right: 0.5em solid transparent;
     border-top: 0.8em solid #ff4444;
 }
+
+/* ── 確認モーダル ── */
+#score-confirm-modal {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.65);
+    display: none; align-items: center; justify-content: center;
+}
+#score-confirm-modal.open { display: flex; }
+.score-confirm-box {
+    background: #fff; border-radius: 0.7em;
+    padding: 1em 0.9em; width: min(15em, 88vw);
+    display: flex; flex-direction: column; gap: 0.75em;
+    text-align: center;
+}
+.score-confirm-msg {
+    font-size: 0.8em; font-weight: bold; color: #222; line-height: 1.5;
+}
+.score-confirm-btns {
+    display: flex; gap: 0.45em;
+}
+.score-confirm-btns button {
+    flex: 1; padding: 0.55em 0; border: none; border-radius: 0.4em;
+    font-size: 0.78em; font-weight: bold; cursor: pointer; font-family: inherit;
+}
+.scb-yes { background: #1565c0; color: #fff; }
+.scb-no  { background: #e0e0e0; color: #333; }
 </style>
 </head>
 <body>
@@ -433,7 +459,7 @@ body {
             <div class="pc-head">
                 <span class="pc-badge">D</span>
                 <span class="pc-status">▶ 試合中</span>
-                <a class="pc-score-btn pc-score-btn-playing" href="score-court-sample2.php">主審<br>スコア入力</a>
+                <button class="pc-score-btn pc-score-btn-playing" onclick="openTakeoverModal('score-court-sample2.php')">主審<br>スコア入力</button>
             </div>
             <!-- 吹き出し（ボタン下・上向き矢印） -->
             <div style="display:flex; flex-direction:column; align-items:flex-end; padding:0 0.45em; margin-top:0.1em;">
@@ -467,7 +493,31 @@ body {
     </div><!-- /courts-grid -->
 </div><!-- /app -->
 
+<!-- 引き継ぎ確認モーダル -->
+<div id="score-confirm-modal">
+    <div class="score-confirm-box">
+        <div class="score-confirm-msg">試合中ですが、<br>審判を引き継ぎますか？</div>
+        <div class="score-confirm-btns">
+            <button class="scb-yes" id="scb-yes">はい</button>
+            <button class="scb-no"  id="scb-no"  onclick="closeTakeoverModal()">キャンセル</button>
+        </div>
+    </div>
+</div>
+
 <script>
+// ── 引き継ぎ確認モーダル ──
+function openTakeoverModal(url) {
+    const modal = document.getElementById('score-confirm-modal');
+    modal.classList.add('open');
+    document.getElementById('scb-yes').onclick = function() {
+        modal.classList.remove('open');
+        window.location.href = url;
+    };
+}
+function closeTakeoverModal() {
+    document.getElementById('score-confirm-modal').classList.remove('open');
+}
+
 // ── 時計 ──
 function updateClock() {
     const now = new Date();
