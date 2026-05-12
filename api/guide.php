@@ -710,39 +710,58 @@ body {
   <!-- ══ ⑥-1 ペア設定・休憩 ══ -->
   <div class="card">
     <div class="card-title"><span class="icon">⑥-1</span>ペア設定・休憩／復帰の仕方</div>
-
     <p style="font-size:.875rem;color:#37474f;margin-bottom:.8rem">
       管理画面の<strong>「設定」タブ</strong>からペアの登録・変更や、選手の休憩・復帰を行います。
     </p>
 
-    <!-- 設定画面 -->
-    <div class="mockup-row" style="align-items:flex-start;gap:1.4rem;flex-wrap:wrap">
-      <div class="mockup-wrap" style="flex:1;min-width:260px;align-items:flex-start">
-        <div class="mockup-label">設定タブ（全体）</div>
-        <img src="/images/mgmt-settings.jpg"
-             style="width:100%;max-width:560px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-             alt="管理画面 設定">
+    <!-- 設定画面（幅いっぱい・注釈付き） -->
+    <div class="mockup-label" style="margin-bottom:.5rem">設定タブ</div>
+    <div style="position:relative;margin-bottom:.4rem">
+      <img src="/images/mgmt-settings.jpg"
+           style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+           alt="管理画面 設定">
+
+      <!-- プレイヤー1 ペアボタン → ペア設定画像へ誘導 -->
+      <div style="position:absolute;top:31%;left:16%;display:flex;flex-direction:column;align-items:center;pointer-events:none">
+        <div style="background:#1565c0;color:#fff;padding:.25em .65em;border-radius:.45em;font-size:.78rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
+          ① クリックでペアを設定 →
+        </div>
+        <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #1565c0"></div>
       </div>
-      <div class="mockup-wrap" style="flex:1;min-width:260px;align-items:flex-start">
-        <div class="mockup-label">ペア設定</div>
-        <img src="/images/mgmt-settings-pairs.jpg"
-             style="width:100%;max-width:560px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-             alt="管理画面 設定 ペア設定">
+
+      <!-- プレイヤー2 休憩ボタン注釈 -->
+      <div style="position:absolute;top:31%;left:51%;display:flex;flex-direction:column;align-items:center;pointer-events:none">
+        <div style="background:#e65100;color:#fff;padding:.25em .65em;border-radius:.45em;font-size:.78rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
+          ② ここを押すと休憩中 ／ 復帰ボタンで復帰可能
+        </div>
+        <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #e65100"></div>
       </div>
     </div>
+
+    <!-- コネクタ：ペアボタン → ペア設定パネル -->
+    <div style="display:flex;align-items:center;gap:.6rem;margin:.5rem 0 .4rem;color:#1565c0;font-size:.875rem;font-weight:bold">
+      <span style="font-size:1.5rem">↓</span>
+      <span>プレイヤー１のペアボタンをクリックすると、下のパネルが開きます</span>
+    </div>
+
+    <!-- ペア設定パネル -->
+    <div class="mockup-label" style="margin-bottom:.4rem">ペア設定パネル（一覧から相手を選択）</div>
+    <img src="/images/mgmt-settings-pairs.jpg"
+         style="display:block;max-width:280px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);"
+         alt="ペア設定パネル">
 
     <ul class="steps" style="margin-top:1rem">
       <li>
         <span class="s-num">①</span>
-        <span><strong>ペア設定</strong><br>「設定」タブ →「ペア設定」で参加ペアを登録・編集します。大会前に確定させておいてください。</span>
+        <span><strong>ペア設定</strong><br>各プレイヤーの行にある「ペア」ボタンをクリックし、一覧から相手を選択します。大会前に確定させてください。</span>
       </li>
       <li>
         <span class="s-num orange">②</span>
-        <span><strong>休憩（棄権・欠席）</strong><br>該当ペアの行にある「休憩」ボタンを押すと、そのペアが組み合わせから除外されます。</span>
+        <span><strong>休憩（棄権・欠席）</strong><br>「休憩」ボタンを押すとそのプレイヤーが組み合わせから除外されます。次のラウンドから反映されます。</span>
       </li>
       <li>
         <span class="s-num green">③</span>
-        <span><strong>復帰</strong><br>「復帰」ボタンを押すと組み合わせに戻ります。次のラウンドから自動的に組み合わせに含まれます。</span>
+        <span><strong>復帰</strong><br>「復帰」ボタンを押すと組み合わせに戻ります。次のラウンドから自動的に含まれます。</span>
       </li>
     </ul>
   </div>
@@ -750,57 +769,92 @@ body {
   <!-- ══ ⑥-2 手動操作 ══ -->
   <div class="card">
     <div class="card-title"><span class="icon">⑥-2</span>手動での試合開始・スコア入力・試合終了</div>
-
     <p style="font-size:.875rem;color:#37474f;margin-bottom:.8rem">
       スマートフォンが使えない場合や、スコアを修正したい場合は管理画面の<strong>「組合」タブ</strong>から直接操作できます。
     </p>
 
-    <!-- 組合 全体 -->
-    <div class="mockup-wrap" style="align-items:flex-start;margin-bottom:1rem">
-      <div class="mockup-label">組合タブ（全体）</div>
-      <img src="/images/mgmt-draw.jpg"
-           style="width:100%;max-width:720px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-           alt="管理画面 組合">
+    <!-- 組合タブ全体 -->
+    <div class="mockup-label" style="margin-bottom:.4rem">組合タブ（全体）</div>
+    <img src="/images/mgmt-draw.jpg"
+         style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;margin-bottom:1.4rem"
+         alt="管理画面 組合">
+
+    <!-- ① 手動で試合開始 -->
+    <div class="mockup-label" style="margin-bottom:.4rem">① 手動で試合開始</div>
+    <div style="position:relative;margin-bottom:1.4rem">
+      <img src="/images/mgmt-draw-manual-start.jpg"
+           style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+           alt="手動試合開始">
+      <!-- 試合開始ボタン callout（右上） -->
+      <div style="position:absolute;top:0%;right:3%;display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateY(-105%)">
+        <div style="background:#e53935;color:#fff;padding:.28em .75em;border-radius:.45em;font-size:.82rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
+          ここを押す ↓
+        </div>
+        <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #e53935"></div>
+      </div>
     </div>
 
-    <!-- 3ステップ横並び -->
-    <div class="mockup-row" style="align-items:flex-start;gap:1.2rem;flex-wrap:wrap">
-
-      <div class="mockup-wrap" style="flex:1;min-width:220px;align-items:flex-start">
-        <div class="mockup-label">① 手動で試合開始</div>
-        <img src="/images/mgmt-draw-manual-start.jpg"
-             style="width:100%;max-width:420px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-             alt="手動試合開始">
+    <!-- ② 手動スコア入力 -->
+    <div class="mockup-label" style="margin-bottom:.4rem">② 手動スコア入力</div>
+    <div style="position:relative;margin-bottom:1.4rem">
+      <img src="/images/mgmt-draw-manual-score.jpg"
+           style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+           alt="手動スコア入力">
+      <!-- 全体薄暗 overlay -->
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,.12);border-radius:.7rem;pointer-events:none"></div>
+      <!-- 左ペア ＋ 半分（青） -->
+      <div style="position:absolute;top:28%;left:0;width:22%;height:72%;background:rgba(21,101,192,.38);border-radius:0 0 0 .7rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3em;pointer-events:none">
+        <span style="color:#fff;font-size:2rem;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.8);line-height:1">＋</span>
+        <span style="color:#fff;font-size:.68rem;font-weight:bold;text-shadow:0 1px 4px rgba(0,0,0,.8);text-align:center;line-height:1.3">得点<br>加算</span>
       </div>
-
-      <div class="mockup-wrap" style="flex:1;min-width:220px;align-items:flex-start">
-        <div class="mockup-label">② 手動スコア入力</div>
-        <img src="/images/mgmt-draw-manual-score.jpg"
-             style="width:100%;max-width:420px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-             alt="手動スコア入力">
+      <!-- 左ペア － 半分（赤） -->
+      <div style="position:absolute;top:28%;left:23%;width:20%;height:72%;background:rgba(183,28,28,.32);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3em;pointer-events:none">
+        <span style="color:#fff;font-size:2rem;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.8);line-height:1">－</span>
+        <span style="color:#fff;font-size:.68rem;font-weight:bold;text-shadow:0 1px 4px rgba(0,0,0,.8);text-align:center;line-height:1.3">得点<br>修正</span>
       </div>
-
-      <div class="mockup-wrap" style="flex:1;min-width:220px;align-items:flex-start">
-        <div class="mockup-label">③ 手動で試合終了</div>
-        <img src="/images/mgmt-draw-manual-end.jpg"
-             style="width:100%;max-width:420px;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-             alt="手動試合終了">
+      <!-- 右ペア ＋ 半分（青） -->
+      <div style="position:absolute;top:28%;left:57%;width:22%;height:72%;background:rgba(21,101,192,.38);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3em;pointer-events:none">
+        <span style="color:#fff;font-size:2rem;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.8);line-height:1">＋</span>
+        <span style="color:#fff;font-size:.68rem;font-weight:bold;text-shadow:0 1px 4px rgba(0,0,0,.8);text-align:center;line-height:1.3">得点<br>加算</span>
       </div>
+      <!-- 右ペア － 半分（赤） -->
+      <div style="position:absolute;top:28%;left:80%;width:20%;height:72%;background:rgba(183,28,28,.32);border-radius:0 0 .7rem 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3em;pointer-events:none">
+        <span style="color:#fff;font-size:2rem;font-weight:900;text-shadow:0 2px 6px rgba(0,0,0,.8);line-height:1">－</span>
+        <span style="color:#fff;font-size:.68rem;font-weight:bold;text-shadow:0 1px 4px rgba(0,0,0,.8);text-align:center;line-height:1.3">得点<br>修正</span>
+      </div>
+      <!-- 凡例ラベル（画像の下に重ねる） -->
+      <div style="position:absolute;bottom:.5em;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:.72rem;padding:.2em .8em;border-radius:.4em;white-space:nowrap;pointer-events:none">
+        各ペアカードの 左半分＝＋得点　右半分＝－修正
+      </div>
+    </div>
 
+    <!-- ③ 手動で試合終了 -->
+    <div class="mockup-label" style="margin-bottom:.4rem">③ 手動で試合終了</div>
+    <div style="position:relative;margin-bottom:1rem">
+      <img src="/images/mgmt-draw-manual-end.jpg"
+           style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
+           alt="手動試合終了">
+      <!-- 試合終了ボタン callout（右上） -->
+      <div style="position:absolute;top:0%;right:3%;display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateY(-105%)">
+        <div style="background:#e53935;color:#fff;padding:.28em .75em;border-radius:.45em;font-size:.82rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
+          ここを押す ↓
+        </div>
+        <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #e53935"></div>
+      </div>
     </div>
 
     <ul class="steps" style="margin-top:1rem">
       <li>
         <span class="s-num green">①</span>
-        <span><strong>手動で試合開始</strong><br>「組合」タブで該当の試合行にある<strong>「試合開始」</strong>ボタンを押します。スマートフォンなしでも試合を呼び出し状態にできます。</span>
+        <span><strong>手動で試合開始</strong><br>試合行の右上にある<strong>「試合開始」</strong>ボタンを押します。スマートフォンなしでも試合を呼び出し状態にできます。</span>
       </li>
       <li>
         <span class="s-num green">②</span>
-        <span><strong>手動スコア入力</strong><br>試合中の行の<strong>「スコア入力」</strong>ボタンから得点を直接入力・修正できます。スコアの修正にも使用できます。</span>
+        <span><strong>手動スコア入力</strong><br>各ペアカードの<strong>左半分（＋）</strong>で得点加算、<strong>右半分（－）</strong>で得点修正ができます。</span>
       </li>
       <li>
         <span class="s-num green">③</span>
-        <span><strong>手動で試合終了</strong><br>「試合終了」ボタンを押し、最終スコアを確認して確定します。試合が完了状態になり次の組み合わせに反映されます。</span>
+        <span><strong>手動で試合終了</strong><br>右上の<strong>「試合終了」</strong>ボタンを押します。試合が完了状態になり次の組み合わせに反映されます。</span>
       </li>
     </ul>
 
