@@ -284,7 +284,7 @@ header('Content-Type: text/html; charset=UTF-8');
 const MATCH_GAMES        = 3;       // 3ゲームマッチ
 const WIN_GAMES          = 2;       // 2ゲーム先取
 const courtChangeEnabled = true;    // チェンジコートあり
-const courtLabel         = 'Aコート';
+const courtLabel         = 'Bコート';
 const currentRoundLabel  = '第2試合';
 const LS_KEY             = 'sc_sample_v1'; // localStorage キー
 
