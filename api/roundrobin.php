@@ -3016,8 +3016,8 @@ function _recalcIsOnCourt() {
     state.schedule.forEach(rd => {
         rd.courts.forEach((ct, ci) => {
             const sc = state.scores[`r${rd.round}c${ci}`];
-            // done=true のコートは終了済みなので isOnCourt=true にしない（0-0終了でも同様）
-            if (!sc?.done && (!sc || (sc.s1 === 0 && sc.s2 === 0))) {
+            // done=true のコートのみ終了済み。試合中（得点 > 0 の playing 状態）も isOnCourt=true にする。
+            if (!sc?.done) {
                 [...ct.team1, ...ct.team2].forEach(id => {
                     const p = state.players.find(pp => pp.id === id);
                     if (p) p.isOnCourt = true;
