@@ -320,37 +320,45 @@ document.getElementById('hd-court').textContent  = courtLabel;
 document.getElementById('hd-round').textContent  = currentRoundLabel;
 document.getElementById('hd-games').textContent  = MATCH_GAMES + 'ゲームマッチ';
 
-// localStorage に保存済み状態があれば復元
+// 初期化：ページリロード時のみ localStorage を復元、新規ナビゲーションは常にセットアップ画面から
 (function init() {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-        try {
-            const d = JSON.parse(raw);
-            leftTeam       = d.leftTeam       ?? 1;
-            current_server = d.current_server ?? 1;
-            set_score_t1   = d.set_score_t1   ?? 0;
-            set_score_t2   = d.set_score_t2   ?? 0;
-            game_score_t1  = d.game_score_t1  ?? 0;
-            game_score_t2  = d.game_score_t2  ?? 0;
-            game_is_over   = d.game_is_over   ?? false;
-            matchStarted   = d.matchStarted   ?? false;
-            historyStack   = Array.isArray(d.historyStack) ? d.historyStack : [];
-            if (matchStarted) {
-                hideAll();
-                showMain();
-                const histEl = document.getElementById('game-history');
-                if (histEl) histEl.innerHTML = d.historyHTML || '';
-                const msgEl = document.getElementById('umpire-msg');
-                if (msgEl) msgEl.textContent = d.umpireMsg || 'プレイボール';
-                updateDisplay();
-                if (game_is_over) {
-                    togglePointButtons(true);
-                    checkGameWinner(); // ボタン表示を復元
+    const navType = performance.getEntriesByType?.('navigation')?.[0]?.type;
+    const isReload = (navType === 'reload');
+
+    if (isReload) {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+            try {
+                const d = JSON.parse(raw);
+                leftTeam       = d.leftTeam       ?? 1;
+                current_server = d.current_server ?? 1;
+                set_score_t1   = d.set_score_t1   ?? 0;
+                set_score_t2   = d.set_score_t2   ?? 0;
+                game_score_t1  = d.game_score_t1  ?? 0;
+                game_score_t2  = d.game_score_t2  ?? 0;
+                game_is_over   = d.game_is_over   ?? false;
+                matchStarted   = d.matchStarted   ?? false;
+                historyStack   = Array.isArray(d.historyStack) ? d.historyStack : [];
+                if (matchStarted) {
+                    hideAll();
+                    showMain();
+                    const histEl = document.getElementById('game-history');
+                    if (histEl) histEl.innerHTML = d.historyHTML || '';
+                    const msgEl = document.getElementById('umpire-msg');
+                    if (msgEl) msgEl.textContent = d.umpireMsg || 'プレイボール';
+                    updateDisplay();
+                    if (game_is_over) {
+                        togglePointButtons(true);
+                        checkGameWinner();
+                    }
+                    return;
                 }
-                return;
-            }
-        } catch(e) {}
+            } catch(e) {}
+        }
     }
+
+    // 新規ナビゲーション（display-sample からのリンク等）→ 常にセットアップ画面から
+    clearLocalState();
     showServeSetup();
 })();
 
