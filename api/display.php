@@ -649,7 +649,7 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 <!-- 試合中スコア入力確認モーダル -->
 <div id="score-confirm-modal">
     <div class="score-confirm-box">
-        <div class="score-confirm-msg">試合中ですが、<br>スコア入力を行いますか？</div>
+        <div class="score-confirm-msg">試合中ですが、<br>審判を引き継ぎますか？</div>
         <div class="score-confirm-btns">
             <button class="scb-yes" id="scb-yes">はい</button>
             <button class="scb-no"  id="scb-no">キャンセル</button>
