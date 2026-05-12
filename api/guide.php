@@ -144,28 +144,6 @@ body {
   font-size: .75rem; font-weight: bold; color: #546e7a;
   letter-spacing: .05em; text-transform: uppercase;
 }
-/* ── 引き継ぎモーダル ── */
-.takeover-modal-overlay {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 50; border-radius: 1.5rem;
-}
-.takeover-modal {
-  background: #fff; border-radius: .9rem;
-  padding: 1.2em 1.4em; width: 85%; max-width: 220px;
-  text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.3);
-}
-.tm-icon { font-size: 2em; margin-bottom: .2em; }
-.tm-msg { font-size: .82em; line-height: 1.5; color: #212121; font-weight: bold; margin-bottom: .8em; }
-.tm-btns { display: flex; gap: .5em; }
-.tm-btn {
-  flex: 1; padding: .5em; border: none; border-radius: .45em;
-  font-size: .82em; font-weight: bold; cursor: pointer;
-}
-.tm-btn.yes { background: #1565c0; color: #fff; }
-.tm-btn.no  { background: #e0e0e0; color: #555; }
-
 /* ── フロー図 ── */
 .flow-diagram {
   display: flex; flex-direction: column; align-items: center;
@@ -344,7 +322,7 @@ body {
     <ul class="steps">
       <li>
         <span class="s-num">1</span>
-        <span>イベント・メンバーがシステムに登録済みであることを確認する（roundrobin-event.php / roundrobin-member.php）</span>
+        <span>イベント・参加者がシステムに登録済みであることを確認する</span>
       </li>
       <li>
         <span class="s-num">2</span>
@@ -597,51 +575,6 @@ body {
     </ul>
   </div>
 
-  <!-- モーダル + スコア画面の並び -->
-  <div class="mockup-row" style="gap:1.2rem">
-
-    <!-- 引き継ぎモーダル -->
-    <div class="mockup-wrap">
-      <div class="mockup-label">① 確認モーダル</div>
-      <div class="phone-frame">
-        <div style="position:relative">
-          <!-- 背景（案内パネル的な画面） -->
-          <div class="dp-screen phone-screen" style="filter:blur(1px);opacity:.6">
-            <div class="dp-header"><span class="dp-event-name">春季テニス大会</span><span class="dp-time">10:45</span></div>
-            <div class="dp-courts">
-              <div class="dp-court-card playing">
-                <div class="dp-court-top"><span class="dp-court-label">🅑 コート</span><span class="dp-status-badge playing">▶ 試合中</span></div>
-                <div class="dp-teams">山田・中村　vs　伊藤・渡辺</div>
-                <div class="dp-score-row"><span class="dp-score-num">3</span><span class="dp-score-dash">-</span><span class="dp-score-num t2">2</span></div>
-                <button class="dp-score-btn playing">引き継いで<br>主審をする</button>
-              </div>
-            </div>
-          </div>
-          <!-- モーダルオーバーレイ -->
-          <div class="takeover-modal-overlay">
-            <div class="takeover-modal">
-              <div class="tm-icon">🔄</div>
-              <div class="tm-msg">試合中ですが、<br>審判を引き継ぎますか？</div>
-              <div class="tm-btns">
-                <button class="tm-btn no">いいえ</button>
-                <button class="tm-btn yes">はい</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 引き継ぎ後のスコア画面 -->
-    <div class="mockup-wrap">
-      <div class="mockup-label">② 引き継ぎ後のスコア画面</div>
-      <img src="/images/screen-score.jpg"
-           style="width:220px;border-radius:1.2rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
-           alt="スコア入力画面">
-    </div>
-
-  </div>
-
   <div class="note warn">
     <span class="note-icon">⚠️</span>
     <span>引き継ぎ後は<strong>旧主審のスマホはそのまま閉じてください</strong>。複数端末で同時入力すると二重カウントになります。</span>
@@ -721,18 +654,18 @@ body {
            style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
            alt="管理画面 設定">
 
-      <!-- プレイヤー1 ペアボタン → ペア設定画像へ誘導 -->
-      <div style="position:absolute;top:31%;left:16%;display:flex;flex-direction:column;align-items:center;pointer-events:none">
+      <!-- プレイヤー1 ペアボタン → ペア設定画像へ誘導（行1 上に配置） -->
+      <div style="position:absolute;top:29%;left:10%;display:flex;flex-direction:column;align-items:center;pointer-events:none">
         <div style="background:#1565c0;color:#fff;padding:.25em .65em;border-radius:.45em;font-size:.78rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
           ① クリックでペアを設定 →
         </div>
         <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #1565c0"></div>
       </div>
 
-      <!-- プレイヤー2 休憩ボタン注釈 -->
-      <div style="position:absolute;top:31%;left:51%;display:flex;flex-direction:column;align-items:center;pointer-events:none">
+      <!-- 休憩ボタン注釈（行3付近に配置して重なりを防ぐ） -->
+      <div style="position:absolute;top:56%;left:52%;display:flex;flex-direction:column;align-items:center;pointer-events:none">
         <div style="background:#e65100;color:#fff;padding:.25em .65em;border-radius:.45em;font-size:.78rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
-          ② ここを押すと休憩中 ／ 復帰ボタンで復帰可能
+          ② 休憩ボタン：押すと休憩中 ／ 復帰ボタンで復帰
         </div>
         <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #e65100"></div>
       </div>
@@ -753,7 +686,7 @@ body {
     <ul class="steps" style="margin-top:1rem">
       <li>
         <span class="s-num">①</span>
-        <span><strong>ペア設定</strong><br>各プレイヤーの行にある「ペア」ボタンをクリックし、一覧から相手を選択します。大会前に確定させてください。</span>
+        <span><strong>ペア設定</strong><br>各プレイヤーの行にある「ペア」ボタンをクリックし、一覧から相手を選択します。次の組合せから有効となります。</span>
       </li>
       <li>
         <span class="s-num orange">②</span>
@@ -800,6 +733,13 @@ body {
       <img src="/images/mgmt-draw-manual-score.jpg"
            style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
            alt="手動スコア入力">
+      <!-- 試合終了ボタン callout（右上） -->
+      <div style="position:absolute;top:0%;right:3%;display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateY(-105%)">
+        <div style="background:#1565c0;color:#fff;padding:.28em .75em;border-radius:.45em;font-size:.82rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
+          ここを押すと試合結果決定 ↓
+        </div>
+        <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #1565c0"></div>
+      </div>
       <!-- 全体薄暗 overlay -->
       <div style="position:absolute;inset:0;background:rgba(0,0,0,.12);border-radius:.7rem;pointer-events:none"></div>
       <!-- 左ペア ＋ 半分（青） -->
@@ -828,20 +768,11 @@ body {
       </div>
     </div>
 
-    <!-- ③ 手動で試合終了 -->
-    <div class="mockup-label" style="margin-bottom:.4rem">③ 手動で試合終了</div>
-    <div style="position:relative;margin-bottom:1rem">
-      <img src="/images/mgmt-draw-manual-end.jpg"
-           style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;"
-           alt="手動試合終了">
-      <!-- 試合終了ボタン callout（右上） -->
-      <div style="position:absolute;top:0%;right:3%;display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateY(-105%)">
-        <div style="background:#e53935;color:#fff;padding:.28em .75em;border-radius:.45em;font-size:.82rem;font-weight:bold;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.55);margin-bottom:3px">
-          ここを押す ↓
-        </div>
-        <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #e53935"></div>
-      </div>
-    </div>
+    <!-- ③ 手動で試合終了（試合結果決定後の表示） -->
+    <div class="mockup-label" style="margin-bottom:.4rem">③ 試合結果決定後の表示</div>
+    <img src="/images/mgmt-draw-manual-end.jpg"
+         style="width:100%;border-radius:.7rem;border:2px solid #90a4ae;box-shadow:0 6px 20px rgba(0,0,0,.2);display:block;margin-bottom:1rem"
+         alt="手動試合終了">
 
     <ul class="steps" style="margin-top:1rem">
       <li>
@@ -873,17 +804,10 @@ body {
     <span>🔗 練習用サンプルページ</span>
   </div>
   <div class="card">
-    <p style="font-size:.875rem;color:#546e7a;margin-bottom:.8rem">本番データに影響しない練習専用ページです。操作に慣れるために活用してください。</p>
-    <ul class="steps">
-      <li>
-        <span class="s-num">📺</span>
-        <span>
-          <strong>案内パネル（サンプル）</strong><br>
-          <a href="/display-sample.php" class="url-tag" style="text-decoration:none">/display-sample.php</a>
-          <span style="font-size:.8rem;color:#546e7a"> — クリックして実際の案内パネルを確認できます</span>
-        </span>
-      </li>
-    </ul>
+    <p style="font-size:.875rem;color:#546e7a;margin-bottom:1rem">本番データに影響しない練習専用ページです。操作に慣れるために活用してください。</p>
+    <a href="/display-sample.php" style="display:block;text-decoration:none;background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;text-align:center;padding:1.1rem 1rem;border-radius:.75rem;font-size:1.05rem;font-weight:bold;box-shadow:0 4px 14px rgba(21,101,192,.45);letter-spacing:.03em">
+      📺 練習用サンプルページを開く
+    </a>
   </div>
 </div>
 
