@@ -204,9 +204,17 @@ body {
 .dp-score-num.t2 { background: #2e7d32; }
 .dp-score-dash { color: #666; font-size: .9em; }
 .dp-score-btn {
-  margin-top: .35em; width: 100%; padding: .3em;
-  background: #1565c0; color: #fff; border: none; border-radius: .35em;
-  font-size: .75em; font-weight: bold; cursor: pointer;
+  margin-top: .35em; width: 100%; padding: .3em .4em;
+  background: #ffd700; color: #333;
+  border: 0.15em solid #b8860b;
+  box-shadow: 0 0.12em 0 #b8860b, 0 0.18em 0.35em rgba(0,0,0,0.3);
+  border-radius: .35em;
+  font-size: .68em; font-weight: bold; cursor: pointer; line-height: 1.35;
+}
+.dp-score-btn.playing {
+  background: #1565c0; color: #fff;
+  border-color: #0d47a1;
+  box-shadow: 0 0.12em 0 #0d47a1, 0 0.18em 0.35em rgba(0,0,0,0.3);
 }
 
 /* ── サーブ選択モックアップ ── */
@@ -466,7 +474,7 @@ body {
       <span class="flow-icon">📱</span>
       <div class="flow-text">
         <strong>主審がスコア入力を開始</strong>
-        <span>スマホで <span class="url-tag">/score/court</span> を開く</span>
+        <span>スマホで<strong>案内パネル</strong>を開く</span>
       </div>
       <span class="role-badge ref">🎾 主審</span>
     </div>
@@ -526,17 +534,15 @@ body {
       </li>
       <li>
         <span class="s-num">2</span>
-        <span>当日使用するスクリーン表示用PCのブラウザで
-          <strong>案内パネル</strong> を開いておく</span>
+        <span>当日使用するPCのブラウザで<strong>管理画面</strong>を開いておく</span>
       </li>
       <li>
         <span class="s-num">3</span>
-        <span>主審・スタッフのスマートフォンに
-          <span class="url-tag">/score/court</span> のURLを周知する（QRコード推奨）</span>
+        <span>主審・スタッフのスマートフォンに<strong>案内パネル</strong>のURLを周知する（QRコード推奨）</span>
       </li>
       <li>
         <span class="s-num">4</span>
-        <span>案内パネル表示用PCはスクリーンに接続し「全画面表示（F11）」で運用する</span>
+        <span>案内パネル表示用PCはスクリーンに接続し、全画面表示（F11キー）で運用する</span>
       </li>
     </ul>
   </div>
@@ -563,7 +569,7 @@ body {
     <div class="mockup-row">
       <!-- display.php モックアップ -->
       <div class="mockup-wrap">
-        <div class="mockup-label">案内パネル（/display）</div>
+        <div class="mockup-label">案内パネル</div>
         <div class="phone-frame">
           <div class="dp-screen phone-screen">
             <div class="dp-header">
@@ -583,6 +589,7 @@ body {
                   <span class="dp-score-dash">-</span>
                   <span class="dp-score-num t2">0</span>
                 </div>
+                <button class="dp-score-btn">主審として<br>試合を開始する</button>
               </div>
               <!-- 試合中 -->
               <div class="dp-court-card playing">
@@ -596,7 +603,7 @@ body {
                   <span class="dp-score-dash">-</span>
                   <span class="dp-score-num t2">2</span>
                 </div>
-                <button class="dp-score-btn">📱 スコア入力</button>
+                <button class="dp-score-btn playing">引き継いで<br>主審をする</button>
               </div>
               <!-- 試合中 -->
               <div class="dp-court-card playing">
@@ -610,7 +617,7 @@ body {
                   <span class="dp-score-dash">-</span>
                   <span class="dp-score-num t2">3</span>
                 </div>
-                <button class="dp-score-btn">📱 スコア入力</button>
+                <button class="dp-score-btn playing">引き継いで<br>主審をする</button>
               </div>
               <!-- 終了 -->
               <div class="dp-court-card done">
@@ -639,7 +646,7 @@ body {
           </li>
           <li>
             <span class="s-num green">▶</span>
-            <span><strong>「試合中」</strong>（緑枠）<br>スコアがリアルタイムで表示されます。「スコア入力」ボタンが表示されている場合は引き継ぎが可能です。</span>
+            <span><strong>「試合中」</strong>（緑枠）<br>スコアがリアルタイムで表示されます。「引き継いで主審をする」ボタンから審判交代が可能です。</span>
           </li>
           <li>
             <span class="s-num">✔</span>
@@ -662,7 +669,7 @@ body {
   <div class="section-title">
     <span class="step-num green">2</span>
     スコア入力の開始
-    <span class="role-badge ref">🏸 主審操作</span>
+    <span class="role-badge ref">🎾 主審操作</span>
   </div>
 
   <div class="card">
@@ -670,11 +677,11 @@ body {
     <ul class="steps">
       <li>
         <span class="s-num green">1</span>
-        <span>スマートフォンのブラウザで <span class="url-tag">/score/court</span> を開く</span>
+        <span>スマートフォンのブラウザで<strong>案内パネル</strong>を開く</span>
       </li>
       <li>
         <span class="s-num green">2</span>
-        <span>イベントと担当コートを選択する</span>
+        <span>担当コートの<strong>主審開始ボタン</strong>を選択する</span>
       </li>
       <li>
         <span class="s-num green">3</span>
@@ -682,7 +689,7 @@ body {
       </li>
       <li>
         <span class="s-num green">4</span>
-        <span>「② コートサイド選択」画面で、<strong>自チームが立つコートのサイドをタップ</strong>する</span>
+        <span>「② コートサイド選択」画面で、<strong>サーバーが立つコートのサイドをタップ</strong>する</span>
       </li>
     </ul>
   </div>
@@ -737,7 +744,7 @@ body {
             </button>
           </div>
           <div style="font-size:.6em;color:#7986cb;text-align:center;margin-top:.5em">
-            主審から見て山田・中村チームが<br>どちら側にいるかを選んでください
+            サーバー（最初にサーブを打つ選手）が<br>立っている側を選んでください
           </div>
         </div>
       </div>
@@ -747,7 +754,7 @@ body {
 
   <div class="note warn">
     <span class="note-icon">⚠️</span>
-    <span>コートサイド選択は<strong>「主審（ネット際中央）から見た左右」</strong>で判断してください。間違えると表示が逆になります。</span>
+    <span>コートサイド選択は<strong>サーバー（最初にサーブを打つ選手）が立っている側</strong>を選んでください。間違えると表示が逆になります。</span>
   </div>
 </div>
 
@@ -758,7 +765,7 @@ body {
   <div class="section-title">
     <span class="step-num green">3</span>
     試合中のスコア入力
-    <span class="role-badge ref">🏸 主審操作</span>
+    <span class="role-badge ref">🎾 主審操作</span>
   </div>
 
   <div class="mockup-row">
@@ -838,7 +845,7 @@ body {
         </li>
         <li>
           <span class="s-num green">🔢</span>
-          <span><strong>4点先取でゲーム終了</strong><br>自動でゲームを判定します。3-3（デュース）になった場合は次の1点で決まります（1アド設定）。</span>
+          <span><strong>4点先取でゲーム終了</strong><br>自動でゲームを判定します。3-3（デュース）になった場合は5点先取で決まります。</span>
         </li>
       </ul>
       <div class="note success" style="margin-top:.8rem">
@@ -856,7 +863,7 @@ body {
   <div class="section-title">
     <span class="step-num green">4</span>
     試合終了処理
-    <span class="role-badge ref">🏸 主審操作</span>
+    <span class="role-badge ref">🎾 主審操作</span>
   </div>
 
   <div class="card">
@@ -883,7 +890,7 @@ body {
 
   <div class="note info">
     <span class="note-icon">💡</span>
-    <span><strong>デュース（3-3）について：</strong>今回の設定は「1アド」です。3-3になった場合、次の1点を取った側がそのゲームを獲得します（5点目で決まります）。2点差は不要です。</span>
+    <span><strong>デュース（3-3）について：</strong>3-3になった場合、5点目で決まります。</span>
   </div>
 </div>
 
@@ -903,7 +910,7 @@ body {
     <ul class="steps">
       <li>
         <span class="s-num orange">1</span>
-        <span>案内パネル（/display）で該当コートの<strong>「スコア入力」ボタン</strong>を押す</span>
+        <span>案内パネルで該当コートの<strong>「引き継いで主審をする」ボタン</strong>を押す</span>
       </li>
       <li>
         <span class="s-num orange">2</span>
@@ -936,7 +943,7 @@ body {
                 <div class="dp-court-top"><span class="dp-court-label">🅑 コート</span><span class="dp-status-badge playing">▶ 試合中</span></div>
                 <div class="dp-teams">山田・中村　vs　伊藤・渡辺</div>
                 <div class="dp-score-row"><span class="dp-score-num">3</span><span class="dp-score-dash">-</span><span class="dp-score-num t2">2</span></div>
-                <button class="dp-score-btn">📱 スコア入力</button>
+                <button class="dp-score-btn playing">引き継いで<br>主審をする</button>
               </div>
             </div>
           </div>
@@ -1043,7 +1050,7 @@ body {
         <span class="s-num orange">Q</span>
         <div>
           <strong>スマホを変えてスコア入力を続けたい（引き継ぎ）</strong><br>
-          <span style="color:#546e7a;font-size:.875rem">→ 案内パネルの「スコア入力」ボタン → 「審判を引き継ぎますか？」→「はい」で新しいスマホから継続できます。</span>
+          <span style="color:#546e7a;font-size:.875rem">→ 案内パネルの「引き継いで主審をする」ボタン → 「審判を引き継ぎますか？」→「はい」で新しいスマホから継続できます。</span>
         </div>
       </li>
     </ul>
