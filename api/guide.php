@@ -1050,6 +1050,43 @@ body {
   </div>
 </div>
 
+<!-- ═══════════════════════════
+     サンプルリンク
+═══════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span>🔗 練習用サンプルページ</span>
+  </div>
+  <div class="card">
+    <p style="font-size:.875rem;color:#546e7a;margin-bottom:.8rem">本番データに影響しない練習専用ページです。操作に慣れるために活用してください。</p>
+    <ul class="steps">
+      <li>
+        <span class="s-num">📺</span>
+        <span>
+          <strong>案内パネル（サンプル）</strong><br>
+          <span class="url-tag">/display-sample.php</span>
+          <span style="font-size:.8rem;color:#546e7a"> — スクリーン表示の確認</span>
+        </span>
+      </li>
+      <li>
+        <span class="s-num green">📱</span>
+        <span>
+          <strong>スコア入力（0からスタート・サンプル）</strong><br>
+          <span class="url-tag">/score-court-sample.php</span>
+          <span style="font-size:.8rem;color:#546e7a"> — サーブ選択→コートサイド→スコア入力の練習</span>
+        </span>
+      </li>
+      <li>
+        <span class="s-num orange">🔄</span>
+        <span>
+          <strong>スコア入力（途中からの引き継ぎ・サンプル）</strong><br>
+          <span class="url-tag">/score-court-sample2.php</span>
+          <span style="font-size:.8rem;color:#546e7a"> — 引き継ぎ操作の練習（途中スコアから直接スタート）</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>
 
 <div class="guide-footer">
   <p>🏸 大会運営システム — ArcNet Roundrobin</p>
