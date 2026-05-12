@@ -417,7 +417,7 @@ body {
 
 <!-- ヘッダー -->
 <div class="guide-header">
-  <h1>🏸 大会当日 運営ガイド</h1>
+  <h1>🎾 大会当日 運営ガイド</h1>
   <p>スタッフ・主審向け操作マニュアル</p>
   <div class="badge-row">
     <span class="badge badge-blue">📺 案内パネル</span>
@@ -448,7 +448,7 @@ body {
       <span class="flow-icon">🖥️</span>
       <div class="flow-text">
         <strong>案内パネルを大型画面に表示</strong>
-        <span>スタッフがPCで <span class="url-tag">/display</span> を開く</span>
+        <span>スタッフがPCで <strong>案内パネル</strong> を開く</span>
       </div>
       <span class="role-badge staff">👤 スタッフ</span>
     </div>
@@ -468,16 +468,16 @@ body {
         <strong>主審がスコア入力を開始</strong>
         <span>スマホで <span class="url-tag">/score/court</span> を開く</span>
       </div>
-      <span class="role-badge ref">🏸 主審</span>
+      <span class="role-badge ref">🎾 主審</span>
     </div>
     <div class="flow-arrow">↓</div>
     <div class="flow-step blue">
-      <span class="flow-icon">🏓</span>
+      <span class="flow-icon">🎾</span>
       <div class="flow-text">
         <strong>① サーブ選択</strong>
         <span>ジャンケン等で決まったサーブ側を選択</span>
       </div>
-      <span class="role-badge ref">🏸 主審</span>
+      <span class="role-badge ref">🎾 主審</span>
     </div>
     <div class="flow-arrow">↓</div>
     <div class="flow-step blue">
@@ -486,7 +486,7 @@ body {
         <strong>② コートサイド選択</strong>
         <span>第1ゲームの自チームのコートサイドを選択</span>
       </div>
-      <span class="role-badge ref">🏸 主審</span>
+      <span class="role-badge ref">🎾 主審</span>
     </div>
     <div class="flow-arrow">↓</div>
     <div class="flow-step green">
@@ -495,7 +495,7 @@ body {
         <strong>③ スコア入力</strong>
         <span>得点したチームのボタンをタップ</span>
       </div>
-      <span class="role-badge ref">🏸 主審</span>
+      <span class="role-badge ref">🎾 主審</span>
     </div>
     <div class="flow-arrow">↓</div>
     <div class="flow-step gray">
@@ -527,7 +527,7 @@ body {
       <li>
         <span class="s-num">2</span>
         <span>当日使用するスクリーン表示用PCのブラウザで
-          <span class="url-tag">/display</span> を開いておく</span>
+          <strong>案内パネル</strong> を開いておく</span>
       </li>
       <li>
         <span class="s-num">3</span>
@@ -567,7 +567,7 @@ body {
         <div class="phone-frame">
           <div class="dp-screen phone-screen">
             <div class="dp-header">
-              <span class="dp-event-name">春季バドミントン大会</span>
+              <span class="dp-event-name">春季テニス大会</span>
               <span class="dp-time">10:32</span>
             </div>
             <div class="dp-courts">
@@ -592,9 +592,9 @@ body {
                 </div>
                 <div class="dp-teams">山田・中村　vs　伊藤・渡辺</div>
                 <div class="dp-score-row">
-                  <span class="dp-score-num">14</span>
+                  <span class="dp-score-num">3</span>
                   <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">11</span>
+                  <span class="dp-score-num t2">2</span>
                 </div>
                 <button class="dp-score-btn">📱 スコア入力</button>
               </div>
@@ -606,9 +606,9 @@ body {
                 </div>
                 <div class="dp-teams">小林・加藤　vs　吉田・山口</div>
                 <div class="dp-score-row">
-                  <span class="dp-score-num">8</span>
+                  <span class="dp-score-num">2</span>
                   <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">10</span>
+                  <span class="dp-score-num t2">3</span>
                 </div>
                 <button class="dp-score-btn">📱 スコア入力</button>
               </div>
@@ -620,9 +620,9 @@ body {
                 </div>
                 <div class="dp-teams">松本・井上　vs　木村・林</div>
                 <div class="dp-score-row">
-                  <span class="dp-score-num">21</span>
+                  <span class="dp-score-num">4</span>
                   <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">15</span>
+                  <span class="dp-score-num t2">2</span>
                 </div>
               </div>
             </div>
@@ -789,9 +789,9 @@ body {
             <!-- 中央スコア -->
             <div class="score-center">
               <div class="score-big-num">
-                <span class="s1">14</span>
+                <span class="s1">3</span>
                 <span class="sep"> - </span>
-                <span class="s2">11</span>
+                <span class="s2">2</span>
               </div>
               <div class="score-serve-ind">🟡 山田・中村 のサーブ</div>
               <!-- ゲームカウントボール -->
@@ -825,8 +825,8 @@ body {
     <div class="mockup-desc">
       <ul class="steps">
         <li>
-          <span class="s-num green">🏸</span>
-          <span><strong>得点ボタンをタップ</strong><br>シャトルが落ちたら、得点したチームのボタン（左または右）をタップします。</span>
+          <span class="s-num green">🎾</span>
+          <span><strong>得点ボタンをタップ</strong><br>得点が入ったら、得点したチームのボタン（左または右）をタップします。</span>
         </li>
         <li>
           <span class="s-num green">🟡</span>
@@ -838,7 +838,7 @@ body {
         </li>
         <li>
           <span class="s-num green">🔢</span>
-          <span><strong>21点でゲーム終了</strong><br>自動でゲームを判定します。次のゲームへの切り替えも画面の指示に従ってください。</span>
+          <span><strong>4点先取でゲーム終了</strong><br>自動でゲームを判定します。3-3（デュース）になった場合は次の1点で決まります（1アド設定）。</span>
         </li>
       </ul>
       <div class="note success" style="margin-top:.8rem">
@@ -864,15 +864,15 @@ body {
     <ul class="steps">
       <li>
         <span class="s-num green">1</span>
-        <span>21点に到達すると画面が「ゲーム終了」を自動的に表示します</span>
+        <span><strong>4点先取</strong>に達すると画面が「ゲーム終了」を自動的に表示します</span>
       </li>
       <li>
         <span class="s-num green">2</span>
-        <span>「次のゲームへ」ボタンを押すと第2ゲームに進みます（コートチェンジがある場合は自動で左右が入れ替わります）</span>
+        <span>「次のゲームへ」ボタンを押すと次のゲームに進みます（コートチェンジがある場合は自動で左右が入れ替わります）</span>
       </li>
       <li>
         <span class="s-num green">3</span>
-        <span>2ゲーム先取（または3ゲーム目）で勝敗が決まったら「試合終了」ボタンを押します</span>
+        <span>規定ゲーム数で勝敗が決まったら「試合終了」ボタンを押します</span>
       </li>
       <li>
         <span class="s-num green">4</span>
@@ -883,7 +883,7 @@ body {
 
   <div class="note info">
     <span class="note-icon">💡</span>
-    <span>デュース（20-20）の場合は2点差がつくまで継続します。21点の上限はありません（30点キャップあり）。</span>
+    <span><strong>デュース（3-3）について：</strong>今回の設定は「1アド」です。3-3になった場合、次の1点を取った側がそのゲームを獲得します（5点目で決まります）。2点差は不要です。</span>
   </div>
 </div>
 
@@ -894,7 +894,7 @@ body {
   <div class="section-title">
     <span class="step-num orange">引</span>
     審判の引き継ぎ
-    <span class="role-badge ref">🏸 引き継ぎ操作</span>
+    <span class="role-badge ref">🎾 引き継ぎ操作</span>
   </div>
 
   <div class="card">
@@ -930,12 +930,12 @@ body {
         <div style="position:relative">
           <!-- 背景（案内パネル的な画面） -->
           <div class="dp-screen phone-screen" style="filter:blur(1px);opacity:.6">
-            <div class="dp-header"><span class="dp-event-name">春季バドミントン大会</span><span class="dp-time">10:45</span></div>
+            <div class="dp-header"><span class="dp-event-name">春季テニス大会</span><span class="dp-time">10:45</span></div>
             <div class="dp-courts">
               <div class="dp-court-card playing">
                 <div class="dp-court-top"><span class="dp-court-label">🅑 コート</span><span class="dp-status-badge playing">▶ 試合中</span></div>
                 <div class="dp-teams">山田・中村　vs　伊藤・渡辺</div>
-                <div class="dp-score-row"><span class="dp-score-num">14</span><span class="dp-score-dash">-</span><span class="dp-score-num t2">11</span></div>
+                <div class="dp-score-row"><span class="dp-score-num">3</span><span class="dp-score-dash">-</span><span class="dp-score-num t2">2</span></div>
                 <button class="dp-score-btn">📱 スコア入力</button>
               </div>
             </div>
@@ -976,7 +976,7 @@ body {
             </div>
             <div class="score-center">
               <div class="score-big-num">
-                <span class="s1">14</span><span class="sep"> - </span><span class="s2">11</span>
+                <span class="s1">3</span><span class="sep"> - </span><span class="s2">2</span>
               </div>
               <div class="score-serve-ind">🟡 山田・中村 のサーブ</div>
             </div>
@@ -1064,24 +1064,8 @@ body {
         <span class="s-num">📺</span>
         <span>
           <strong>案内パネル（サンプル）</strong><br>
-          <span class="url-tag">/display-sample.php</span>
-          <span style="font-size:.8rem;color:#546e7a"> — スクリーン表示の確認</span>
-        </span>
-      </li>
-      <li>
-        <span class="s-num green">📱</span>
-        <span>
-          <strong>スコア入力（0からスタート・サンプル）</strong><br>
-          <span class="url-tag">/score-court-sample.php</span>
-          <span style="font-size:.8rem;color:#546e7a"> — サーブ選択→コートサイド→スコア入力の練習</span>
-        </span>
-      </li>
-      <li>
-        <span class="s-num orange">🔄</span>
-        <span>
-          <strong>スコア入力（途中からの引き継ぎ・サンプル）</strong><br>
-          <span class="url-tag">/score-court-sample2.php</span>
-          <span style="font-size:.8rem;color:#546e7a"> — 引き継ぎ操作の練習（途中スコアから直接スタート）</span>
+          <a href="/display-sample.php" class="url-tag" style="text-decoration:none">/display-sample.php</a>
+          <span style="font-size:.8rem;color:#546e7a"> — クリックして実際の案内パネルを確認できます</span>
         </span>
       </li>
     </ul>
@@ -1089,7 +1073,7 @@ body {
 </div>
 
 <div class="guide-footer">
-  <p>🏸 大会運営システム — ArcNet Roundrobin</p>
+  <p>🎾 大会運営システム — ArcNet Roundrobin</p>
   <p style="margin-top:.3rem">このガイドは当日スタッフ・主審向けです。事前配布を推奨します。</p>
 </div>
 
