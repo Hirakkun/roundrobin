@@ -144,192 +144,6 @@ body {
   font-size: .75rem; font-weight: bold; color: #546e7a;
   letter-spacing: .05em; text-transform: uppercase;
 }
-.phone-frame {
-  width: 260px; border-radius: 1.8rem;
-  border: 3px solid #37474f;
-  overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.25);
-  position: relative;
-}
-.phone-screen {
-  font-size: 14px; /* 固定px でモックアップサイズに合わせる */
-  min-height: 440px;
-}
-
-/* ── display.php モックアップ ── */
-.dp-screen {
-  background: #0d1b2a; color: #fff;
-  font-family: Arial, sans-serif; font-size: 12px;
-  padding: .3em;
-}
-.dp-header {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #1b2a3b; border-radius: .3em; padding: .3em .6em;
-  margin-bottom: .3em; font-size: .8em;
-}
-.dp-event-name { font-weight: bold; }
-.dp-time { color: #90caf9; font-weight: bold; }
-.dp-courts { display: flex; flex-direction: column; gap: .25em; }
-.dp-court-card {
-  border-radius: .4em; padding: .35em .5em; font-size: .78em;
-}
-.dp-court-card.calling {
-  background: #3a2800; border: 1.5px solid #f9a825;
-}
-.dp-court-card.playing {
-  background: #0f2d14; border: 1.5px solid #2e7d32;
-}
-.dp-court-card.done {
-  background: #1a1a1a; border: 1.5px solid #444;
-}
-.dp-court-top {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: .2em;
-}
-.dp-court-label { font-weight: bold; font-size: .85em; }
-.dp-status-badge {
-  font-size: .68em; font-weight: bold; padding: .1em .4em; border-radius: .3em;
-}
-.dp-status-badge.calling { background: #f9a825; color: #3a2800; }
-.dp-status-badge.playing { background: #2e7d32; color: #fff; }
-.dp-status-badge.done    { background: #444; color: #aaa; }
-.dp-teams { font-size: .75em; color: #ccc; margin-bottom: .2em; }
-.dp-score-row {
-  display: flex; align-items: center; gap: .3em; font-size: 1.2em;
-}
-.dp-score-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  background: #1565c0; color: #fff;
-  width: 1.4em; height: 1.4em; border-radius: .25em; font-weight: 900;
-}
-.dp-score-num.t2 { background: #2e7d32; }
-.dp-score-dash { color: #666; font-size: .9em; }
-.dp-score-btn {
-  margin-top: .35em; width: 100%; padding: .3em .4em;
-  background: #ffd700; color: #333;
-  border: 0.15em solid #b8860b;
-  box-shadow: 0 0.12em 0 #b8860b, 0 0.18em 0.35em rgba(0,0,0,0.3);
-  border-radius: .35em;
-  font-size: .68em; font-weight: bold; cursor: pointer; line-height: 1.35;
-}
-.dp-score-btn.playing {
-  background: #1565c0; color: #fff;
-  border-color: #0d47a1;
-  box-shadow: 0 0.12em 0 #0d47a1, 0 0.18em 0.35em rgba(0,0,0,0.3);
-}
-
-/* ── サーブ選択モックアップ ── */
-.serve-screen {
-  background: #283593; color: #fff;
-  display: flex; flex-direction: column;
-  padding: 1.2em .8em; gap: .7em; min-height: 440px;
-}
-.serve-title { font-size: 1.1em; font-weight: 900; text-align: center; line-height: 1.4; }
-.serve-sub { font-size: .7em; color: #c5cae9; text-align: center; }
-.serve-btn {
-  padding: .9em; border: none; border-radius: .55em;
-  font-size: .95em; font-weight: bold; cursor: pointer; text-align: left;
-  display: flex; align-items: center; gap: .5em;
-}
-.serve-btn.t1 { background: #1565c0; color: #fff; }
-.serve-btn.t2 { background: #2e7d32; color: #fff; }
-.serve-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 1.6em; height: 1.6em; border-radius: .35em;
-  background: rgba(255,255,255,.9); font-weight: 900; font-size: .9em;
-}
-.serve-badge.t1 { color: #1565c0; }
-.serve-badge.t2 { color: #2e7d32; }
-
-/* ── コートサイド選択モックアップ ── */
-.court-side-screen {
-  background: #283593; color: #fff;
-  display: flex; flex-direction: column;
-  padding: 1em .8em; gap: .5em; min-height: 440px;
-}
-.court-side-row {
-  display: flex; flex: 1; border-radius: .5em; overflow: hidden;
-  border: 2.5px solid #fff; min-height: 9em;
-}
-.court-half {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: .25em;
-}
-.court-half.left  { background: #1565c0; color: #fff; }
-.court-half.right { background: #2e7d32; color: #fff; }
-.court-net-div { width: 4px; background: #fff; flex-shrink: 0; }
-.half-arrow { font-size: 1.8em; opacity: .8; }
-.half-word  { font-size: 3.5em; font-weight: 900; line-height: 1; }
-.half-name  { font-size: .7em; font-weight: bold; line-height: 1.3; text-align: center; padding: 0 .3em; }
-
-/* ── スコア入力モックアップ ── */
-.score-screen {
-  background: #f4f4f9; font-size: 12px;
-  display: flex; flex-direction: column;
-  min-height: 440px;
-}
-.score-banner {
-  background: #e65100; color: #fff; text-align: center;
-  font-size: .75em; font-weight: bold; padding: .2em; letter-spacing: 1px;
-}
-.score-court-label {
-  background: #1e1e2e; color: #ccc; text-align: center;
-  font-size: .72em; padding: .2em .5em;
-}
-.score-header {
-  background: #1b2a3b; color: #fff; padding: .4em .6em;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.score-game-count { font-size: .7em; color: #aaa; }
-.score-game-label { font-size: .85em; font-weight: bold; color: #90caf9; }
-.score-teams-row {
-  display: flex; justify-content: space-between;
-  padding: .3em .6em; gap: .5em;
-}
-.score-team-label {
-  flex: 1; text-align: center;
-  font-size: .72em; font-weight: bold; padding: .2em;
-  border-radius: .35em; color: #fff;
-}
-.score-team-label.t1 { background: #1565c0; }
-.score-team-label.t2 { background: #2e7d32; }
-.score-main {
-  display: flex; flex: 1; padding: .4em .5em; gap: .4em; align-items: stretch;
-}
-.score-side {
-  width: 30%; display: flex; flex-direction: column; gap: .35em;
-}
-.score-center {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: .3em;
-}
-.score-big-num {
-  font-size: 3.5em; font-weight: 900; line-height: 1;
-  display: flex; align-items: center; gap: .15em;
-}
-.score-big-num .s1 { color: #1565c0; }
-.score-big-num .sep { color: #666; font-size: .6em; }
-.score-big-num .s2 { color: #2e7d32; }
-.score-serve-ind {
-  font-size: .65em; color: #f9a825; font-weight: bold;
-  background: rgba(249,168,37,.12); padding: .15em .5em; border-radius: .3em;
-}
-.score-btn {
-  padding: .85em .4em; border: none; border-radius: .5em;
-  font-size: .72em; font-weight: bold; cursor: pointer;
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: .15em; text-align: center; line-height: 1.3;
-}
-.score-btn.t1 { background: #1565c0; }
-.score-btn.t2 { background: #2e7d32; }
-.score-btn small { font-size: .8em; opacity: .85; font-weight: normal; }
-.score-ball-row {
-  display: flex; gap: .2em; justify-content: center; flex-wrap: wrap;
-  margin-top: .2em;
-}
-.score-ball { width: .8em; height: .8em; border-radius: 50%; background: #eee; }
-.score-ball.won { background: #1565c0; }
-.score-ball.won.t2 { background: #2e7d32; }
-
 /* ── 引き継ぎモーダル ── */
 .takeover-modal-overlay {
   position: absolute; inset: 0;
@@ -392,7 +206,6 @@ body {
     display: flex; align-items: flex-start;
     gap: 1.5rem; margin: 1rem 0;
   }
-  .mockup-row .phone-frame { flex-shrink: 0; }
   .mockup-row .mockup-desc { flex: 1; padding-top: .5rem; }
 }
 
@@ -567,74 +380,12 @@ body {
     <div class="card-title"><span class="icon">📺</span>画面の構成</div>
 
     <div class="mockup-row">
-      <!-- display.php モックアップ -->
+      <!-- 実際の案内パネル画面（スマホ縦向き） -->
       <div class="mockup-wrap">
-        <div class="mockup-label">案内パネル</div>
-        <div class="phone-frame">
-          <div class="dp-screen phone-screen">
-            <div class="dp-header">
-              <span class="dp-event-name">春季テニス大会</span>
-              <span class="dp-time">10:32</span>
-            </div>
-            <div class="dp-courts">
-              <!-- 呼び出し中 -->
-              <div class="dp-court-card calling">
-                <div class="dp-court-top">
-                  <span class="dp-court-label">🅐 コート</span>
-                  <span class="dp-status-badge calling">📢 呼び出し中</span>
-                </div>
-                <div class="dp-teams">田中・佐藤　vs　鈴木・高橋</div>
-                <div class="dp-score-row">
-                  <span class="dp-score-num">0</span>
-                  <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">0</span>
-                </div>
-                <button class="dp-score-btn">主審として<br>試合を開始する</button>
-              </div>
-              <!-- 試合中 -->
-              <div class="dp-court-card playing">
-                <div class="dp-court-top">
-                  <span class="dp-court-label">🅑 コート</span>
-                  <span class="dp-status-badge playing">▶ 試合中</span>
-                </div>
-                <div class="dp-teams">山田・中村　vs　伊藤・渡辺</div>
-                <div class="dp-score-row">
-                  <span class="dp-score-num">3</span>
-                  <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">2</span>
-                </div>
-                <button class="dp-score-btn playing">引き継いで<br>主審をする</button>
-              </div>
-              <!-- 試合中 -->
-              <div class="dp-court-card playing">
-                <div class="dp-court-top">
-                  <span class="dp-court-label">🅒 コート</span>
-                  <span class="dp-status-badge playing">▶ 試合中</span>
-                </div>
-                <div class="dp-teams">小林・加藤　vs　吉田・山口</div>
-                <div class="dp-score-row">
-                  <span class="dp-score-num">2</span>
-                  <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">3</span>
-                </div>
-                <button class="dp-score-btn playing">引き継いで<br>主審をする</button>
-              </div>
-              <!-- 終了 -->
-              <div class="dp-court-card done">
-                <div class="dp-court-top">
-                  <span class="dp-court-label">🅓 コート</span>
-                  <span class="dp-status-badge done">✔ 終了</span>
-                </div>
-                <div class="dp-teams">松本・井上　vs　木村・林</div>
-                <div class="dp-score-row">
-                  <span class="dp-score-num">4</span>
-                  <span class="dp-score-dash">-</span>
-                  <span class="dp-score-num t2">2</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="mockup-label">案内パネル（スマホ）</div>
+        <img src="/images/screen-display-portrait.jpg"
+             style="width:260px;border-radius:1.2rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
+             alt="案内パネル（スマホ縦向き）">
       </div>
 
       <!-- 説明 -->
@@ -658,6 +409,14 @@ body {
           <span>このパネルはFirebaseから<strong>自動更新</strong>されます。ページを手動でリロードする必要はありません。</span>
         </div>
       </div>
+    </div>
+
+    <!-- プロジェクタ・PC横向き表示 -->
+    <div style="margin-top:1.4rem">
+      <div class="mockup-label" style="margin-bottom:.6rem">案内パネル（PC・プロジェクタ）</div>
+      <img src="/images/screen-display-wide.jpg"
+           style="width:100%;max-width:680px;border-radius:.8rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
+           alt="案内パネル（横向き全画面）">
     </div>
   </div>
 </div>
@@ -699,55 +458,16 @@ body {
 
     <div class="mockup-wrap">
       <div class="mockup-label">① サーブ選択</div>
-      <div class="phone-frame">
-        <div class="serve-screen phone-screen">
-          <div style="background:#e65100;color:#fff;text-align:center;font-size:.6em;font-weight:bold;padding:.25em;letter-spacing:1px;margin:-1.2em -.8em .7em;padding-top:.4em">練習モード</div>
-          <div class="serve-title">サービス権は<br>どちらですか？</div>
-          <div class="serve-sub">Bコート｜第1ゲーム</div>
-          <div style="background:rgba(255,255,255,.1);border-radius:.5em;padding:.5em .7em;font-size:.72em;text-align:center;line-height:1.6">
-            <div style="font-weight:bold">🅑 Bコート</div>
-            <div style="color:#c5cae9">山田・中村 vs 伊藤・渡辺</div>
-          </div>
-          <button class="serve-btn t1">
-            <span class="serve-badge t1">①</span>
-            山田・中村 がサーブ
-          </button>
-          <button class="serve-btn t2">
-            <span class="serve-badge t2">②</span>
-            伊藤・渡辺 がサーブ
-          </button>
-          <div style="font-size:.6em;color:#7986cb;text-align:center;margin-top:.3em">
-            ジャンケン等でサービス権を決めてから選択してください
-          </div>
-        </div>
-      </div>
+      <img src="/images/screen-serve.jpg"
+           style="width:220px;border-radius:1.2rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
+           alt="サーブ選択画面">
     </div>
 
     <div class="mockup-wrap">
       <div class="mockup-label">② コートサイド選択</div>
-      <div class="phone-frame">
-        <div class="court-side-screen phone-screen">
-          <div style="background:#e65100;color:#fff;text-align:center;font-size:.6em;font-weight:bold;padding:.25em;letter-spacing:1px;margin:-1em -.8em .5em;padding-top:.3em">練習モード</div>
-          <div class="serve-title" style="font-size:.92em">山田・中村は<br>コートの左右どちら？</div>
-          <div class="serve-sub">Bコート 第1ゲーム</div>
-          <div class="court-side-row">
-            <button class="court-half left">
-              <span class="half-arrow">←</span>
-              <span class="half-word">左</span>
-              <span class="half-name">山田・中村</span>
-            </button>
-            <div class="court-net-div"></div>
-            <button class="court-half right">
-              <span class="half-arrow">→</span>
-              <span class="half-word">右</span>
-              <span class="half-name">伊藤・渡辺</span>
-            </button>
-          </div>
-          <div style="font-size:.6em;color:#7986cb;text-align:center;margin-top:.5em">
-            サーバー（最初にサーブを打つ選手）が<br>立っている側を選んでください
-          </div>
-        </div>
-      </div>
+      <img src="/images/screen-court-side.jpg"
+           style="width:220px;border-radius:1.2rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
+           alt="コートサイド選択画面">
     </div>
 
   </div>
@@ -772,60 +492,9 @@ body {
 
     <div class="mockup-wrap">
       <div class="mockup-label">スコア入力画面</div>
-      <div class="phone-frame">
-        <div class="score-screen phone-screen">
-          <div class="score-banner">練習モード</div>
-          <div class="score-court-label">🅑 Bコート｜第1ゲーム</div>
-          <div class="score-header">
-            <div class="score-game-count">ゲームカウント 0 - 0</div>
-            <div class="score-game-label">第1ゲーム</div>
-          </div>
-          <div class="score-teams-row">
-            <div class="score-team-label t1">① 山田・中村</div>
-            <div class="score-team-label t2">② 伊藤・渡辺</div>
-          </div>
-          <div class="score-main">
-            <!-- 左 得点ボタン -->
-            <div class="score-side">
-              <button class="score-btn t1" style="flex:1">
-                ◀<br>
-                <span>山田・中村</span><br>
-                <small>の得点</small>
-              </button>
-            </div>
-            <!-- 中央スコア -->
-            <div class="score-center">
-              <div class="score-big-num">
-                <span class="s1">3</span>
-                <span class="sep"> - </span>
-                <span class="s2">2</span>
-              </div>
-              <div class="score-serve-ind">🟡 山田・中村 のサーブ</div>
-              <!-- ゲームカウントボール -->
-              <div style="margin-top:.4em;font-size:.6em;color:#888">ゲーム</div>
-              <div class="score-ball-row">
-                <span class="score-ball"></span>
-                <span class="score-ball"></span>
-                <span class="score-ball"></span>
-              </div>
-            </div>
-            <!-- 右 得点ボタン -->
-            <div class="score-side">
-              <button class="score-btn t2" style="flex:1">
-                ▶<br>
-                <span>伊藤・渡辺</span><br>
-                <small>の得点</small>
-              </button>
-            </div>
-          </div>
-          <!-- 取り消しボタン -->
-          <div style="padding:.3em .5em .5em">
-            <button style="width:100%;padding:.5em;background:#546e7a;color:#fff;border:none;border-radius:.4em;font-size:.72em;font-weight:bold">
-              ↩ 直前の得点を取り消す
-            </button>
-          </div>
-        </div>
-      </div>
+      <img src="/images/screen-score.jpg"
+           style="width:220px;border-radius:1.2rem;border:3px solid #37474f;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;"
+           alt="スコア入力画面">
     </div>
 
     <!-- 操作説明 -->
