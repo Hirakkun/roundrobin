@@ -6,7 +6,8 @@ header('Content-Type: text/html; charset=UTF-8');
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>大会当日 運営ガイド</title>
+<title>運営ガイド</title>
+<script>if(history.scrollRestoration) history.scrollRestoration='manual';</script>
 <style>
 /* ═══════════════════════════════════════════
    ガイド全体レイアウト
@@ -216,7 +217,7 @@ body {
 
 <!-- ヘッダー -->
 <div class="guide-header">
-  <h1>🎾 大会当日 運営ガイド</h1>
+  <h1>🎾 運営ガイド</h1>
   <p>スタッフ・主審向け操作マニュアル</p>
   <div class="badge-row">
     <span class="badge badge-blue">📺 案内パネル</span>
@@ -318,6 +319,28 @@ body {
   </div>
 
   <div class="card">
+    <div class="card-title"><span class="icon">🙋</span>受付</div>
+    <ul class="steps">
+      <li>
+        <span class="s-num">1</span>
+        <span>参加費の徴収</span>
+      </li>
+      <li>
+        <span class="s-num">2</span>
+        <span>ペア申請の受付 → 管理画面でペア設定</span>
+      </li>
+      <li>
+        <span class="s-num">3</span>
+        <span>案内パネルのURLをQRコードで参加者へ周知（審判台などにQRコードを貼り付ける）</span>
+      </li>
+      <li>
+        <span class="s-num">4</span>
+        <span>コート横にタブレットを設置（案内パネル表示用）</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="card">
     <div class="card-title"><span class="icon">✅</span>事前に確認すること</div>
     <ul class="steps">
       <li>
@@ -385,7 +408,7 @@ body {
         </ul>
         <div class="note info" style="margin-top:.8rem">
           <span class="note-icon">📡</span>
-          <span>このパネルはFirebaseから<strong>自動更新</strong>されます。ページを手動でリロードする必要はありません。</span>
+          <span>このパネルは<strong>自動更新</strong>されます。ページを手動でリロードする必要はありません。</span>
         </div>
       </div>
     </div>
@@ -455,6 +478,10 @@ body {
     <span class="note-icon">⚠️</span>
     <span>コートサイド選択は<strong>サーバー（最初にサーブを打つ選手）が立っている側</strong>を選んでください。間違えると表示が逆になります。</span>
   </div>
+  <div class="note info">
+    <span class="note-icon">😊</span>
+    <span>サーバーやコートサイドを間違えた場合は、スコア入力画面の画面上部赤色の<strong>「戻る」</strong>ボタンを押せばサーバー選択画面に戻ります。安心して操作してください。</span>
+  </div>
 </div>
 
 <!-- ═══════════════════════════
@@ -489,7 +516,7 @@ body {
         </li>
         <li>
           <span class="s-num green">↩</span>
-          <span><strong>間違えたら「取り消し」</strong><br>直前の得点を1つ戻せます。間違いにすぐ気付いたら使用してください。</span>
+          <span><strong>間違えたら「取り消し」</strong><br>直前の得点を1つずつ戻せます。間違いにすぐ気付いたら使用してください。</span>
         </li>
         <li>
           <span class="s-num green">🔢</span>
@@ -498,7 +525,7 @@ body {
       </ul>
       <div class="note success" style="margin-top:.8rem">
         <span class="note-icon">📡</span>
-        <span>スコアは<strong>リアルタイムで案内パネルに反映</strong>されます。スタッフは別途操作不要です。</span>
+        <span>スコアは<strong>リアルタイムで案内パネルに反映</strong>されます。</span>
       </div>
     </div>
   </div>
