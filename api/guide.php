@@ -375,7 +375,7 @@ body {
   <div class="section-title">
     <span class="step-num">1</span>
     案内パネルの見方
-    <span class="role-badge staff">👤 スタッフ操作</span>
+    <span class="role-badge staff">👥 全員</span>
   </div>
 
   <div class="card">
