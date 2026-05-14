@@ -3878,6 +3878,8 @@ document.addEventListener('click', e => {
     const scoreEl = row.querySelector(isLeft ? '.s1' : '.s2');
     const val = (e.clientX - teamEl.getBoundingClientRect().left < teamEl.offsetWidth / 2) ? 1 : -1;
     scoreEl.innerText = Math.max(0, parseInt(scoreEl.innerText) + val);
+    // 終了カード修正中はDOMのみ更新（修正終了ボタン押下時に確定保存）
+    if (teamEl.closest('.match-card-done-wrap.editing')) return;
     saveScores();
     updateRoundStatus();
 });
