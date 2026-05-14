@@ -4837,59 +4837,9 @@ window._fbApply = function(remoteState) {
         if (!remoteState.playerKana      || typeof remoteState.playerKana      !== 'object') remoteState.playerKana      = {};
         if (!remoteState.announcedCourts || typeof remoteState.announcedCourts !== 'object') remoteState.announcedCourts = {};
 
-        // コートページから done=true が書き込まれた場合に側面処理を実行（管理者のみ）
-        // ── ローカルとリモートそれぞれの autoMatch/seqMatch を保存 ──────────────────
-        // Object.assign 前のローカル値と、Firebase から届いたリモート値の両方を参照する。
-        // 「手動に切り替えたが 300ms デバウンスで Firebase への push がまだ届いていない」
-        // タイミングで done イベントが届いても、ローカルが OFF なら自動組み込みしない。
-        const _lAutoMatch = !!state.autoMatch;   // ローカル値（merge 前）
-        const _lSeqMatch  = !!state.seqMatch;
-        const _rAutoMatch = !!remoteState.autoMatch; // リモート値（Firebase 最新）
-        const _rSeqMatch  = !!remoteState.seqMatch;
-
-        if (isAdmin && (_rAutoMatch || _rSeqMatch)) {
-            const prevScores = state.scores || {};
-            const newScores  = remoteState.scores || {};
-            // 新たに done=true になったコートを検出
-            const newlyDone = [];
-            if (Array.isArray(remoteState.schedule)) {
-                remoteState.schedule.forEach(rd => {
-                    (rd.courts || []).forEach((ct, ci) => {
-                        const mid = 'r' + rd.round + 'c' + ci;
-                        if (newScores[mid]?.done && !prevScores[mid]?.done) {
-                            newlyDone.push({ rd, ct, ci, mid });
-                        }
-                    });
-                });
-            }
-            // 先に state を更新してから側面処理
-            Object.assign(state, remoteState);
-            localStorage.setItem('rr_state_v2', JSON.stringify(state));
-            newlyDone.forEach(({ rd, ct, ci }) => {
-                // isOnCourt を解放
-                [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
-                    const p = state.players.find(pp => pp.id === id);
-                    if (p) p.isOnCourt = false;
-                });
-                const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
-                // 少し遅延してから次の組合せを投入（renderの後）
-                // ローカルとリモートの両方が autoMatch=ON のときのみ実行
-                // （切り替え直後のデバウンス遅延による誤作動を防止）
-                if (_rAutoMatch && _lAutoMatch) {
-                    if (_rSeqMatch && _lSeqMatch) {
-                        setTimeout(() => assignNextPoolMatch(physIdx), 300);
-                    } else if (!_rSeqMatch && !_lSeqMatch) {
-                        const allDone = (rd.courts || []).every((c, i) =>
-                            state.scores['r' + rd.round + 'c' + i]?.done);
-                        if (allDone) setTimeout(() => generateNextRound(), 300);
-                    }
-                }
-                // autoMatch=OFF(手動)の場合は自動組み込みしない
-            });
-        } else {
-            Object.assign(state, remoteState);
-            localStorage.setItem('rr_state_v2', JSON.stringify(state));
-        }
+        // state を更新（newlyDone の自動組み込みは scoresサブパスリスナーが一元管理）
+        Object.assign(state, remoteState);
+        localStorage.setItem('rr_state_v2', JSON.stringify(state));
         // score-court が管理する pt1/pt2 を受信するたびキャッシュに保存
         // （次の _fbPush で set() 上書きされないよう保護するため）
         // _livePtScores は window プロパティとして公開されているため window._ で参照する
@@ -5280,6 +5230,7 @@ let _ref = null;
 
 let _evRef     = null;
 let _scoresRef = null;   // scores 専用リアルタイムリスナー
+const _pendingAssign = new Set(); // assignNextPoolMatch の二重実行防止ガード
 
 // セッション切替直後の初回 onValue は CLIENT_ID 一致でもスキップしないためのフラグ。
 // selectHistoryId など「ローカルをリセットして別セッションへ接続」するパスでのみ true にする。
@@ -5319,16 +5270,15 @@ window._fbStart = function(sessionId) {
         if (!scores || typeof scores !== 'object') return;
 
         // ── 新たに done になったコートを検出 → autoMatch/seqMatch トリガー ──────
-        // _fbApply はメインリスナーの発火順次第で state.scores が更新済みになっている場合があり、
-        // 「新たに done になった」検出ができない（レース条件）。
-        // scores サブパスリスナーは state.scores 更新前に発火するため確実に検出できる。
+        // _fbApply 内の newlyDone 検出は削除済み。このリスナーが唯一のトリガー。
+        // _pendingAssign で同一コートへの二重 assignNextPoolMatch を防止する。
         if (isAdmin && (state.autoMatch || state.seqMatch) && Array.isArray(state.schedule)) {
             state.schedule.forEach(rd => {
                 (rd.courts || []).forEach((ct, ci) => {
                     const mid = 'r' + rd.round + 'c' + ci;
                     const alreadyDone = !!state.scores?.[mid]?.done;
                     const nowDone = !!scores[mid]?.done;
-                    if (nowDone && !alreadyDone) {
+                    if (nowDone && !alreadyDone && !_pendingAssign.has(mid)) {
                         // isOnCourt を解放
                         [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => {
                             const p = state.players.find(pp => pp.id === id);
@@ -5337,11 +5287,14 @@ window._fbStart = function(sessionId) {
                         const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
                         if (state.autoMatch) {
                             if (state.seqMatch) {
-                                // 順次モード: 終了コートで次を投入
-                                setTimeout(() => assignNextPoolMatch(physIdx), 300);
+                                // 順次モード: 終了コートで次を投入（二重実行防止ガード付き）
+                                _pendingAssign.add(mid);
+                                setTimeout(() => {
+                                    _pendingAssign.delete(mid);
+                                    assignNextPoolMatch(physIdx);
+                                }, 300);
                             } else {
                                 // 一括モード: ラウンド内の全コートが終了したら次ラウンドを生成
-                                // state.scores はまだ更新前なので incoming scores を参照する
                                 const allDone = (rd.courts || []).every((c, i) => {
                                     const m = 'r' + rd.round + 'c' + i;
                                     return !!(scores[m]?.done || state.scores?.[m]?.done);
