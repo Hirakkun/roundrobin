@@ -192,6 +192,14 @@ body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; backgro
 .swipe-del-wrap .match-card { margin-bottom:0; position:relative; z-index:1; }
 .swipe-del-bg { position:absolute; right:0; top:0; bottom:0; width:5rem; background:#c62828; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; font-size:1.4rem; gap:3px; z-index:0; pointer-events:none; }
 .swipe-del-bg span { font-size:0.6rem; font-weight:bold; letter-spacing:0.05em; }
+/* ── 終了カード スコア修正モード ── */
+.done-edit-btn { font-size:0.65rem; font-weight:bold; background:#e65100; color:#fff; border:none; border-radius:0.3rem; padding:0.2rem 0.5rem; cursor:pointer; white-space:nowrap; }
+.done-edit-btn:active { background:#bf360c; }
+.done-match-content { opacity:0.5; transition:opacity 0.2s; }
+.done-match-content .done-team { pointer-events:none; }
+.match-card-done-wrap.editing .done-match-content { opacity:1; }
+.match-card-done-wrap.editing .done-match-content .done-team { pointer-events:auto; }
+.match-card-done-wrap.editing { outline:2px solid #e65100; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 1.1875rem; font-weight: bold; padding: 0.875rem; background: #1565c0; color: #fff; border: none; border-radius: 0.75rem; margin-top: 0.875rem; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -3763,21 +3771,25 @@ function renderMatchContainer() {
 
                     // 自動/順次ON かつ終了済みコート → カード型（グレーアウト）
                     if (autoOrSeq && courtDone) {
+                        const editBtn = isAdmin && !isEventLocked()
+                            ? `<button class="done-edit-btn" onclick="event.stopPropagation();toggleDoneEdit(${rd.round},${arrayIdx},this)">修正</button>`
+                            : '';
                         return `
                         <div class="match-card match-card-done-wrap${isEventLocked() ? ' expanded' : ''}">
-                            <div class="match-header-row match-header-done" onclick="this.closest('.match-card-done-wrap').classList.toggle('expanded')">
+                            <div class="match-header-row match-header-done" onclick="if(!event.target.closest('.done-edit-btn'))this.closest('.match-card-done-wrap').classList.toggle('expanded')">
                                 ${getCourtNameHTML(physIdx)}
                                 <span style="display:flex;align-items:center;gap:6px;">
+                                    ${editBtn}
                                     <span style="font-size:0.75rem;font-weight:bold;color:#a5d6a7;">✓ 終了</span>
                                     <span class="done-arrow" style="font-size:0.6875rem;color:#cfd8dc;">▼</span>
                                 </span>
                             </div>
-                            <div class="match-content" style="opacity:0.5;">
-                                <div class="team left-side" style="pointer-events:none;">
+                            <div class="match-content done-match-content" data-match-id="${mid}">
+                                <div class="team left-side done-team" data-p="${ct.team1.join(',')}">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n1}</span>
                                 </div>
-                                <div class="score-area"><div class="score-pts-t1"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div></div><div class="score-nums"><span>${sc.s1 ?? 0}</span><small>-</small><span>${sc.s2 ?? 0}</span></div><div class="score-pts-t2"><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
-                                <div class="team right-side" style="pointer-events:none;">
+                                <div class="score-area"><div class="score-pts-t1"><div class="rr-balls">${ballsHTML(sc.pt1??0)}</div></div><div class="score-nums"><span class="s1">${sc.s1 ?? 0}</span><small>-</small><span class="s2">${sc.s2 ?? 0}</span></div><div class="score-pts-t2"><div class="rr-balls">${ballsHTML(sc.pt2??0)}</div></div></div>
+                                <div class="team right-side done-team" data-p="${ct.team2.join(',')}">
                                     <span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span>
                                 </div>
                             </div>
@@ -4045,12 +4057,41 @@ function deleteCallingCourt(roundNum, courtArrayIdx) {
     showToast('組合せを削除しました');
 }
 
+// 終了カードのスコア修正モード切り替え
+function toggleDoneEdit(roundNum, courtArrayIdx, btn) {
+    const card = btn.closest('.match-card-done-wrap');
+    const content = card.querySelector('.done-match-content');
+    const isEditing = card.classList.contains('editing');
+
+    if (isEditing) {
+        // 修正終了 → スコアを保存してTrueSkill再計算
+        const mid = content.dataset.matchId;
+        const s1 = parseInt(card.querySelector('.s1').innerText) || 0;
+        const s2 = parseInt(card.querySelector('.s2').innerText) || 0;
+        state.scores[mid] = { ...state.scores[mid], s1, s2, done: true };
+        content.classList.remove('match-row');
+        card.classList.remove('editing');
+        btn.textContent = '修正';
+        recalcAllTrueSkill();
+        saveState();
+        renderMatchContainer();
+        renderPlayers();
+        showToast('試合結果を修正しました（勝率・μ値を再計算）');
+    } else {
+        // 修正開始 → 編集可能にする
+        card.classList.add('editing', 'expanded');
+        content.classList.add('match-row'); // 既存クリックスコア入力ハンドラを有効化
+        btn.textContent = '修正終了';
+    }
+}
+
 function saveScores() {
     document.querySelectorAll('.match-row').forEach(row => {
         const mid = row.dataset.matchId;
         state.scores[mid] = {
-            s1: parseInt(row.querySelector('.s1').innerText),
-            s2: parseInt(row.querySelector('.s2').innerText),
+            ...state.scores[mid], // done, status, pt1, pt2 等を保持
+            s1: parseInt(row.querySelector('.s1').innerText) || 0,
+            s2: parseInt(row.querySelector('.s2').innerText) || 0,
         };
     });
     recalcAllTrueSkill();
