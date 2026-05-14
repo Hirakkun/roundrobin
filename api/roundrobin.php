@@ -187,6 +187,11 @@ body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; backgro
 .announce-btn:active { background:#e65100; }
 .announce-btn:disabled { background:#b0bec5; cursor:not-allowed; }
 .announce-btn.announced { background:#78909c; color:#eceff1; }
+/* ── スワイプ削除（呼び出し中カードのみ） ── */
+.swipe-del-wrap { position:relative; border-radius:0.75rem; overflow:hidden; margin-bottom:0.625rem; }
+.swipe-del-wrap .match-card { margin-bottom:0; position:relative; z-index:1; }
+.swipe-del-bg { position:absolute; right:0; top:0; bottom:0; width:5rem; background:#c62828; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; font-size:1.4rem; gap:3px; z-index:0; pointer-events:none; }
+.swipe-del-bg span { font-size:0.6rem; font-weight:bold; letter-spacing:0.05em; }
 .next-round-btn:disabled { background: #b0bec5; box-shadow: none; }
 .report-btn { width: 100%; font-size: 1.1875rem; font-weight: bold; padding: 0.875rem; background: #1565c0; color: #fff; border: none; border-radius: 0.75rem; margin-top: 0.875rem; cursor: pointer; box-shadow: 0 3px 8px rgba(21,101,192,.3); }
 .report-btn:disabled { background: #b0bec5; box-shadow: none; }
@@ -3801,7 +3806,7 @@ function renderMatchContainer() {
                     const announceBtn = isAdmin && state.geminiApiKey && !courtDone
                         ? `<button class="announce-btn" onclick="announceMatch(${rd.round},${arrayIdx},${physIdx},this)">📢 アナウンス</button>`
                         : '';
-                    return `
+                    const cardInner = `
                     <div class="match-card">
                         <div class="match-header-row">
                             ${getCourtNameHTML(physIdx)}
@@ -3822,6 +3827,10 @@ function renderMatchContainer() {
                                  ><span class="name" style="display:flex;flex-direction:column;align-items:center;gap:2px;">${n2}</span></div>
                         </div>
                     </div>`;
+                    // 呼び出し中 かつ 管理者 → スワイプ削除ラッパーで包む
+                    return (isAdmin && !isEventLocked() && isCalling)
+                        ? `<div class="swipe-del-wrap" data-round="${rd.round}" data-cidx="${arrayIdx}"><div class="swipe-del-bg">🗑️<span>削除</span></div>${cardInner}</div>`
+                        : cardInner;
                     }).join('');
                 })()}
             </div>
@@ -3951,6 +3960,89 @@ function deleteRound(e, roundNum) {
         }
     }
     updatePoolStatus();
+}
+
+// 呼び出し中の単一コートを削除する
+function deleteCallingCourt(roundNum, courtArrayIdx) {
+    if (isEventLocked()) { showToast('このイベントは終了しています'); return; }
+    const rd = state.schedule.find(r => r.round === roundNum);
+    if (!rd) return;
+    const mid = `r${roundNum}c${courtArrayIdx}`;
+    const sc = state.scores?.[mid];
+    if (sc?.done || sc?.status === 'playing') { showToast('呼び出し中の組合せのみ削除できます'); return; }
+
+    // スコアを削除
+    if (state.scores) delete state.scores[mid];
+    // コートを配列から削除
+    rd.courts.splice(courtArrayIdx, 1);
+    // 残ったコートのスコアキーを詰め直す
+    if (state.scores) {
+        for (let i = courtArrayIdx; i < rd.courts.length; i++) {
+            const oldKey = `r${roundNum}c${i+1}`;
+            const newKey = `r${roundNum}c${i}`;
+            if (state.scores[oldKey] != null) {
+                state.scores[newKey] = state.scores[oldKey];
+                delete state.scores[oldKey];
+            }
+        }
+    }
+    // ラウンドが空になったらラウンドごと削除・番号詰め直し
+    if (rd.courts.length === 0) {
+        state.schedule = state.schedule.filter(r => r.round !== roundNum);
+        state.schedule.sort((a, b) => a.round - b.round);
+        const newScores = {};
+        state.schedule.forEach((r, idx) => {
+            const oldNum = r.round;
+            const newNum = idx + 1;
+            r.courts.forEach((ct, ci) => {
+                const oldKey = `r${oldNum}c${ci}`;
+                const newKey = `r${newNum}c${ci}`;
+                if (state.scores?.[oldKey] != null) newScores[newKey] = state.scores[oldKey];
+            });
+            r.round = newNum;
+        });
+        state.scores = newScores;
+    }
+    state.roundCount = state.schedule.length;
+    // playCount / lastRound 再計算
+    state.players.forEach(p => { p.playCount = 0; p.lastRound = -1; });
+    state.schedule.forEach(r => {
+        if (!r.playerStates) return;
+        Object.entries(r.playerStates).forEach(([idStr, st]) => {
+            if (st !== 'play') return;
+            const p = state.players.find(pp => pp.id === Number(idStr));
+            if (p) { p.playCount++; p.lastRound = r.round; }
+        });
+    });
+    recalcAllTrueSkill();
+    // isOnCourt 再計算
+    state.players.forEach(p => { p.isOnCourt = false; });
+    state.schedule.forEach(r => {
+        r.courts.forEach((ct, ci) => {
+            const s = state.scores?.[`r${r.round}c${ci}`];
+            if (!s?.done) {
+                [...ct.team1, ...ct.team2].forEach(id => {
+                    const p = state.players.find(pp => pp.id === id);
+                    if (p) p.isOnCourt = true;
+                });
+            }
+        });
+    });
+    state.matchPool = [];
+    saveState();
+    if (state.schedule.length === 0) {
+        document.getElementById('initialSetup').style.display = 'block';
+        document.getElementById('liveSetup').style.display = 'none';
+        _rebuildEntryPlayers();
+        showEntryMode();
+        showStep('step-setup', document.getElementById('btn-setup'));
+    } else {
+        renderMatchContainer();
+        if (state.autoMatch && state.seqMatch) setTimeout(() => generatePoolBatch(), 100);
+    }
+    renderPlayers();
+    updatePoolStatus();
+    showToast('組合せを削除しました');
 }
 
 function saveScores() {
@@ -5003,6 +5095,56 @@ window.onload = function () {
         }, 150);
     });
 };
+
+// ── スワイプ削除（呼び出し中カードのみ）──
+(function () {
+    let _wrap = null, _startX = 0, _startY = 0, _dx = 0, _moved = false;
+    const THRESHOLD = 70; // 削除確定に必要なスワイプ量(px)
+
+    document.addEventListener('touchstart', e => {
+        const wrap = e.target.closest('.swipe-del-wrap');
+        if (!wrap) return;
+        _wrap = wrap;
+        _startX = e.touches[0].clientX;
+        _startY = e.touches[0].clientY;
+        _dx = 0; _moved = false;
+        wrap.querySelector('.match-card').style.transition = 'none';
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+        if (!_wrap) return;
+        const ddx = e.touches[0].clientX - _startX;
+        const ddy = e.touches[0].clientY - _startY;
+        // 最初の動きが縦なら縦スクロールを優先してスワイプ中止
+        if (!_moved && Math.abs(ddy) > Math.abs(ddx)) { _wrap = null; return; }
+        if (ddx > 0) return; // 右スワイプは無視
+        _moved = true;
+        e.preventDefault();
+        _dx = ddx;
+        _wrap.querySelector('.match-card').style.transform = `translateX(${Math.max(-80, _dx)}px)`;
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+        if (!_wrap) return;
+        const wrap = _wrap;
+        const card = wrap.querySelector('.match-card');
+        _wrap = null;
+        if (_dx < -THRESHOLD) {
+            // 閾値超え → カードを左へ飛ばして削除
+            card.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
+            card.style.transform = 'translateX(-110%)';
+            card.style.opacity = '0';
+            setTimeout(() => {
+                deleteCallingCourt(Number(wrap.dataset.round), Number(wrap.dataset.cidx));
+            }, 230);
+        } else {
+            // スナップバック
+            card.style.transition = 'transform 0.22s ease';
+            card.style.transform = 'translateX(0)';
+        }
+        _dx = 0; _moved = false;
+    });
+})();
 </script>
 
 <!-- ペア選択モーダル -->
