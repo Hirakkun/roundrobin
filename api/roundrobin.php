@@ -3706,6 +3706,32 @@ function assignNextPoolMatch(fromPhysicalIndex) {
 }
 
 // =====================================================================
+// =====================================================================
+// スコア数値のみ更新（全再描画せずスクロール位置を保持）
+// =====================================================================
+function updateScoreDisplays() {
+    if (!state.scores) return;
+    document.querySelectorAll('[data-match-id]').forEach(row => {
+        const mid = row.dataset.matchId;
+        const sc = state.scores[mid];
+        if (!sc) return;
+        // ゲームカウント (s1/s2)
+        const s1El = row.querySelector('.s1');
+        const s2El = row.querySelector('.s2');
+        if (s1El) s1El.textContent = sc.s1 ?? 0;
+        if (s2El) s2El.textContent = sc.s2 ?? 0;
+        // ゲーム内ポイント (pt1/pt2 ボールアイコン)
+        const livePt = window._livePtScores?.[mid];
+        const pt1 = livePt?.pt1 ?? sc.pt1 ?? 0;
+        const pt2 = livePt?.pt2 ?? sc.pt2 ?? 0;
+        const b1 = row.querySelector('.score-pts-t1 .rr-balls');
+        const b2 = row.querySelector('.score-pts-t2 .rr-balls');
+        if (b1) b1.innerHTML = ballsHTML(pt1);
+        if (b2) b2.innerHTML = ballsHTML(pt2);
+    });
+}
+
+// =====================================================================
 // 組合せ描画
 // =====================================================================
 function renderMatchContainer() {
@@ -4837,9 +4863,23 @@ window._fbApply = function(remoteState) {
         if (!remoteState.playerKana      || typeof remoteState.playerKana      !== 'object') remoteState.playerKana      = {};
         if (!remoteState.announcedCourts || typeof remoteState.announcedCourts !== 'object') remoteState.announcedCourts = {};
 
+        // スコア数値のみ変更か判定（全再描画の要否を決める）
+        const _prevSchedJson  = JSON.stringify(state.schedule);
+        const _prevPlayJson   = JSON.stringify(state.players);
+        const _prevScores     = state.scores || {};
+        const _newScores      = remoteState.scores || {};
         // state を更新（newlyDone の自動組み込みは scoresサブパスリスナーが一元管理）
         Object.assign(state, remoteState);
         localStorage.setItem('rr_state_v2', JSON.stringify(state));
+        // スケジュール・選手に変化がなく、スコアのstatus/doneも変わっていなければ軽量更新
+        let _onlyScoreNums = JSON.stringify(state.schedule) === _prevSchedJson &&
+                             JSON.stringify(state.players)  === _prevPlayJson;
+        if (_onlyScoreNums) {
+            Object.keys(_newScores).forEach(mid => {
+                if (_newScores[mid]?.status !== _prevScores[mid]?.status) _onlyScoreNums = false;
+                if (!!_newScores[mid]?.done  !== !!_prevScores[mid]?.done) _onlyScoreNums = false;
+            });
+        }
         // score-court が管理する pt1/pt2 を受信するたびキャッシュに保存
         // （次の _fbPush で set() 上書きされないよう保護するため）
         // _livePtScores は window プロパティとして公開されているため window._ で参照する
@@ -4899,7 +4939,11 @@ window._fbApply = function(remoteState) {
             setupPlayers = state.players.length;
             setupCourts = state.courts;
             showLiveSetup();
-            renderMatchContainer();
+            if (_onlyScoreNums) {
+                updateScoreDisplays(); // スコア数値のみ更新（スクロール位置保持）
+            } else {
+                renderMatchContainer(); // スケジュール変化あり → 全再描画
+            }
             renderPlayerList();
         } else if (Array.isArray(state.roster) && state.roster.length > 0 && (!Array.isArray(state.players) || state.players.length === 0)) {
             // 名簿あり・エントリー未確定（参加者選択待ち）
@@ -5321,11 +5365,11 @@ window._fbStart = function(sessionId) {
         // state.scores を最新値にマージ
         if (!state.scores) state.scores = {};
         Object.assign(state.scores, scores);
-        // 試合進行中なら組合せ画面を再描画
+        // スコア数値のみ更新（全再描画不要・スクロール位置保持）
         if (!isApplyingRemote &&
-            typeof renderMatchContainer === 'function' &&
+            typeof updateScoreDisplays === 'function' &&
             Array.isArray(state.schedule) && state.schedule.length > 0) {
-            renderMatchContainer();
+            updateScoreDisplays();
         }
     });
 
