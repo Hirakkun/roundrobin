@@ -833,7 +833,10 @@ function _saveEntryToState() {
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
         const resting = p.isGuest ? false : entryRestingPids.has(p.pid);
-        const player = { id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 };
+        const initMu    = p.mu    ?? 25.0;
+        const initSigma = p.sigma ?? (25 / 3);
+        const player = { id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0,
+                         initMu, initSigma };   // イベント開始前レート（再計算の起点として保持）
         // ゲストフィールドをstateに引き継ぎ
         if (p.isGuest) {
             player.isGuest        = true;
@@ -848,7 +851,7 @@ function _saveEntryToState() {
         state.playerNames[id] = p.name;
         state.playerKana[id]  = p.kana || p.name || '';
         if (p.clubName) state.playerClubs[id] = p.clubName;
-        state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
+        state.tsMap[id] = { mu: initMu, sigma: initSigma };
     });
     const ids = state.players.map(p => p.id);
     ids.forEach(i => {
@@ -991,7 +994,10 @@ function applyEntryPlayers() {
     entryPlayers.forEach((p, i) => {
         const id = i + 1;
         const resting = p.isGuest ? false : entryRestingPids.has(p.pid);
-        const player = { id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0 };
+        const initMu    = p.mu    ?? 25.0;
+        const initSigma = p.sigma ?? (25 / 3);
+        const player = { id, pid: p.pid || null, playCount: 0, lastRound: -1, resting, joinedRound: 0, restCount: 0,
+                         initMu, initSigma };   // イベント開始前レート（再計算の起点として保持）
         if (p.isGuest) {
             player.isGuest        = true;
             player.guestName      = p.guestName || p.name;
@@ -1004,7 +1010,7 @@ function applyEntryPlayers() {
         state.players.push(player);
         state.playerNames[id] = p.name;
         if (p.clubName) state.playerClubs[id] = p.clubName;
-        state.tsMap[id] = { mu: p.mu ?? 25.0, sigma: p.sigma ?? (25/3) };
+        state.tsMap[id] = { mu: initMu, sigma: initSigma };
     });
     const ids = state.players.map(p => p.id);
     ids.forEach(i => {
@@ -1179,7 +1185,8 @@ function addPlayerToState(id, isNew = false) {
     }
 
     state.players.push({ id, playCount: 0, lastRound: -1, resting: false,
-        joinedRound: state.roundCount
+        joinedRound: state.roundCount,
+        initMu: 25.0, initSigma: 25.0 / 3   // 途中参加ゲストは初期値固定
     });
 
     // TrueSkill初期値（μ=25, σ=25/3）
@@ -4127,9 +4134,10 @@ function saveScores() {
 }
 
 function recalcAllTrueSkill() {
-    // 全プレイヤーのTrueSkillを初期値にリセット
+    // 全プレイヤーをイベント開始前レート（initMu/initSigma）にリセット
+    // ※ initMu/initSigma は選手追加時に state.players[i] へ保存した前イベント引き継ぎ値
     state.players.forEach(p => {
-        state.tsMap[p.id] = { mu: 25.0, sigma: 25.0 / 3 };
+        state.tsMap[p.id] = { mu: p.initMu ?? 25.0, sigma: p.initSigma ?? (25.0 / 3) };
     });
     // 全試合結果を時系列順に再適用
     state.schedule.forEach(rd => {
@@ -4381,9 +4389,9 @@ function buildReportCSV() {
     csv += '\n【試合結果】\n';
     csv += '試合番号,コート番号,チーム1選手1,R前,チーム1選手2,R前,チームR前,スコア1,スコア2,チーム2選手1,R前,チーム2選手2,R前,チームR前\n';
 
-    // 試合ごとのレートを時系列で再計算
+    // 試合ごとのレートを時系列で再計算（イベント開始前レートを起点とする）
     const tsSnapshot = {};
-    state.players.forEach(p => { tsSnapshot[p.id] = { mu: 25.0, sigma: 25.0 / 3 }; });
+    state.players.forEach(p => { tsSnapshot[p.id] = { mu: p.initMu ?? 25.0, sigma: p.initSigma ?? (25.0 / 3) }; });
 
     const getMu = (id, snap) => (snap[id]?.mu || 25).toFixed(1);
 
