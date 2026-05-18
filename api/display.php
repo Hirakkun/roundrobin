@@ -445,10 +445,15 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 
 /* ── ボールアイコン ── */
 .game-ball { display: inline-block; vertical-align: middle; }
-/* 横長カード：スコア横のボール（左は右詰め、右は左詰めでスコアを中央固定） */
-.score-balls { display: flex; align-items: center; gap: 0.07em; }
-.score-balls:first-child { justify-content: flex-end; }
-.score-balls:last-child  { justify-content: flex-start; }
+/* 横長カード：スコア横のボール（2列グリッドで折り返し） */
+.score-balls {
+    display: grid;
+    grid-template-columns: repeat(2, 1em);
+    gap: 0.07em;
+    align-items: center;
+}
+.score-balls:first-child { justify-self: end; }   /* 左側：グリッド全体を右詰め */
+.score-balls:last-child  { justify-self: start; } /* 右側：グリッド全体を左詰め */
 .score-balls .game-ball { width: 1em; height: 1em; }
 /* 縦長カード：スコア行のボール */
 .pc-balls { display: inline-flex; align-items: center; gap: 0.06em; }
