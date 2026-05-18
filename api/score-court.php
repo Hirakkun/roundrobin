@@ -934,10 +934,10 @@ function checkGameWinner() {
         document.getElementById('btn-end').style.display = 'block';
     } else if (total % 2 !== 0) {
         // 奇数ゲーム終了：コートチェンジあり→「チェンジサイズ」、なし→「チェンジサービス」
-        setUmpire(courtChangeEnabled ? 'ゲーム、チェンジサイズ' : 'ゲーム、チェンジサービス');
+        setUmpire(courtChangeEnabled ? 'ゲーム、チェンジサイズ' : 'チェンジサービス');
         document.getElementById('btn-confirm').style.display = 'block';
     } else {
-        setUmpire('ゲーム、チェンジサービス');
+        setUmpire('チェンジサービス');
         document.getElementById('btn-confirm').style.display = 'block';
     }
 }
