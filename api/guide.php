@@ -413,10 +413,13 @@ body {
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🙋</span>受付</div>
+    <div class="card-title"><span class="icon">👥</span>役割分担</div>
     <ul class="steps">
-      <li><span class="s-num">1</span><span>参加料の受領</span></li>
-      <li><span class="s-num">2</span><span>ペア受付（ペア変更があれば管理画面で設定）</span></li>
+      <li><span class="s-num">🎤</span><span>司会 <span class="charge-badge">👤 赤岡</span></span></li>
+      <li><span class="s-num">🏸</span><span>コート設営 <span class="charge-badge">👤 長山・松田</span></span></li>
+      <li><span class="s-num">🙋</span><span>受付（参加料の受領・ペア受付） <span class="charge-badge">👤 尾崎・本多</span> <span class="charge-badge">💰 山田（会計）</span></span></li>
+      <li><span class="s-num">📢</span><span>ルール説明 <span class="charge-badge">👤 木村</span></span></li>
+      <li><span class="s-num">💻</span><span>システム説明 <span class="charge-badge">👤 荒地</span></span></li>
     </ul>
   </div>
 </div>
