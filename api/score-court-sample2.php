@@ -74,7 +74,8 @@ header('Content-Type: text/html; charset=UTF-8');
             touch-action: manipulation;
         }
 
-        .umpire-call-area { position: relative; font-size: 1.15em; font-weight: bold; color: #333; padding: 0.5em 0.7em; min-height: 1.4em; background: #e9f5ff; border: 2px solid #aed9f7; border-radius: 0.5em; margin: 0.45em; flex-shrink: 0; }
+        .umpire-call-area { position: relative; font-size: 1.15em; font-weight: bold; color: #333; padding: 0.5em 0.7em; min-height: 1.4em; background: #e9f5ff; border: 2px solid #aed9f7; border-radius: 0.5em; margin: 0.45em; flex-shrink: 0; text-align: center; }
+        .umpire-sub { display: block; font-size: 0.65em; font-weight: normal; color: #555; margin-top: 0.2em; }
         .umpire-call-area::after { content: ''; position: absolute; bottom: -0.6em; left: 50%; transform: translateX(-50%); border-width: 0.6em 0.6em 0; border-style: solid; border-color: #e9f5ff transparent transparent; z-index: 1; }
 
         .action-button {
@@ -297,7 +298,7 @@ let _doneTimer     = null;
             const histEl = document.getElementById('game-history');
             if (histEl && d.historyHTML) histEl.innerHTML = d.historyHTML;
             const msgEl = document.getElementById('umpire-msg');
-            if (msgEl && d.umpireMsg)    msgEl.textContent = d.umpireMsg;
+            if (msgEl && d.umpireMsg)    setUmpire(d.umpireMsg);
             updateDisplay();
             if (game_is_over) {
                 togglePointButtons(true);
@@ -369,7 +370,7 @@ window.addPoint = function(side) {
     historyStack.push({
         type: 'point',
         game_score_t1, game_score_t2, current_server,
-        umpireMsg: document.getElementById('umpire-msg').textContent
+        umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
     });
 
     if (winner === 1) game_score_t1++;
@@ -398,7 +399,21 @@ function updateUmpireCall() {
     if (p_sv === p_rc && p_sv > 0) { setUmpire((words[p_sv] || p_sv) + 'オール'); return; }
     setUmpire((words[p_sv] || p_sv) + ' - ' + (words[p_rc] || p_rc));
 }
-function setUmpire(msg) { document.getElementById('umpire-msg').textContent = msg; }
+function setUmpire(msg) {
+    const el = document.getElementById('umpire-msg');
+    el.dataset.msg = msg;
+    const subMap = {
+        'チェンジコート':   '（次のゲームへボタンを押してください）',
+        'チェンジサービス': '（次のゲームへボタンを押してください）',
+    };
+    let sub = subMap[msg];
+    if (!sub && msg.startsWith('ゲームセット')) sub = '（試合終了ボタンを押してください）';
+    if (sub) {
+        el.innerHTML = msg + '<span class="umpire-sub">' + sub + '</span>';
+    } else {
+        el.textContent = msg;
+    }
+}
 
 // ══════════════════════════════════════════════════════════════
 // ■ ゲーム終了チェック
@@ -449,7 +464,7 @@ window.handleGameConfirm = function() {
         game_score_t1, game_score_t2, set_score_t1, set_score_t2,
         current_server, leftTeam,
         historyHTML: document.getElementById('game-history').innerHTML,
-        umpireMsg: document.getElementById('umpire-msg').textContent
+        umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
     });
 
     if (winner === 1) set_score_t1++;
@@ -659,7 +674,7 @@ function saveLocalState() {
             game_is_over,
             historyStack,
             historyHTML: document.getElementById('game-history')?.innerHTML || '',
-            umpireMsg:   document.getElementById('umpire-msg')?.textContent  || ''
+            umpireMsg:   document.getElementById('umpire-msg')?.dataset.msg  || ''
         }));
     } catch(e) {}
 }
