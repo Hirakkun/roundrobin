@@ -404,11 +404,34 @@ body {
   </div>
 
   <div class="card">
+    <div class="card-title"><span class="icon">🧑</span>個人から借りるもの</div>
+    <ul class="steps">
+      <li><span class="s-num">1</span><span>貸し出し用タブレット端末 <span class="charge-badge">👤 尾崎・山田・荒地</span></span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🏢</span>職場から借りるもの</div>
+    <ul class="steps">
+      <li><span class="s-num">1</span><span>プロジェクター一式 <span class="charge-badge">👤 荒地</span></span></li>
+    </ul>
+  </div>
+
+  <div class="card">
     <div class="card-title"><span class="icon">🎾</span>コート整備</div>
     <ul class="steps">
       <li><span class="s-num green">1</span><span>ネット張り</span></li>
       <li><span class="s-num green">2</span><span>審判台の設置</span></li>
       <li><span class="s-num green">3</span><span>ネット高さの確認・調整</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🖨️</span>印刷物</div>
+    <ul class="steps">
+      <li><span class="s-num">1</span><span>コート名</span></li>
+      <li><span class="s-num">2</span><span>案内パネルQR（本部用・審判台用）</span></li>
+      <li><span class="s-num">3</span><span>NFCカード（案内パネル）</span></li>
     </ul>
   </div>
 
