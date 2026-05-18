@@ -201,6 +201,19 @@ body.light #theme-thumb { left: 1.15em; }
         overflow-y: auto;       /* 溢れたらスクロール */
         /* flex:1 で残り高さ確保済み、スクロールはこの要素内で発生 */
     }
+    /* カード overflow:hidden を解除してコンテンツが切れないようにする */
+    .court-card.pc {
+        overflow: visible;
+    }
+    /* チームブロックを縦積みにして2人目が必ず表示されるようにする */
+    .pc-team1-block {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .pc-team2-block {
+        flex-direction: column;
+        align-items: flex-end;
+    }
 }
 
 /* ── コートカード（共通） ── */
