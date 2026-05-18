@@ -208,6 +208,18 @@ body {
   padding: .1em .5em; margin-left: .35em; text-decoration: none; vertical-align: middle;
 }
 .pdf-link:hover { background: #f8bbd0; }
+.doing-badge {
+  display: inline-flex; align-items: center; gap: .15em;
+  background: #fff8e1; color: #f57f17; border: 1.5px solid #ffe082;
+  border-radius: 999px; font-size: .7rem; font-weight: bold;
+  padding: .1em .55em; margin-left: .35em; vertical-align: middle; white-space: nowrap;
+}
+.date-badge {
+  display: inline-flex; align-items: center; gap: .15em;
+  background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9;
+  border-radius: 999px; font-size: .7rem; font-weight: bold;
+  padding: .1em .55em; margin-left: .35em; vertical-align: middle; white-space: nowrap;
+}
 
 /* ── 会場配置図 ── */
 .venue-map-wrap {
@@ -295,8 +307,8 @@ body {
   <div class="card">
     <div class="card-title"><span class="icon">📣</span>案内・申込受付</div>
     <ul class="steps">
-      <li><span class="s-num orange">1</span><span>LINEにて各クラブへ周知＆募集</span></li>
-      <li><span class="s-num orange">2</span><span>申込受付（メール返信）</span></li>
+      <li><span class="s-num orange">1</span><span>LINEにて各クラブへ周知＆募集 <span class="doing-badge">▶ 実施中</span></span></li>
+      <li><span class="s-num orange">2</span><span>申込受付（メール返信） <span class="doing-badge">▶ 実施中</span></span></li>
     </ul>
   </div>
 
@@ -304,12 +316,12 @@ body {
     <div class="card-title"><span class="icon">📝</span>大会準備</div>
     <ul class="steps">
       <li><span class="s-num green">☑</span><span>大会実施要項の作成 <span class="done-badge">☑ 済</span></span></li>
-      <li><span class="s-num orange">2</span><span>参加人数の確定</span></li>
-      <li><span class="s-num orange">3</span><span>使用コート数の確認</span></li>
-      <li><span class="s-num orange">4</span><span>予算案の作成</span></li>
+      <li><span class="s-num orange">2</span><span>参加人数の確定 <span class="date-badge">📅 5/27</span></span></li>
+      <li><span class="s-num green">☑</span><span>使用コート数の確認（5コート） <span class="done-badge">☑ 済</span></span></li>
+      <li><span class="s-num orange">4</span><span>予算案の確定 <span class="date-badge">📅 5/27</span></span></li>
       <li><span class="s-num green">☑</span><span>ボールの購入 <span class="done-badge">☑ 済</span></span></li>
-      <li><span class="s-num orange">6</span><span>参加賞・賞品の購入 <span class="charge-badge">👤 尾崎・山田</span></span></li>
-      <li><span class="s-num orange">7</span><span>各クラブとの打ち合わせ</span></li>
+      <li><span class="s-num orange">6</span><span>参加賞・賞品の購入 <span class="date-badge">📅 5/27以降</span> <span class="charge-badge">👤 尾崎・山田</span></span></li>
+      <li><span class="s-num orange">7</span><span>各クラブとの打ち合わせ <span class="doing-badge">▶ 実施中</span> <span class="charge-badge">👤 荒地</span></span></li>
     </ul>
   </div>
 </div>
