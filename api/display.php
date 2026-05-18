@@ -8,6 +8,9 @@ header('Content-Type: text/html; charset=UTF-8');
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>試合案内パネル</title>
 <style>
 /* ── CSS変数 ── */
@@ -71,6 +74,15 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
+/* 縦向きスマホ：bodyスクロール有効 */
+@media (orientation: portrait) {
+    body {
+        height: auto;
+        min-height: 100dvh;
+        overflow-y: auto;
+    }
+}
+
 /* ── レイアウト ── */
 #app {
     display: flex;
@@ -78,6 +90,14 @@ body {
     height: 100vh;
     padding: 0.3em;
     gap: 0.25em;
+}
+
+/* 縦向きスマホ：高さをコンテンツに任せる */
+@media (orientation: portrait) {
+    #app {
+        height: auto;
+        min-height: 100dvh;
+    }
 }
 
 /* ── ヘッダー ── */
@@ -159,6 +179,19 @@ body.light #theme-thumb { left: 1.15em; }
     color: var(--text-clock);
     font-variant-numeric: tabular-nums;
 }
+#fullscreen-btn {
+    background: none;
+    border: 1px solid var(--text-dim);
+    border-radius: 0.3em;
+    color: var(--text-dim);
+    font-size: 0.75em;
+    padding: 0.1em 0.4em;
+    cursor: pointer;
+    line-height: 1.4;
+    user-select: none;
+    flex-shrink: 0;
+}
+#fullscreen-btn:hover { border-color: var(--text-main); color: var(--text-main); }
 
 /* ── コートグリッド ── */
 #courts-grid {
@@ -192,14 +225,14 @@ body.light #theme-thumb { left: 1.15em; }
     /* cols-4/cols-6 は既に grid-template-rows: 1fr 1fr 定義済み */
 }
 
-/* ── 縦長：1列レイアウト・スクロール可能 ── */
+/* ── 縦長：1列レイアウト・bodyスクロール ── */
 @media (orientation: portrait) {
     #courts-grid {
         grid-template-columns: 1fr !important;
         grid-auto-rows: auto;   /* カードの自然な高さに任せる */
         align-content: start;   /* 上詰め */
-        overflow-y: auto;       /* 溢れたらスクロール */
-        /* flex:1 で残り高さ確保済み、スクロールはこの要素内で発生 */
+        overflow-y: visible;    /* bodyスクロールに任せる */
+        flex: none;             /* 高さを固定せずコンテンツ分だけ確保 */
     }
     /* カード overflow:hidden を解除してコンテンツが切れないようにする */
     .court-card.pc {
@@ -697,6 +730,7 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
                 <div id="theme-track"><div id="theme-thumb"></div></div>
                 <span class="theme-icon">☀️</span>
             </div>
+            <button id="fullscreen-btn" onclick="toggleFullscreen()" title="全画面切替">⛶</button>
             <div id="current-time">--:--</div>
         </div>
     </div>
@@ -756,6 +790,44 @@ window.toggleTheme = function() {
     const isLight = document.body.classList.toggle('light');
     localStorage.setItem('display_theme', isLight ? 'light' : 'dark');
 };
+
+// ── 全画面 ──
+function requestFS(el) {
+    if (el.requestFullscreen)            return el.requestFullscreen();
+    if (el.webkitRequestFullscreen)      return el.webkitRequestFullscreen();
+    if (el.mozRequestFullScreen)         return el.mozRequestFullScreen();
+    if (el.msRequestFullscreen)          return el.msRequestFullscreen();
+}
+function exitFS() {
+    if (document.exitFullscreen)         return document.exitFullscreen();
+    if (document.webkitExitFullscreen)   return document.webkitExitFullscreen();
+    if (document.mozCancelFullScreen)    return document.mozCancelFullScreen();
+    if (document.msExitFullscreen)       return document.msExitFullscreen();
+}
+function isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+              document.mozFullScreenElement || document.msFullscreenElement);
+}
+window.toggleFullscreen = function() {
+    if (isFullscreen()) { exitFS(); } else { requestFS(document.documentElement); }
+};
+// ボタンのアイコンを全画面状態に合わせて更新
+function updateFSBtn() {
+    const btn = document.getElementById('fullscreen-btn');
+    if (btn) btn.textContent = isFullscreen() ? '✕' : '⛶';
+}
+document.addEventListener('fullscreenchange', updateFSBtn);
+document.addEventListener('webkitfullscreenchange', updateFSBtn);
+
+// ページを開いた直後に全画面を試みる（ユーザージェスチャーが必要なためタッチで起動）
+let _autoFsTriggered = false;
+function _tryAutoFullscreen() {
+    if (_autoFsTriggered || isFullscreen()) return;
+    _autoFsTriggered = true;
+    requestFS(document.documentElement);
+}
+document.addEventListener('touchstart', _tryAutoFullscreen, { once: true });
+document.addEventListener('click',      _tryAutoFullscreen, { once: true });
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
