@@ -437,6 +437,14 @@ body {
   </div>
 
   <div class="card">
+    <div class="card-title"><span class="icon">🎒</span>準備物</div>
+    <ul class="steps">
+      <li><span class="s-num">1</span><span>番号札（養生テープ？）</span></li>
+      <li><span class="s-num">2</span><span>マジック</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
     <div class="card-title"><span class="icon">👥</span>役割分担</div>
     <ul class="steps">
       <li><span class="s-num">🎤</span><span>司会 <span class="charge-badge">👤 赤岡</span></span></li>
