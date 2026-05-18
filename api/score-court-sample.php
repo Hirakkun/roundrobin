@@ -551,7 +551,7 @@ function checkGameWinner() {
         setUmpire('ゲームセット ' + (leftTeam === 1 ? nextS1 : nextS2) + ' - ' + (leftTeam === 1 ? nextS2 : nextS1));
         document.getElementById('btn-end').style.display = 'block';
     } else if (total % 2 !== 0) {
-        setUmpire(courtChangeEnabled ? 'ゲーム、チェンジサイズ' : 'チェンジサービス');
+        setUmpire(courtChangeEnabled ? 'チェンジサイズ' : 'チェンジサービス');
         document.getElementById('btn-confirm').style.display = 'block';
     } else {
         setUmpire('チェンジサービス');
