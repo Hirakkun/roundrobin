@@ -188,6 +188,17 @@ body {
   .mockup-row .mockup-desc { flex: 1; padding-top: .5rem; }
 }
 
+/* ── 会場配置図 ── */
+.venue-map-wrap {
+  width: 100%; overflow-x: auto; margin: 1rem 0;
+  border-radius: .8rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.venue-map-wrap img {
+  display: block; width: 100%; min-width: 600px;
+  border-radius: .8rem; border: 2px solid #b0bec5;
+}
+
 /* ── URL タグ ── */
 .url-tag {
   display: inline-block; background: #212121; color: #90caf9;
@@ -228,6 +239,7 @@ body {
 
 <!-- 目次 -->
 <nav class="toc">
+  <a href="#venue-map"><span class="toc-num">📍</span>会場配置図</a>
   <a href="#step0"><span class="toc-num">準</span>開会前の準備</a>
   <a href="#step1"><span class="toc-num">1</span>案内パネル起動</a>
   <a href="#step2"><span class="toc-num">2</span>スコア入力開始</a>
@@ -306,6 +318,40 @@ body {
         <span>案内パネルが自動更新される</span>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     会場配置図
+═══════════════════════════ -->
+<div class="section" id="venue-map">
+  <div class="section-title">
+    <span class="step-num orange">📍</span>
+    会場配置図
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🏟️</span>八幡浜市民体育館 設営計画</div>
+    <div class="venue-map-wrap">
+      <img src="/images/venue-map.png" alt="会場配置図（八幡浜市民体育館）">
+    </div>
+    <ul class="steps" style="margin-top:1rem">
+      <li>
+        <span class="s-num">A</span>
+        <span><strong>コートA・C・E</strong>（上段3面）— 北側（2階観客席オレンジシート側）</span>
+      </li>
+      <li>
+        <span class="s-num">B</span>
+        <span><strong>コートB・D</strong>（下段2面）— 南側（2階観客席 手前）</span>
+      </li>
+      <li>
+        <span class="s-num orange">📋</span>
+        <span><strong>待機エリア</strong>（A〜E）— 各コート近くのベンチで次の試合まで待機</span>
+      </li>
+      <li>
+        <span class="s-num green">💻</span>
+        <span><strong>本部席</strong>（右側）— プロジェクター・100インチスクリーンで案内パネルを表示</span>
+      </li>
+    </ul>
   </div>
 </div>
 
