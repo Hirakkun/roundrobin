@@ -318,8 +318,8 @@ body {
       <li><span class="s-num green">☑</span><span>大会実施要項の作成 <span class="done-badge">☑ 済</span></span></li>
       <li><span class="s-num orange">2</span><span>参加人数の確定 <span class="date-badge">📅 5/27</span></span></li>
       <li><span class="s-num green">☑</span><span>使用コート数の確認（5コート） <span class="done-badge">☑ 済</span></span></li>
-      <li><span class="s-num orange">4</span><span>予算案の確定 <span class="date-badge">📅 5/27</span></span></li>
-      <li><span class="s-num green">☑</span><span>ボールの購入 <span class="done-badge">☑ 済</span></span></li>
+      <li><span class="s-num orange">4</span><span>予算案の確定 <span class="date-badge">📅 5/27</span> <a href="https://arechi.net/spbt/20260607/yosan.html" target="_blank" class="pdf-link">📊 予算案</a></span></li>
+      <li><span class="s-num green">☑</span><span>ボールの購入 <span class="done-badge">☑ 済</span> <span class="charge-badge">👤 山田</span></span></li>
       <li><span class="s-num orange">6</span><span>参加賞・賞品の購入 <span class="date-badge">📅 5/27以降</span> <span class="charge-badge">👤 尾崎・山田</span></span></li>
       <li><span class="s-num orange">7</span><span>各クラブとの打ち合わせ <span class="doing-badge">▶ 実施中</span> <span class="charge-badge">👤 荒地</span></span></li>
     </ul>
@@ -390,8 +390,7 @@ body {
       <li><span class="s-num">🎤</span><span>司会 <span class="charge-badge">👤 赤岡</span></span></li>
       <li><span class="s-num">🏸</span><span>コート設営 <span class="charge-badge">👤 木村・赤岡・長山・松田</span></span></li>
       <li><span class="s-num">🙋</span><span>受付（参加料の受領・ペア受付） <span class="charge-badge">👤 尾崎・本多・荒地</span> <span class="charge-badge">💰 山田（会計）</span></span></li>
-      <li><span class="s-num">📢</span><span>ルール説明 <span class="charge-badge">👤 木村</span></span></li>
-      <li><span class="s-num">💻</span><span>システム説明 <span class="charge-badge">👤 荒地</span></span></li>
+      <li><span class="s-num">📢</span><span>ルール説明 <span class="charge-badge">👤 荒地</span></span></li>
     </ul>
   </div>
 </div>
