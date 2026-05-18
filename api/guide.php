@@ -273,78 +273,6 @@ body {
 </nav>
 
 <!-- ═══════════════════════════
-     全体フロー
-═══════════════════════════ -->
-<div class="section">
-  <div class="section-title">
-    <span>📋 当日の流れ（全体像）</span>
-  </div>
-  <div class="flow-diagram">
-    <div class="flow-step gray">
-      <span class="flow-icon">🖥️</span>
-      <div class="flow-text">
-        <strong>案内パネルを大型画面に表示</strong>
-        <span>スタッフがPCで <strong>案内パネル</strong> を開く</span>
-      </div>
-      <span class="role-badge staff">👤 スタッフ</span>
-    </div>
-    <div class="flow-arrow">↓</div>
-    <div class="flow-step blue">
-      <span class="flow-icon">📢</span>
-      <div class="flow-text">
-        <strong>試合コールを確認</strong>
-        <span>「呼び出し中」のコートに選手を誘導</span>
-      </div>
-      <span class="role-badge staff">👤 スタッフ</span>
-    </div>
-    <div class="flow-arrow">↓</div>
-    <div class="flow-step green">
-      <span class="flow-icon">📱</span>
-      <div class="flow-text">
-        <strong>主審がスコア入力を開始</strong>
-        <span>スマホで<strong>案内パネル</strong>を開く</span>
-      </div>
-      <span class="role-badge ref">🎾 主審</span>
-    </div>
-    <div class="flow-arrow">↓</div>
-    <div class="flow-step blue">
-      <span class="flow-icon">🎾</span>
-      <div class="flow-text">
-        <strong>① サーブ選択</strong>
-        <span>ジャンケン等で決まったサーブ側を選択</span>
-      </div>
-      <span class="role-badge ref">🎾 主審</span>
-    </div>
-    <div class="flow-arrow">↓</div>
-    <div class="flow-step blue">
-      <span class="flow-icon">⬅️➡️</span>
-      <div class="flow-text">
-        <strong>② コートサイド選択</strong>
-        <span>第1ゲームの自チームのコートサイドを選択</span>
-      </div>
-      <span class="role-badge ref">🎾 主審</span>
-    </div>
-    <div class="flow-arrow">↓</div>
-    <div class="flow-step green">
-      <span class="flow-icon">✍️</span>
-      <div class="flow-text">
-        <strong>③ スコア入力</strong>
-        <span>得点したチームのボタンをタップ</span>
-      </div>
-      <span class="role-badge ref">🎾 主審</span>
-    </div>
-    <div class="flow-arrow">↓</div>
-    <div class="flow-step gray">
-      <span class="flow-icon">🏆</span>
-      <div class="flow-text">
-        <strong>試合終了 → 次の試合へ</strong>
-        <span>案内パネルが自動更新される</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════
      事前準備の流れ
 ═══════════════════════════ -->
 <div class="section" id="prep-flow">
@@ -418,7 +346,7 @@ body {
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🎾</span>コート整備</div>
+    <div class="card-title"><span class="icon">🎾</span>コート整備 <span class="charge-badge">👤 木村・赤岡・長山・松田</span></div>
     <ul class="steps">
       <li><span class="s-num green">1</span><span>ネット張り</span></li>
       <li><span class="s-num green">2</span><span>審判台の設置</span></li>
@@ -427,7 +355,7 @@ body {
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🖨️</span>印刷物</div>
+    <div class="card-title"><span class="icon">🖨️</span>印刷物 <span class="charge-badge">👤 荒地</span></div>
     <ul class="steps">
       <li><span class="s-num">1</span><span>コート名</span></li>
       <li><span class="s-num">2</span><span>案内パネルQR（本部用・審判台用）</span></li>
@@ -437,7 +365,7 @@ body {
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🎒</span>準備物</div>
+    <div class="card-title"><span class="icon">🎒</span>準備物 <span class="charge-badge">👤 荒地</span></div>
     <ul class="steps">
       <li><span class="s-num">1</span><span>番号札（養生テープ？）</span></li>
       <li><span class="s-num">2</span><span>マジック</span></li>
@@ -546,6 +474,78 @@ body {
   <div class="note info">
     <span class="note-icon">💡</span>
     <span>各ページは<strong>インターネット接続が必要</strong>です。会場のWi-Fiを全スタッフが確実に使えるか確認してください。</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     全体フロー
+═══════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span>📋 当日の流れ（全体像）</span>
+  </div>
+  <div class="flow-diagram">
+    <div class="flow-step gray">
+      <span class="flow-icon">🖥️</span>
+      <div class="flow-text">
+        <strong>案内パネルを大型画面に表示</strong>
+        <span>スタッフがPCで <strong>案内パネル</strong> を開く</span>
+      </div>
+      <span class="role-badge staff">👤 スタッフ</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step blue">
+      <span class="flow-icon">📢</span>
+      <div class="flow-text">
+        <strong>試合コールを確認</strong>
+        <span>「呼び出し中」のコートに選手を誘導</span>
+      </div>
+      <span class="role-badge staff">👤 スタッフ</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step green">
+      <span class="flow-icon">📱</span>
+      <div class="flow-text">
+        <strong>主審がスコア入力を開始</strong>
+        <span>スマホで<strong>案内パネル</strong>を開く</span>
+      </div>
+      <span class="role-badge ref">🎾 主審</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step blue">
+      <span class="flow-icon">🎾</span>
+      <div class="flow-text">
+        <strong>① サーブ選択</strong>
+        <span>ジャンケン等で決まったサーブ側を選択</span>
+      </div>
+      <span class="role-badge ref">🎾 主審</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step blue">
+      <span class="flow-icon">⬅️➡️</span>
+      <div class="flow-text">
+        <strong>② コートサイド選択</strong>
+        <span>第1ゲームの自チームのコートサイドを選択</span>
+      </div>
+      <span class="role-badge ref">🎾 主審</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step green">
+      <span class="flow-icon">✍️</span>
+      <div class="flow-text">
+        <strong>③ スコア入力</strong>
+        <span>得点したチームのボタンをタップ</span>
+      </div>
+      <span class="role-badge ref">🎾 主審</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step gray">
+      <span class="flow-icon">🏆</span>
+      <div class="flow-text">
+        <strong>試合終了 → 次の試合へ</strong>
+        <span>案内パネルが自動更新される</span>
+      </div>
+    </div>
   </div>
 </div>
 
