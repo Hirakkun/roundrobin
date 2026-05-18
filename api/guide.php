@@ -188,6 +188,27 @@ body {
   .mockup-row .mockup-desc { flex: 1; padding-top: .5rem; }
 }
 
+/* ── 済バッジ・担当バッジ・PDFリンク ── */
+.done-badge {
+  display: inline-flex; align-items: center; gap: .15em;
+  background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7;
+  border-radius: 999px; font-size: .7rem; font-weight: bold;
+  padding: .1em .55em; margin-left: .35em; vertical-align: middle; white-space: nowrap;
+}
+.charge-badge {
+  display: inline-flex; align-items: center;
+  background: #e8eaf6; color: #3949ab; border: 1.5px solid #9fa8da;
+  border-radius: 999px; font-size: .7rem; font-weight: bold;
+  padding: .1em .55em; margin-left: .35em; vertical-align: middle; white-space: nowrap;
+}
+.pdf-link {
+  display: inline-flex; align-items: center; gap: .2em;
+  background: #fce4ec; color: #c62828; border: 1.5px solid #ef9a9a;
+  border-radius: .4em; font-size: .72rem; font-weight: bold;
+  padding: .1em .5em; margin-left: .35em; text-decoration: none; vertical-align: middle;
+}
+.pdf-link:hover { background: #f8bbd0; }
+
 /* ── 会場配置図 ── */
 .venue-map-wrap {
   width: 100%; overflow-x: auto; margin: 1rem 0;
@@ -335,11 +356,11 @@ body {
   <div class="card">
     <div class="card-title"><span class="icon">💡</span>立案</div>
     <ul class="steps">
-      <li><span class="s-num orange">1</span><span>開催日の決定</span></li>
-      <li><span class="s-num orange">2</span><span>大会形式の決定（ゲーム数・コート数・ルール等）</span></li>
-      <li><span class="s-num orange">3</span><span>参加料の設定</span></li>
-      <li><span class="s-num orange">4</span><span>申込方法の決定（メール・LINE等）</span></li>
-      <li><span class="s-num orange">5</span><span>申込受付期間の設定</span></li>
+      <li><span class="s-num green">☑</span><span>開催日の決定 <span class="done-badge">☑ 済</span></span></li>
+      <li><span class="s-num green">☑</span><span>大会形式の決定（ゲーム数・コート数・ルール等） <span class="done-badge">☑ 済</span> <a href="/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89/%E5%85%AB%E5%B9%A1%E6%B5%9C%E3%83%86%E3%83%8B%E3%82%B9%E4%BA%A4%E6%B5%81%E4%BC%9A%20%E9%96%8B%E5%82%AC%E8%A6%81%E9%A0%85.pdf" target="_blank" class="pdf-link">📄 開催要項PDF</a></span></li>
+      <li><span class="s-num green">☑</span><span>参加料の設定 <span class="done-badge">☑ 済</span></span></li>
+      <li><span class="s-num green">☑</span><span>申込方法の決定（メール・LINE等） <span class="done-badge">☑ 済</span></span></li>
+      <li><span class="s-num green">☑</span><span>申込受付期間の設定（5/27まで） <span class="done-badge">☑ 済</span></span></li>
     </ul>
   </div>
 
@@ -354,12 +375,12 @@ body {
   <div class="card">
     <div class="card-title"><span class="icon">📝</span>大会準備</div>
     <ul class="steps">
-      <li><span class="s-num orange">1</span><span>大会実施要項の作成</span></li>
+      <li><span class="s-num green">☑</span><span>大会実施要項の作成 <span class="done-badge">☑ 済</span></span></li>
       <li><span class="s-num orange">2</span><span>参加人数の確定</span></li>
-      <li><span class="s-num orange">3</span><span>使用コート数の確定</span></li>
+      <li><span class="s-num orange">3</span><span>使用コート数の確認</span></li>
       <li><span class="s-num orange">4</span><span>予算案の作成</span></li>
-      <li><span class="s-num orange">5</span><span>ボールの購入</span></li>
-      <li><span class="s-num orange">6</span><span>参加賞・賞品の購入</span></li>
+      <li><span class="s-num green">☑</span><span>ボールの購入 <span class="done-badge">☑ 済</span></span></li>
+      <li><span class="s-num orange">6</span><span>参加賞・賞品の購入 <span class="charge-badge">👤 尾崎・山田</span></span></li>
       <li><span class="s-num orange">7</span><span>各クラブとの打ち合わせ</span></li>
     </ul>
   </div>
@@ -377,8 +398,8 @@ body {
   <div class="card">
     <div class="card-title"><span class="icon">🏛️</span>体育館から借りるもの</div>
     <ul class="steps">
-      <li><span class="s-num">1</span><span>放送設備（マイク・スピーカー等）</span></li>
-      <li><span class="s-num">2</span><span>電源リール</span></li>
+      <li><span class="s-num">1</span><span>放送設備（マイク・スピーカー等） <span class="charge-badge">👤 荒地</span></span></li>
+      <li><span class="s-num">2</span><span>電源リール <span class="charge-badge">👤 荒地</span></span></li>
     </ul>
   </div>
 
