@@ -172,6 +172,12 @@ header('Content-Type: text/html; charset=UTF-8');
         .score-button.p2 { background: #2e7d32; color: #fff; }
         .score-button:disabled { background: #ccc; cursor: not-allowed; }
 
+        /* ── ダブルタップ・誤操作防止 ── */
+        .score-button, .score-point, .action-button,
+        .role-button.undo, .setup-btn, .court-half, .done-next-btn {
+            touch-action: manipulation;
+        }
+
         /* 審判コール */
         .umpire-call-area {
             position: relative; font-size: 1.15em; font-weight: bold; color: #333;
@@ -472,6 +478,19 @@ function toggleTheme() {
     const isDark = document.body.classList.toggle('dark');
     localStorage.setItem('sc_theme', isDark ? 'dark' : 'light');
 }
+
+// ── ② グローバルダブルタップ検出（500ms以内の2回目タップを無視） ──
+(function() {
+    var _lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+        var now = Date.now();
+        if (now - _lastTap < 500) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        _lastTap = now;
+    }, { passive: false });
+})();
 </script>
 
 <script type="module">
@@ -863,9 +882,15 @@ function showMain() {
     updateDisplay();
 }
 
+// ── ③ ポイントボタンdebounce（500ms以内の連打を無視） ──────────
+let _pointDebouncing = false;
+
 // ── ポイント追加 ──────────────────────────────────────────────
 window.addPoint = function(side) {
     if (game_is_over) return;
+    if (_pointDebouncing) return;
+    _pointDebouncing = true;
+    setTimeout(() => { _pointDebouncing = false; }, 500);
     // side='left' or 'right' → team
     const winner = side === 'left' ? leftTeam : (3 - leftTeam);
 
@@ -1066,6 +1091,10 @@ window.handleMatchEnd = async function() {
 
 // ── 取消 ──────────────────────────────────────────────────────
 window.undoLastPoint = function() {
+    // ④ 戻るボタン確認ダイアログ
+    const msg = historyStack.length === 0 ? 'サーブ選択に戻りますか？' : '1点取り消しますか？';
+    if (!confirm(msg)) return;
+
     if (historyStack.length === 0) {
         // 0-0 の状態 → サーブ選択画面に戻る
         matchStarted = false;

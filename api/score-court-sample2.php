@@ -68,6 +68,12 @@ header('Content-Type: text/html; charset=UTF-8');
         .score-button.p2 { background: #2e7d32; color: #fff; }
         .score-button:disabled { background: #ccc; cursor: not-allowed; }
 
+        /* ── ダブルタップ・誤操作防止 ── */
+        .score-button, .score-point, .action-button,
+        .role-button.undo, .done-next-btn {
+            touch-action: manipulation;
+        }
+
         .umpire-call-area { position: relative; font-size: 1.15em; font-weight: bold; color: #333; padding: 0.5em 0.7em; min-height: 1.4em; background: #e9f5ff; border: 2px solid #aed9f7; border-radius: 0.5em; margin: 0.45em; flex-shrink: 0; }
         .umpire-call-area::after { content: ''; position: absolute; bottom: -0.6em; left: 50%; transform: translateX(-50%); border-width: 0.6em 0.6em 0; border-style: solid; border-color: #e9f5ff transparent transparent; z-index: 1; }
 
@@ -209,6 +215,21 @@ header('Content-Type: text/html; charset=UTF-8');
 </div>
 
 <script>
+// ── ② グローバルダブルタップ検出（500ms以内の2回目タップを無視） ──
+(function() {
+    var _lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+        var now = Date.now();
+        if (now - _lastTap < 500) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        _lastTap = now;
+    }, { passive: false });
+})();
+</script>
+
+<script>
 'use strict';
 
 // ══════════════════════════════════════════════════════════════
@@ -331,10 +352,18 @@ function renderName(p) {
 function teamNamesToText(team) { return team.map(p => p.name).join(' / '); }
 
 // ══════════════════════════════════════════════════════════════
+// ■ ③ ポイントボタンdebounce（500ms以内の連打を無視）
+// ══════════════════════════════════════════════════════════════
+let _pointDebouncing = false;
+
+// ══════════════════════════════════════════════════════════════
 // ■ ポイント追加
 // ══════════════════════════════════════════════════════════════
 window.addPoint = function(side) {
     if (game_is_over) return;
+    if (_pointDebouncing) return;
+    _pointDebouncing = true;
+    setTimeout(() => { _pointDebouncing = false; }, 500);
     const winner = side === 'left' ? leftTeam : (3 - leftTeam);
 
     historyStack.push({
@@ -503,6 +532,10 @@ window.doneNext = function() {
 // ■ 戻る（undo）
 // ══════════════════════════════════════════════════════════════
 window.undoLastPoint = function() {
+    // ④ 戻るボタン確認ダイアログ
+    const msg = historyStack.length === 0 ? '引き継ぎ初期状態に戻しますか？' : '1点取り消しますか？';
+    if (!confirm(msg)) return;
+
     if (game_is_over) {
         game_is_over = false;
         togglePointButtons(false);
