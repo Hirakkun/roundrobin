@@ -239,6 +239,8 @@ body {
 
 <!-- 目次 -->
 <nav class="toc">
+  <a href="#prep-flow"><span class="toc-num">📋</span>事前準備の流れ</a>
+  <a href="#matchday"><span class="toc-num">🏟</span>試合当日の準備</a>
   <a href="#venue-map"><span class="toc-num">📍</span>会場配置図</a>
   <a href="#step0"><span class="toc-num">準</span>開会前の準備</a>
   <a href="#step1"><span class="toc-num">1</span>案内パネル起動</a>
@@ -318,6 +320,83 @@ body {
         <span>案内パネルが自動更新される</span>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     事前準備の流れ
+═══════════════════════════ -->
+<div class="section" id="prep-flow">
+  <div class="section-title">
+    <span class="step-num orange">📋</span>
+    事前準備の流れ
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">💡</span>立案</div>
+    <ul class="steps">
+      <li><span class="s-num orange">1</span><span>開催日の決定</span></li>
+      <li><span class="s-num orange">2</span><span>大会形式の決定（ゲーム数・コート数・ルール等）</span></li>
+      <li><span class="s-num orange">3</span><span>参加料の設定</span></li>
+      <li><span class="s-num orange">4</span><span>申込方法の決定（メール・LINE等）</span></li>
+      <li><span class="s-num orange">5</span><span>申込受付期間の設定</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📣</span>案内・申込受付</div>
+    <ul class="steps">
+      <li><span class="s-num orange">1</span><span>LINEにて各クラブへ周知＆募集</span></li>
+      <li><span class="s-num orange">2</span><span>申込受付（メール返信）</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📝</span>大会準備</div>
+    <ul class="steps">
+      <li><span class="s-num orange">1</span><span>大会実施要項の作成</span></li>
+      <li><span class="s-num orange">2</span><span>参加人数の確定</span></li>
+      <li><span class="s-num orange">3</span><span>使用コート数の確定</span></li>
+      <li><span class="s-num orange">4</span><span>予算案の作成</span></li>
+      <li><span class="s-num orange">5</span><span>ボールの購入</span></li>
+      <li><span class="s-num orange">6</span><span>参加賞・賞品の購入</span></li>
+      <li><span class="s-num orange">7</span><span>各クラブとの打ち合わせ</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     試合当日の準備
+═══════════════════════════ -->
+<div class="section" id="matchday">
+  <div class="section-title">
+    <span class="step-num orange">🏟</span>
+    試合当日の準備
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🏛️</span>体育館から借りるもの</div>
+    <ul class="steps">
+      <li><span class="s-num">1</span><span>放送設備（マイク・スピーカー等）</span></li>
+      <li><span class="s-num">2</span><span>電源リール</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🎾</span>コート整備</div>
+    <ul class="steps">
+      <li><span class="s-num green">1</span><span>ネット張り</span></li>
+      <li><span class="s-num green">2</span><span>審判台の設置</span></li>
+      <li><span class="s-num green">3</span><span>ネット高さの確認・調整</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🙋</span>受付</div>
+    <ul class="steps">
+      <li><span class="s-num">1</span><span>参加料の受領</span></li>
+      <li><span class="s-num">2</span><span>ペア受付（ペア変更があれば管理画面で設定）</span></li>
+    </ul>
   </div>
 </div>
 
