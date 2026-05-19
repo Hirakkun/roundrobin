@@ -2307,63 +2307,66 @@ function findBestCourtGroups(ids, courtCount) {
     // 固定ペアがidsに含まれるものを取得
     const activeFP = getFixedPairs().filter(fp => ids.includes(fp[0]) && ids.includes(fp[1]));
 
+    // 探索ノード数の上限（人数に応じて調整: 多人数ほど小さく）
+    // 20人5コートの理論上限は約25億 → 上限を設けてフリーズを防ぐ
+    const MAX_NODES = Math.max(2000, Math.min(8000, 120000 / Math.pow(ids.length, 1.5)));
+    let nodeCount = 0;
+
+    function evalScore(groups) {
+        for (const fp of activeFP) {
+            if (!groups.some(g => g.includes(fp[0]) && g.includes(fp[1]))) return Infinity;
+        }
+        const muScore = groups.reduce((s, g) => {
+            const mus = g.map(i => state.tsMap[i]?.mu || 25);
+            return s + (Math.max(...mus) - Math.min(...mus)) / totalMuRange;
+        }, 0);
+        const pairWeight = 1.0 + maxPair * 0.5;
+        const pairScore = groups.reduce((s, g) => {
+            let ps = 0;
+            for (let i = 0; i < g.length; i++)
+                for (let j = i+1; j < g.length; j++)
+                    ps += state.pairMatrix[g[i]]?.[g[j]] || 0;
+            return s + ps;
+        }, 0);
+        const oppScore = groups.reduce((s, g) => {
+            let os = 0;
+            for (let i = 0; i < g.length; i++)
+                for (let j = i+1; j < g.length; j++)
+                    os += state.oppMatrix[g[i]]?.[g[j]] || 0;
+            return s + os;
+        }, 0);
+        const coQuadScore = groups.reduce((s, g) => {
+            let cs = 0;
+            for (let i = 0; i < g.length; i++)
+                for (let j = i + 1; j < g.length; j++) {
+                    const co = (state.pairMatrix[g[i]]?.[g[j]] || 0)
+                             + (state.oppMatrix[g[i]]?.[g[j]] || 0);
+                    cs += co * co * 0.1;
+                    if (co === 0) cs -= 0.15;
+                }
+            return s + cs;
+        }, 0);
+        return muScore * 10 + pairScore * pairWeight + oppScore * 0.5 + coQuadScore;
+    }
+
     function bt(remaining, groups) {
+        if (nodeCount >= MAX_NODES) return; // ノード上限 → 打ち切り（bestを返す）
         if (remaining.length === 0) {
-            // 固定ペアが同じグループに入っているか検証
-            for (const fp of activeFP) {
-                const inSame = groups.some(g => g.includes(fp[0]) && g.includes(fp[1]));
-                if (!inSame) return; // 違反 → この解を棄却
-            }
-            const muScore = groups.reduce((s, g) => {
-                const mus = g.map(i => state.tsMap[i]?.mu || 25);
-                return s + (Math.max(...mus) - Math.min(...mus)) / totalMuRange;
-            }, 0);
-            const pairWeight = 1.0 + maxPair * 0.5;
-            const pairScore = groups.reduce((s, g) => {
-                let ps = 0;
-                for (let i = 0; i < g.length; i++)
-                    for (let j = i+1; j < g.length; j++)
-                        ps += state.pairMatrix[g[i]]?.[g[j]] || 0;
-                return s + ps;
-            }, 0);
-            const oppScore = groups.reduce((s, g) => {
-                let os = 0;
-                for (let i = 0; i < g.length; i++)
-                    for (let j = i+1; j < g.length; j++)
-                        os += state.oppMatrix[g[i]]?.[g[j]] || 0;
-                return s + os;
-            }, 0);
-            // 同コート共演回数の2乗ペナルティ＋初対面ボーナス（コート内全6ペア）
-            // muScore優先を壊さない小係数（μ差0.3 → 3.0 vs co=2全6ペア → 2.4）
-            const coQuadScore = groups.reduce((s, g) => {
-                let cs = 0;
-                for (let i = 0; i < g.length; i++)
-                    for (let j = i + 1; j < g.length; j++) {
-                        const co = (state.pairMatrix[g[i]]?.[g[j]] || 0)
-                                 + (state.oppMatrix[g[i]]?.[g[j]] || 0);
-                        cs += co * co * 0.1;   // 1回:0.1, 2回:0.4, 3回:0.9
-                        if (co === 0) cs -= 0.15; // 初対面ボーナス
-                    }
-                return s + cs;
-            }, 0);
-            const score = muScore * 10 + pairScore * pairWeight + oppScore * 0.5 + coQuadScore;
+            nodeCount++;
+            const score = evalScore(groups);
             if (score < bestScore) { bestScore = score; best = groups.map(g => [...g]); }
-            // 早期終了: coQuadScoreが負になりうるため閾値を-5に設定
-            // （μ完全一致＋全ペア初対面でも-2.7程度止まりのため-5は安全圏）
-            if (bestScore < -5) return;
+            if (bestScore < -5) nodeCount = MAX_NODES; // 早期終了確定
             return;
         }
 
         const first = remaining[0];
         const rest = remaining.slice(1);
 
-        // firstが固定ペアの一方なら、相方を必ずtrioに含める
         const fpPartner = activeFP.find(fp => fp[0] === first || fp[1] === first);
         const mustInclude = fpPartner ? (fpPartner[0] === first ? fpPartner[1] : fpPartner[0]) : null;
 
         let combos;
         if (mustInclude != null && rest.includes(mustInclude)) {
-            // mustInclude を必ず含む3人の組み合わせを生成
             const others = rest.filter(x => x !== mustInclude);
             combos = getCombinations(others, 2).map(c => [mustInclude, ...c]);
         } else {
@@ -2381,16 +2384,26 @@ function findBestCourtGroups(ids, courtCount) {
         });
 
         for (const trio of combos) {
+            if (nodeCount >= MAX_NODES) return;
             const group = [first, ...trio];
             const newRemaining = rest.filter(x => !trio.includes(x));
             bt(newRemaining, [...groups, group]);
-            if (bestScore < -5) return; // -5以下で最適解確定（0.01より安全な閾値）
         }
     }
 
-    // 起点をシャッフルして毎回異なる探索順にする
-    const shuffled = shuffle([...sorted]);
-    bt(shuffled, []);
+    // ① まず連続4人ずつのグリーディ解を初期ベストとして登録（最初の1解を高速確定）
+    const greedyGroups = [];
+    for (let i = 0; i < sorted.length; i += 4) greedyGroups.push(sorted.slice(i, i + 4));
+    const greedyScore = evalScore(greedyGroups);
+    if (greedyScore < Infinity) { best = greedyGroups.map(g => [...g]); bestScore = greedyScore; }
+
+    // ② ソート順を少しシャッフルして探索多様性を確保（完全ランダムではなく局所シャッフル）
+    const startOrder = [...sorted];
+    // 隣接する選手を確率的に入れ替えて初期探索順に揺らぎを持たせる
+    for (let i = 0; i < startOrder.length - 1; i++) {
+        if (Math.random() < 0.3) { [startOrder[i], startOrder[i+1]] = [startOrder[i+1], startOrder[i]]; }
+    }
+    bt(startOrder, []);
     return best;
 }
 
