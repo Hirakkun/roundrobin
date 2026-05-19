@@ -2274,13 +2274,16 @@ function generateCourtsRating(ids) {
     if (muRange < 1.0) {
         // μ差が小さい→ランダムロジックで重複回避を優先
         const pairs = makePairsRandom(ids);
-        if (!pairs) return null;
-        return assignCourtsRandom(pairs);
+        if (pairs && pairs.length > 0) {
+            const courts = assignCourtsRandom(pairs);
+            if (courts && courts.length > 0) return courts;
+        }
+        // フォールバック: assignCourtsRandom が空を返した場合も findBestCourtGroups で対処
     }
 
     // ② μ値が近い4人を1コートグループとして抽出
     const bestGroups = findBestCourtGroups(ids, courtCount);
-    if (!bestGroups) return null;
+    if (!bestGroups || bestGroups.length === 0) return null;
 
     // 各グループ内で ③チーム均衡ペア + ④対戦履歴回避
     const courts = bestGroups.map(group => makeBestPairInGroup(group));
@@ -3053,10 +3056,22 @@ function _saveStateNow() {
 // isOnCourt を現在のスケジュールから再計算
 function _recalcIsOnCourt() {
     state.players.forEach(p => { p.isOnCourt = false; });
-    state.schedule.forEach(rd => {
-        rd.courts.forEach((ct, ci) => {
-            const sc = state.scores[`r${rd.round}c${ci}`];
-            // done=true のコートのみ終了済み。試合中（得点 > 0 の playing 状態）も isOnCourt=true にする。
+
+    if (state.seqMatch) {
+        // 順次モード: 物理コートごとに最新（ラウンド番号が最大）の未終了試合のみを isOnCourt=true にする
+        // 古いラウンドの未スコア試合が残っていても二重カウントしない
+        const latestByPhys = {}; // physIdx -> { round, courtObj }
+        state.schedule.forEach(rd => {
+            rd.courts.forEach((ct, ci) => {
+                const physIdx = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+                const existing = latestByPhys[physIdx];
+                if (!existing || rd.round > existing.round) {
+                    latestByPhys[physIdx] = { round: rd.round, ci, ct };
+                }
+            });
+        });
+        Object.values(latestByPhys).forEach(({ round, ci, ct }) => {
+            const sc = state.scores[`r${round}c${ci}`];
             if (!sc?.done) {
                 [...ct.team1, ...ct.team2].forEach(id => {
                     const p = state.players.find(pp => pp.id === id);
@@ -3064,7 +3079,20 @@ function _recalcIsOnCourt() {
                 });
             }
         });
-    });
+    } else {
+        // 一括モード: 全ラウンドの非終了コートを isOnCourt=true
+        state.schedule.forEach(rd => {
+            rd.courts.forEach((ct, ci) => {
+                const sc = state.scores[`r${rd.round}c${ci}`];
+                if (!sc?.done) {
+                    [...ct.team1, ...ct.team2].forEach(id => {
+                        const p = state.players.find(pp => pp.id === id);
+                        if (p) p.isOnCourt = true;
+                    });
+                }
+            });
+        });
+    }
 }
 
 // 自動組合せUIの状態更新
@@ -3372,13 +3400,29 @@ function updatePoolStatus() {
     if (!bar) return;
     if (state.seqMatch) {
         bar.style.display = '';
-        bar.textContent = `🗂 プール: ${state.matchPool.length} 試合待機中`;
+        const avail = state.players.filter(p => !p.resting && !p.isOnCourt).length;
+        const resetBtn = `<button onclick="resetPoolAndRegen()" style="margin-left:8px;padding:2px 8px;font-size:0.75rem;background:#546e7a;color:#fff;border:none;border-radius:4px;cursor:pointer;">🔄 プール再生成</button>`;
+        bar.innerHTML = `🗂 プール: ${state.matchPool.length} 試合待機中（待機中: ${avail}人）${resetBtn}`;
     } else if (state.autoMatch) {
         bar.style.display = '';
         bar.textContent = '⚡ 自動組合せ: 全コート終了で次のラウンドを自動生成';
     } else {
         bar.style.display = 'none';
     }
+}
+
+// プールを強制リセット→isOnCourt再計算→再生成
+function resetPoolAndRegen() {
+    _recalcIsOnCourt();
+    state.matchPool = [];
+    if (generatePoolBatch()) {
+        saveState();
+        showToast('✅ プールを再生成しました');
+    } else {
+        const avail = state.players.filter(p => !p.resting && !p.isOnCourt).length;
+        showToast(`⚠️ プール再生成失敗: 利用可能 ${avail}人`);
+    }
+    updatePoolStatus();
 }
 
 // コート終了ボタン（自動ON共通）
@@ -3558,7 +3602,10 @@ function generatePoolBatch() {
     };
 
     const active = state.players.filter(p => !p.resting);
-    if (active.length < 4) { restore(); return false; }
+    if (active.length < 4) {
+        console.warn('[generatePoolBatch] active < 4:', active.length, 'tempResting:', tempResting.length);
+        restore(); return false;
+    }
 
     // 生成前: プール内試合を一時的に matrix に加算（生成品質向上）
     applyPoolToMatrix(+1);
@@ -3568,7 +3615,11 @@ function generatePoolBatch() {
     try {
         if (state.matchingRule === 'rating') {
             const ids = selectRoundPlayers();
-            if (!ids || ids.length < 4) { restore(); return false; }
+            if (!ids || ids.length < 4) {
+                console.warn('[generatePoolBatch] selectRoundPlayers < 4:', ids?.length,
+                    'active:', active.length, 'tempResting:', tempResting.length);
+                restore(); return false;
+            }
             courts = generateCourtsRating(ids);
             if (!courts) { restore(); return false; }
         } else if (state.matchingRule === 'balance') {
@@ -3588,7 +3639,10 @@ function generatePoolBatch() {
 
     // 生成後: 一時加算を元に戻す（restore で処理）
     restore();
-    if (!courts || courts.length === 0) return false;
+    if (!courts || courts.length === 0) {
+        console.warn('[generatePoolBatch] courts empty after generation, matchingRule:', state.matchingRule);
+        return false;
+    }
 
     const courtsFormatted = courts.map(([t1, t2]) => ({ team1: t1, team2: t2 }));
 
@@ -3655,8 +3709,14 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     // プールが空なら補充
     if (state.matchPool.length === 0) {
         if (!generatePoolBatch()) {
-            showToast('⚠️ 次の組合せの生成に失敗しました');
-            return;
+            // 1回目失敗: isOnCourt を再計算してリトライ（stale フラグ対策）
+            _recalcIsOnCourt();
+            if (!generatePoolBatch()) {
+                const avail = state.players.filter(p => !p.resting && !p.isOnCourt).length;
+                const need  = Math.min(state.players.filter(p => !p.resting).length, state.courts * 4);
+                showToast(`⚠️ 次の組合せの生成に失敗しました（利用可能: ${avail}人 / 必要: ${Math.floor(need/4)*4}人）`);
+                return;
+            }
         }
     }
     if (state.matchPool.length === 0) return;
