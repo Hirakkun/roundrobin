@@ -814,7 +814,13 @@ function isFullscreen() {
               document.mozFullScreenElement || document.msFullscreenElement);
 }
 window.toggleFullscreen = function() {
-    if (isFullscreen()) { exitFS(); } else { requestFS(document.documentElement); }
+    if (isFullscreen()) {
+        exitFS();
+        localStorage.setItem('fs_preferred', '0');
+    } else {
+        requestFS(document.documentElement);
+        localStorage.setItem('fs_preferred', '1');
+    }
 };
 // ボタンのアイコンを全画面状態に合わせて更新
 function updateFSBtn() {
@@ -824,10 +830,11 @@ function updateFSBtn() {
 document.addEventListener('fullscreenchange', updateFSBtn);
 document.addEventListener('webkitfullscreenchange', updateFSBtn);
 
-// ページを開いた直後に全画面を試みる（ユーザージェスチャーが必要なためタッチで起動）
+// fs_preferred=1 のときだけ初回タッチ/クリックで全画面に入る
 let _autoFsTriggered = false;
 function _tryAutoFullscreen() {
     if (_autoFsTriggered || isFullscreen()) return;
+    if (localStorage.getItem('fs_preferred') !== '1') return;
     _autoFsTriggered = true;
     requestFS(document.documentElement);
 }

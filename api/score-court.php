@@ -483,6 +483,29 @@ function toggleTheme() {
     localStorage.setItem('sc_theme', isDark ? 'dark' : 'light');
 }
 
+// ── 全画面引き継ぎ（display.phpで fs_preferred=1 が設定されていれば全画面に入る）──
+(function() {
+    function _reqFS(el) {
+        if (el.requestFullscreen)            return el.requestFullscreen();
+        if (el.webkitRequestFullscreen)      return el.webkitRequestFullscreen();
+        if (el.mozRequestFullScreen)         return el.mozRequestFullScreen();
+        if (el.msRequestFullscreen)          return el.msRequestFullscreen();
+    }
+    function _isFS() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+                  document.mozFullScreenElement || document.msFullscreenElement);
+    }
+    var triggered = false;
+    function tryFS() {
+        if (triggered || _isFS()) return;
+        if (localStorage.getItem('fs_preferred') !== '1') return;
+        triggered = true;
+        _reqFS(document.documentElement);
+    }
+    document.addEventListener('touchstart', tryFS, { once: true });
+    document.addEventListener('click',      tryFS, { once: true });
+})();
+
 // ── ② グローバルダブルタップ検出（500ms以内の2回目タップを無視） ──
 (function() {
     var _lastTap = 0;
