@@ -720,16 +720,10 @@ function onStateUpdate(state) {
         if (found) break;
     }
 
-    // 完了画面表示中 → 新しい試合が来たら移行、なければそのまま
+    // 完了画面表示中 → カウントダウン中は割り込みさせない
     if (document.getElementById('done-screen').style.display === 'flex') {
-        if (found && found.mid !== currentMid) {
-            if (!stayMode) {
-                // display.php から起動した場合は新試合が来てもここに留まらず案内パネルへ即移動
-                _clearDoneTimer();
-                location.href = '/display?sid=' + encodeURIComponent(sessionId);
-                return;
-            }
-            // stayMode（QR起動）: カウントダウン停止・完了画面を閉じて次試合へ
+        if (found && found.mid !== currentMid && stayMode) {
+            // stayMode（QR起動）のみ: 次試合が来たらカウントダウン停止・完了画面を閉じて移行
             _clearDoneTimer();
             document.getElementById('done-screen').style.display = 'none';
             currentMid = found.mid;
@@ -741,6 +735,7 @@ function onStateUpdate(state) {
             document.getElementById('hd-round').textContent = '第' + found.rd.round + '試合';
             resetMatch();
         }
+        // stayMode=false の場合はカウントダウン（または「次へ」ボタン）で doneNext() を待つ
         return;
     }
 
