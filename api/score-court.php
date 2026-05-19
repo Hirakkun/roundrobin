@@ -673,7 +673,13 @@ function onStateUpdate(state) {
     // 完了画面表示中 → 新しい試合が来たら移行、なければそのまま
     if (document.getElementById('done-screen').style.display === 'flex') {
         if (found && found.mid !== currentMid) {
-            // 新しい試合が割り当てられた → カウントダウン停止・完了画面を閉じてリセット
+            if (!stayMode) {
+                // display.php から起動した場合は新試合が来てもここに留まらず案内パネルへ即移動
+                _clearDoneTimer();
+                location.href = '/display?sid=' + encodeURIComponent(sessionId);
+                return;
+            }
+            // stayMode（QR起動）: カウントダウン停止・完了画面を閉じて次試合へ
             _clearDoneTimer();
             document.getElementById('done-screen').style.display = 'none';
             currentMid = found.mid;
