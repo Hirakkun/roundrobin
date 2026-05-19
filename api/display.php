@@ -830,16 +830,18 @@ function updateFSBtn() {
 document.addEventListener('fullscreenchange', updateFSBtn);
 document.addEventListener('webkitfullscreenchange', updateFSBtn);
 
-// fs_preferred=1 のときだけ初回タッチ/クリックで全画面に入る
+// fs_preferred=1 のとき、全画面ボタン以外の最初のタッチ/クリックで全画面に入る
+// ※全画面ボタン自体を除外しないと toggleFullscreen と競合して即解除されるバグが起きる
 let _autoFsTriggered = false;
-function _tryAutoFullscreen() {
+function _tryAutoFullscreen(e) {
+    if (e && e.target && e.target.closest('#fullscreen-btn')) return; // ボタンは除外
     if (_autoFsTriggered || isFullscreen()) return;
     if (localStorage.getItem('fs_preferred') !== '1') return;
     _autoFsTriggered = true;
     requestFS(document.documentElement);
 }
-document.addEventListener('touchstart', _tryAutoFullscreen, { once: true });
-document.addEventListener('click',      _tryAutoFullscreen, { once: true });
+document.addEventListener('touchstart', _tryAutoFullscreen);
+document.addEventListener('click',      _tryAutoFullscreen);
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);

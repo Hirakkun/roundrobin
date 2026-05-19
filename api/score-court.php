@@ -428,6 +428,10 @@ header('Content-Type: text/html; charset=UTF-8');
         <span class="court-name"  id="hd-court">-</span>
         <div style="display:flex; align-items:center; gap:0.5em;">
             <span class="games-badge" id="hd-games">3ゲームマッチ</span>
+            <button id="sc-fullscreen-btn" onclick="scToggleFullscreen()" title="全画面切替"
+                style="background:none;border:1px solid rgba(255,255,255,0.4);border-radius:0.3em;
+                       color:rgba(255,255,255,0.7);font-size:0.75em;padding:0.1em 0.4em;
+                       cursor:pointer;line-height:1.4;flex-shrink:0;">⛶</button>
             <div class="theme-toggle" onclick="toggleTheme()">
                 <span>🌙</span>
                 <div class="theme-track"><div class="theme-thumb"></div></div>
@@ -483,28 +487,51 @@ function toggleTheme() {
     localStorage.setItem('sc_theme', isDark ? 'dark' : 'light');
 }
 
-// ── 全画面引き継ぎ（display.phpで fs_preferred=1 が設定されていれば全画面に入る）──
-(function() {
-    function _reqFS(el) {
-        if (el.requestFullscreen)            return el.requestFullscreen();
-        if (el.webkitRequestFullscreen)      return el.webkitRequestFullscreen();
-        if (el.mozRequestFullScreen)         return el.mozRequestFullScreen();
-        if (el.msRequestFullscreen)          return el.msRequestFullscreen();
+// ── 全画面管理（display.php と共通設定 fs_preferred で引き継ぎ）──
+function _scReqFS(el) {
+    if (el.requestFullscreen)            return el.requestFullscreen();
+    if (el.webkitRequestFullscreen)      return el.webkitRequestFullscreen();
+    if (el.mozRequestFullScreen)         return el.mozRequestFullScreen();
+    if (el.msRequestFullscreen)          return el.msRequestFullscreen();
+}
+function _scExitFS() {
+    if (document.exitFullscreen)         return document.exitFullscreen();
+    if (document.webkitExitFullscreen)   return document.webkitExitFullscreen();
+    if (document.mozCancelFullScreen)    return document.mozCancelFullScreen();
+    if (document.msExitFullscreen)       return document.msExitFullscreen();
+}
+function _scIsFS() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+              document.mozFullScreenElement || document.msFullscreenElement);
+}
+function _scUpdateFSBtn() {
+    const btn = document.getElementById('sc-fullscreen-btn');
+    if (btn) btn.textContent = _scIsFS() ? '✕' : '⛶';
+}
+document.addEventListener('fullscreenchange', _scUpdateFSBtn);
+document.addEventListener('webkitfullscreenchange', _scUpdateFSBtn);
+
+window.scToggleFullscreen = function() {
+    if (_scIsFS()) {
+        _scExitFS();
+        localStorage.setItem('fs_preferred', '0');
+    } else {
+        _scReqFS(document.documentElement);
+        localStorage.setItem('fs_preferred', '1');
     }
-    function _isFS() {
-        return !!(document.fullscreenElement || document.webkitFullscreenElement ||
-                  document.mozFullScreenElement || document.msFullscreenElement);
-    }
-    var triggered = false;
-    function tryFS() {
-        if (triggered || _isFS()) return;
-        if (localStorage.getItem('fs_preferred') !== '1') return;
-        triggered = true;
-        _reqFS(document.documentElement);
-    }
-    document.addEventListener('touchstart', tryFS, { once: true });
-    document.addEventListener('click',      tryFS, { once: true });
-})();
+};
+
+// fs_preferred=1 のとき、全画面ボタン以外の最初のタッチ/クリックで自動全画面
+var _scAutoFsTriggered = false;
+function _scTryAutoFS(e) {
+    if (e && e.target && e.target.closest('#sc-fullscreen-btn')) return;
+    if (_scAutoFsTriggered || _scIsFS()) return;
+    if (localStorage.getItem('fs_preferred') !== '1') return;
+    _scAutoFsTriggered = true;
+    _scReqFS(document.documentElement);
+}
+document.addEventListener('touchstart', _scTryAutoFS);
+document.addEventListener('click',      _scTryAutoFS);
 
 // ── ② グローバルダブルタップ検出（500ms以内の2回目タップを無視） ──
 (function() {
