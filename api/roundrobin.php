@@ -291,9 +291,9 @@ body.viewer-mode #initialSetup { display: none !important; }
 
     <!-- コートQRコードカード（管理者・セッション接続後） -->
     <div id="courtQrCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div onclick="toggleQrPanel()" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer;user-select:none;">
             <div class="setup-label" style="margin:0;">📱 コートスコア入力QR</div>
-            <button onclick="toggleQrPanel()" id="qrToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;color:#555;">▼ 開く</button>
+            <span id="qrToggleBtn" style="font-size:0.8rem;color:#888;">▼</span>
         </div>
         <div id="qrPanelBody" style="display:none;">
             <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
@@ -351,9 +351,9 @@ body.viewer-mode #initialSetup { display: none !important; }
 
     <!-- 試合案内パネルカード（管理者・セッション接続後） -->
     <div id="displayPanelCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div onclick="toggleDisplayPanel()" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer;user-select:none;">
             <div class="setup-label" style="margin:0;">📺 試合案内パネル</div>
-            <button onclick="toggleDisplayPanel()" id="displayPanelToggleBtn" style="background:none;border:1px solid #bbb;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;color:#555;">▼ 開く</button>
+            <span id="displayPanelToggleBtn" style="font-size:0.8rem;color:#888;">▼</span>
         </div>
         <div id="displayPanelBody" style="display:none;">
             <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">プロジェクター等で試合状況をリアルタイム表示します</div>
@@ -3290,7 +3290,7 @@ function toggleQrPanel() {
     if (!body) return;
     const isOpen = body.style.display !== 'none';
     body.style.display = isOpen ? 'none' : '';
-    btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    btn.textContent = isOpen ? '▼' : '▲';
     if (!isOpen) {
         updateMatchGamesUI();
         updateCourtChangeUI();
@@ -3305,7 +3305,7 @@ function toggleDisplayPanel() {
     if (!body) return;
     const isOpen = body.style.display !== 'none';
     body.style.display = isOpen ? 'none' : '';
-    btn.textContent = isOpen ? '▼ 開く' : '▲ 閉じる';
+    btn.textContent = isOpen ? '▼' : '▲';
     if (!isOpen) renderDisplayPanelQR();
 }
 
