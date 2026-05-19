@@ -289,15 +289,13 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div id="eventInfoBar" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#f5f5f5;font-size:0.8125rem;line-height:1.6;"></div>
     </div>
 
-    <!-- コートQRコードカード（管理者・セッション接続後） -->
+    <!-- ゲーム設定カード（管理者・セッション接続後） -->
     <div id="courtQrCard" class="setup-card admin-only" style="display:none;margin-bottom:14px;">
         <div onclick="toggleQrPanel()" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer;user-select:none;">
-            <div class="setup-label" style="margin:0;">📱 コートスコア入力QR</div>
+            <div class="setup-label" style="margin:0;">⚙️ ゲーム設定</div>
             <span id="qrToggleBtn" style="font-size:0.8rem;color:#888;">▼</span>
         </div>
         <div id="qrPanelBody" style="display:none;">
-            <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">各コートのQRコードをスキャンするとスコア入力画面が開きます</div>
-            <div id="qrCodesWrap" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;"></div>
             <!-- ゲーム数設定 -->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
                 <div style="font-size:0.8125rem;font-weight:bold;color:#333;margin-bottom:8px;">🎾 ゲーム数（スコア入力）</div>
@@ -359,11 +357,16 @@ body.viewer-mode #initialSetup { display: none !important; }
             <div style="font-size:0.75rem;color:#777;margin-bottom:10px;">プロジェクター等で試合状況をリアルタイム表示します</div>
             <div id="displayPanelQrWrap" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
                 <div id="qr-display-panel"></div>
-                <div id="display-panel-url" style="font-size:0.6875rem;color:#555;word-break:break-all;text-align:center;"></div>
-                <a id="display-panel-link" href="#" target="_blank"
-                    style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:0.8125rem;text-decoration:none;font-weight:bold;">
-                    🔗 パネルを開く
-                </a>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                    <button id="display-panel-copy-btn" onclick="copyDisplayPanelUrl()"
+                        style="padding:8px 18px;background:#546e7a;color:white;border:none;border-radius:8px;font-size:0.8125rem;font-weight:bold;cursor:pointer;">
+                        📋 リンクをコピー
+                    </button>
+                    <a id="display-panel-link" href="#" target="_blank"
+                        style="display:inline-block;padding:8px 18px;background:#1565c0;color:white;border-radius:8px;font-size:0.8125rem;text-decoration:none;font-weight:bold;">
+                        🔗 パネルを開く
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -3314,14 +3317,29 @@ function renderDisplayPanelQR() {
     const card = document.getElementById('displayPanelCard');
     if (card) card.style.display = '';
     const url = location.origin + '/display?sid=' + encodeURIComponent(_sessionId);
-    const urlEl = document.getElementById('display-panel-url');
-    if (urlEl) urlEl.textContent = url;
     const link = document.getElementById('display-panel-link');
     if (link) link.href = url;
     const qrDiv = document.getElementById('qr-display-panel');
     if (qrDiv && !qrDiv.querySelector('canvas,img')) {
         new QRCode(qrDiv, { text: url, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
     }
+}
+
+function copyDisplayPanelUrl() {
+    if (!_sessionId) return;
+    const url = location.origin + '/display?sid=' + encodeURIComponent(_sessionId);
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('display-panel-copy-btn');
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = '✅ コピーしました';
+        btn.style.background = '#2e7d32';
+        setTimeout(() => { btn.textContent = orig; btn.style.background = '#546e7a'; }, 2000);
+    }).catch(() => {
+        // clipboard API が使えない場合はpromptで表示
+        const url2 = location.origin + '/display?sid=' + encodeURIComponent(_sessionId);
+        prompt('URLをコピーしてください', url2);
+    });
 }
 
 function updateAutoMatchUI() {
