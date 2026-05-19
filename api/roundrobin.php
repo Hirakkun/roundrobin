@@ -923,7 +923,7 @@ function renderEntryList() {
     // 組合せ（schedule）が1件以上あれば開催中とみなしてロック
     const isActive = Array.isArray(state.schedule) && state.schedule.length > 0;
     const frag = document.createDocumentFragment();
-    entryPlayers.forEach(p => {
+    entryPlayers.forEach((p, idx) => {
         const div = document.createElement('div');
         div.className = 'entry-confirmed-row';
         div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0f0f0;';
@@ -965,6 +965,10 @@ function renderEntryList() {
             : '';
         div.style.opacity = isResting ? '0.5' : '1';
         div.innerHTML = `
+            <div style="display:inline-flex;align-items:center;justify-content:center;
+                        min-width:1.6em;height:1.6em;background:#1565c0;color:#fff;
+                        border-radius:50%;font-size:0.75rem;font-weight:900;
+                        flex-shrink:0;line-height:1;">${idx + 1}</div>
             <div style="flex:1;">
                 <div style="font-weight:bold;font-size:0.9375rem;">${_esc(p.name)}${guestBadge}${clubBadge}${pairBadge}</div>
                 <div style="font-size:0.6875rem;color:#888;">${_esc(p.kana||'')}${p.mu!=null?' μ='+Number(p.mu).toFixed(1):''}</div>
