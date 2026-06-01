@@ -1093,6 +1093,9 @@ function assignCourtsRandom(pairs, attempts = 20) {
 }
 // =====================================================================
 function generateNextRound() {
+    const btn = document.getElementById('nextRoundBtn');
+    if (btn && btn.disabled) return;
+    if (btn) btn.disabled = true;
     const active = state.players.filter(p => !p.resting);
 
     // state未初期化チェック
@@ -1162,6 +1165,11 @@ function generateNextRound() {
             openRound(toggle);
         }
     }, 50);
+    // Firebase書き込みが完了するまでボタンをロック（二重生成防止）
+    setTimeout(() => {
+        const b = document.getElementById('nextRoundBtn');
+        if (b) b.disabled = false;
+    }, 2000);
 }
 
 // =====================================================================
@@ -1272,7 +1280,9 @@ function deleteRound(e, roundNum) {
 function saveScores() {
     document.querySelectorAll('.match-row').forEach(row => {
         const mid = row.dataset.matchId;
+        const existing = state.scores[mid] || {};
         state.scores[mid] = {
+            ...existing,
             s1: parseInt(row.querySelector('.s1').innerText),
             s2: parseInt(row.querySelector('.s2').innerText),
         };
@@ -1936,6 +1946,9 @@ window.updateSyncStatus = updateSyncStatus;
 
 window._fbApply = function(remoteState) {
     if (isApplyingRemote) return;
+    // 自分がgenerateNextRoundで進めたroundCountより古いスナップショットは無視
+    // （score-court.phpの部分更新がFirebaseに残っている間に自分のset()が完了していない場合の逆戻り防止）
+    if (remoteState.roundCount !== undefined && remoteState.roundCount < state.roundCount) return;
     isApplyingRemote = true;
     try {
         Object.assign(state, remoteState);
