@@ -15,6 +15,8 @@
     { "src": "/display",               "dest": "/api/display.php" },
     { "src": "/guide",                 "dest": "/api/guide.php" },
     { "src": "/guide.php",             "dest": "/api/guide.php" },
+    { "src": "/system",               "dest": "/api/system.php" },
+    { "src": "/system.php",           "dest": "/api/system.php" },
     { "src": "/images/(.*)",           "dest": "/images/$1" },
     { "src": "/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89/(.*)", "dest": "/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89/$1" },
     { "src": "/(.*)", "dest": "/api/roundrobin.php" }
