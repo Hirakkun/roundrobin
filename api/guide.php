@@ -371,8 +371,7 @@ body {
     <ul class="steps">
       <li><span class="s-num">1</span><span>コート名</span></li>
       <li><span class="s-num">2</span><span>案内パネルQR（本部用・審判台用）</span></li>
-      <li><span class="s-num">3</span><span>NFCカード（案内パネル）</span></li>
-      <li><span class="s-num">4</span><span>紙のスコアカード</span></li>
+      <li><span class="s-num">3</span><span>紙のスコアカード</span></li>
     </ul>
   </div>
 
