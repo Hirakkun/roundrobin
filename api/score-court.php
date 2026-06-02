@@ -368,6 +368,13 @@ header('Content-Type: text/html; charset=UTF-8');
 </head>
 <body>
 
+<!-- 引き継がれた通知 -->
+<div class="overlay" id="ov-taken" style="display:none; background:#4a148c;">
+    <div class="ov-icon">🔄</div>
+    <div class="ov-msg">この画面の審判は<br>引き継がれました</div>
+    <div class="ov-sub">このページを閉じてください</div>
+</div>
+
 <!-- ローディング -->
 <div class="overlay" id="ov-loading">
     <div class="ov-icon">🔄</div>
@@ -562,6 +569,8 @@ const firebaseConfig = {
     appId: "1:648952505350:web:eb913450f350ba404ccf87"
 };
 const COURT_ALPHA = ['A','B','C','D','E','F'];
+// この画面固有のID（引き継ぎ検知用）
+const MY_REF_ID = Math.random().toString(36).substr(2, 10);
 
 const params     = new URLSearchParams(location.search);
 const sessionId  = params.get('session') || '';
@@ -718,6 +727,14 @@ function onStateUpdate(state) {
             break;
         }
         if (found) break;
+    }
+
+    // ── 引き継ぎ検知：別の審判が同じコートを引き継いだ場合、この画面を無効化 ──
+    // found が存在し、Firebase の refId が自分以外になっていたら操作不能にする
+    // （完了画面・done状態の場合はチェック不要）
+    if (found && matchStarted && found.sc.refId && found.sc.refId !== MY_REF_ID) {
+        showTakenOver();
+        return;
     }
 
     // 完了画面表示中 → カウントダウン中は割り込みさせない
@@ -1328,6 +1345,8 @@ async function writeStatus(status, resetScores = false) {
         // roundrobin.php に undefined が表示されないよう必ず書き込む
         upd['scores/' + currentMid + '/s1']     = set_score_t1;
         upd['scores/' + currentMid + '/s2']     = set_score_t2;
+        // この審判のIDを書き込む（古い審判画面の引き継ぎ検知に使用）
+        upd['scores/' + currentMid + '/refId']  = MY_REF_ID;
     }
     if (resetScores) {
         upd['scores/' + currentMid + '/s1']     = 0;
@@ -1354,7 +1373,7 @@ async function writeScore(done) {
 
 // ── 画面制御 ─────────────────────────────────────────────────
 function hideAll() {
-    ['ov-loading','ov-waiting'].forEach(id => {
+    ['ov-loading','ov-waiting','ov-taken'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -1362,6 +1381,22 @@ function hideAll() {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
+}
+
+// ── 引き継ぎ検知：この画面を無効化して通知を表示 ──────────────────
+let _takenOver = false;
+function showTakenOver() {
+    if (_takenOver) return;
+    _takenOver = true;
+    _clearDoneTimer();
+    // 全画面を隠してから引き継ぎオーバーレイを表示
+    ['ov-loading','ov-waiting','serve-setup','court-setup','main-container'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    document.getElementById('done-screen').style.display = 'none';
+    const el = document.getElementById('ov-taken');
+    if (el) el.style.display = 'flex';
 }
 
 function showWaiting(msg) {
