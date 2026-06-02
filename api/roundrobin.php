@@ -5465,14 +5465,28 @@ window._fbStart = function(sessionId) {
             }
             if (s.done) delete window._livePtScores[mid];
         });
+        // ── ステータス変化検出（マージ前に比較する必要がある）──
+        // state.scores は参照なので Object.assign 後だと _prevScores と同一になり
+        // _fbApply 側の判定が「変化なし」になる。ここで先に検出して renderMatchContainer を呼ぶ。
+        let _scoreStatusChanged = false;
+        if (!isApplyingRemote && Array.isArray(state.schedule) && state.schedule.length > 0) {
+            Object.keys(scores).forEach(mid => {
+                if ((scores[mid]?.status ?? null) !== (state.scores?.[mid]?.status ?? null)) {
+                    _scoreStatusChanged = true;
+                }
+            });
+        }
         // state.scores を最新値にマージ
         if (!state.scores) state.scores = {};
         Object.assign(state.scores, scores);
-        // スコア数値のみ更新（全再描画不要・スクロール位置保持）
-        if (!isApplyingRemote &&
-            typeof updateScoreDisplays === 'function' &&
-            Array.isArray(state.schedule) && state.schedule.length > 0) {
-            updateScoreDisplays();
+        // ステータス変化あり → 全再描画（試合開始・終了バッジ更新）
+        // 変化なし → スコア数値のみ更新（スクロール位置保持）
+        if (!isApplyingRemote && Array.isArray(state.schedule) && state.schedule.length > 0) {
+            if (_scoreStatusChanged) {
+                renderMatchContainer();
+            } else if (typeof updateScoreDisplays === 'function') {
+                updateScoreDisplays();
+            }
         }
     });
 
