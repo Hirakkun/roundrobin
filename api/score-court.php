@@ -786,6 +786,9 @@ function onStateUpdate(state) {
             game_score_t2 = found.sc.pt2 ?? game_score_t2;
             matchStarted = true;
             showMain();
+            // リロード時は MY_REF_ID が変わるため、自分のIDを Firebase に上書きして
+            // 引き継ぎ誤検知（旧IDと不一致 → ロックアウト）を防ぐ
+            writeRefId();
         } else if (fStatus === 'playing') {
             // localStorageなし（別端末・キャッシュクリア等）
             // Firebase に server/left が保存されていれば途中から直接再開
@@ -804,6 +807,8 @@ function onStateUpdate(state) {
                 showMain();
                 updateUmpireCall();
                 checkGameWinner(); // ゲーム終了状態ならボタンを正しく表示
+                // 引き継ぎ時も自分のIDをすぐに書き込む（旧refIdとの不一致でロックアウトされるのを防ぐ）
+                writeRefId();
             }
             // hasServInfo=false の場合はサーブ選択画面からやり直し（resetMatch済み）
         } else {
@@ -1330,6 +1335,15 @@ function writeCurrentPoints() {
     upd['scores/' + currentMid + '/left']   = leftTeam;
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     update(stateRef, upd).catch(e => console.warn('writeCurrentPoints:', e));
+}
+
+// ── refId だけ書き込む（リロード・引き継ぎ直接復元時に自分のIDを主張する）─────
+function writeRefId() {
+    if (!currentMid) return;
+    const upd = {};
+    upd['scores/' + currentMid + '/refId'] = MY_REF_ID;
+    upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
+    update(stateRef, upd).catch(e => console.warn('writeRefId:', e));
 }
 
 // ── ステータス書き込み ─────────────────────────────────────────
