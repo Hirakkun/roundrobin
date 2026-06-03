@@ -248,10 +248,6 @@ body {
           <span>本部席の <strong>PC</strong>（1台）</span>
         </div>
         <div class="info-row">
-          <span class="info-label lbl-blue">URL</span>
-          <span><span class="url-chip">/(トップページ)</span></span>
-        </div>
-        <div class="info-row">
           <span class="info-label lbl-blue">役割</span>
           <span>
             参加者の登録・ペア設定・休憩管理<br>
@@ -290,10 +286,6 @@ body {
           <span>プロジェクター用 <strong>PC</strong>（大型スクリーン表示）<br>審判・選手の <strong>スマホ</strong>（QRコードで閲覧）</span>
         </div>
         <div class="info-row">
-          <span class="info-label lbl-green">URL</span>
-          <span><span class="url-chip">/display?sid=セッションID</span></span>
-        </div>
-        <div class="info-row">
           <span class="info-label lbl-green">役割</span>
           <span>
             各コートの <strong>試合状況をリアルタイム表示</strong><br>
@@ -326,10 +318,6 @@ body {
         <div class="info-row">
           <span class="info-label lbl-orange">場所</span>
           <span>各コートの審判が持つ <strong>スマホ</strong><br>（案内パネルから起動）</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label lbl-orange">URL</span>
-          <span><span class="url-chip">/score/court?session=…&court=0</span></span>
         </div>
         <div class="info-row">
           <span class="info-label lbl-orange">役割</span>
@@ -410,6 +398,13 @@ body {
       案内パネル・管理画面の両方に<strong>即座に反映</strong>されます。
       ページの手動リロードは不要です。
     </div>
+    <div style="margin-top:.8rem;padding:.8rem 1rem;background:#fce4ec;border-radius:.6rem;border-left:4px solid #e53935;font-size:.85rem;">
+      <strong>⚠️ 備考：同時接続数の上限について</strong><br>
+      Firebase の無料枠では<strong>同時接続100台まで</strong>が上限です。<br>
+      参加者全員がスマホで案内パネルを開くなど、接続台数が100を超えると
+      リアルタイム同期が止まる恐れがあります。<br>
+      大人数の大会では接続台数にご注意ください。
+    </div>
   </div>
 
   <!-- ══════════════════════════════
@@ -468,7 +463,8 @@ body {
     <ul class="step-list">
       <li>
         <span class="step-num sn-blue">1</span>
-        <span>管理画面の「組合せ」タブで<strong>「▶ 次の試合を作る」</strong>を押す</span>
+        <span>管理画面の「組合せ」タブで<strong>「▶ 次の試合を作る」</strong>を押す<br>
+        <span style="font-size:.82rem;color:#546e7a;">※ 自動組合せ（自動ON）の場合は、試合終了後に次の試合が自動で組まれるため、手動操作は不要</span></span>
       </li>
       <li>
         <span class="step-num sn-blue">2</span>
