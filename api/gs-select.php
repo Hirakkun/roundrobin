@@ -360,10 +360,10 @@ function reload() {
 }
 
 function showView(name) {
-    document.getElementById('league-screen').style.display = name === 'league'  ? '' : 'none';
-    document.getElementById('match-screen').style.display  = name === 'match'   ? '' : 'none';
-    document.getElementById('loading-view').style.display  = name === 'loading' ? 'flex' : 'none';
-    document.getElementById('error-view').style.display    = name === 'error'   ? '' : 'none';
+    document.getElementById('league-screen').style.display = name === 'league'  ? 'block' : 'none';
+    document.getElementById('match-screen').style.display  = name === 'match'   ? 'block' : 'none';
+    document.getElementById('loading-view').style.display  = name === 'loading' ? 'flex'  : 'none';
+    document.getElementById('error-view').style.display    = name === 'error'   ? 'block' : 'none';
 }
 
 function showError(msg) {
