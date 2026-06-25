@@ -194,7 +194,7 @@ header('Content-Type: text/html; charset=UTF-8');
 // ── 設定 ─────────────────────────────────────────────────────
 // GASデプロイ後にURLを設定してください
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycby2xk6p1twOlpMseEFEPsbxw3ocjYR19Z2Erw-68HtymddD6580Oj6JtDugmKUWkM1B9g/exec';
-const SCORE_PAGE = 'gs-score.php';
+const SCORE_PAGE = '/gs-score';
 // ─────────────────────────────────────────────────────────────
 
 let leagues       = [];
