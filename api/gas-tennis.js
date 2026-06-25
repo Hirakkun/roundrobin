@@ -148,8 +148,6 @@ function saveScore(data) {
   }
   if (mRow < 0) throw new Error('試合が見つかりません: No.' + no);
 
-  sh.getRange(mRow, 12).setValue(wA);   // L: 対戦者1ゲーム数
-  sh.getRange(mRow, 13).setValue(wB);   // M: 対戦者2ゲーム数
   sh.getRange(mRow, 15).setValue(true); // O: 終了フラグ
   const tz = Session.getScriptTimeZone();
   sh.getRange(mRow, 16).setValue(
