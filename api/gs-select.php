@@ -14,18 +14,18 @@ header('Content-Type: text/html; charset=UTF-8');
 
         body {
             min-height: 100vh;
-            background: #1e2533;
+            background: #2d3748;
             color: #fff;
             font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', Arial, sans-serif;
         }
 
         /* ヘッダー */
         header {
-            background: #111827;
+            background: #1a202c;
             padding: 0.55em 0.9em;
             display: flex; align-items: center; justify-content: space-between;
             position: sticky; top: 0; z-index: 10;
-            border-bottom: 2px solid #374151;
+            border-bottom: 2px solid #4a5568;
         }
         header h1 { font-size: 1em; font-weight: bold; }
         .refresh-btn {
@@ -38,11 +38,11 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .refresh-btn:active { opacity: 0.7; }
 
-        /* ローディング・エラー */
+        /* ローディング */
         #loading-view {
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            min-height: 50vh; color: #9ca3af;
+            min-height: 50vh; color: #9ca3af; font-size: 0.9em;
         }
         .spinner {
             display: flex; gap: 0.5em; margin-bottom: 0.8em;
@@ -58,6 +58,8 @@ header('Content-Type: text/html; charset=UTF-8');
             0%,80%,100% { transform: scale(.6); opacity: .4; }
             40%          { transform: scale(1);  opacity: 1;  }
         }
+
+        /* エラー */
         #error-view { padding: 1em; display: none; }
         .error-box {
             background: #3e1010; border: 1px solid #c62828;
@@ -74,14 +76,14 @@ header('Content-Type: text/html; charset=UTF-8');
         /* リーグ選択 */
         #league-screen { padding: 1em; display: none; }
         .section-label {
-            font-size: 0.78em; color: #9ca3af;
-            letter-spacing: 0.08em; margin-bottom: 0.7em;
+            font-size: 0.8em; color: #a0aec0;
+            margin-bottom: 0.8em; letter-spacing: 0.05em;
         }
         .league-btn {
             width: 100%; padding: 1em 1.1em;
             border: none; border-radius: 0.65em;
             background: #e07b2a; color: #fff;
-            font-size: 1.1em; font-weight: bold;
+            font-size: 1.15em; font-weight: bold;
             cursor: pointer; text-align: left; margin-bottom: 0.6em;
             display: flex; justify-content: space-between; align-items: center;
             touch-action: manipulation;
@@ -98,95 +100,97 @@ header('Content-Type: text/html; charset=UTF-8');
 
         .back-btn {
             background: none; border: none;
-            color: #9ca3af; font-size: 0.85em;
+            color: #a0aec0; font-size: 0.85em;
             cursor: pointer; padding: 0.3em 0;
-            margin-bottom: 0.8em;
+            margin-bottom: 0.7em;
             display: inline-flex; align-items: center; gap: 0.3em;
             touch-action: manipulation;
         }
         .back-btn:active { opacity: 0.7; }
 
-        /* コートグループヘッダー */
+        /* コートヘッダー */
         .court-header {
             background: #e07b2a;
             border-radius: 0.5em 0.5em 0 0;
-            padding: 0.4em 0.8em;
-            font-size: 0.88em; font-weight: bold;
+            padding: 0.45em 0.85em;
+            font-size: 0.92em; font-weight: bold;
             display: flex; align-items: center; gap: 0.5em;
         }
-        .court-header .court-tag {
+        .court-badge {
             background: rgba(0,0,0,0.25);
-            padding: 0.1em 0.55em; border-radius: 1em;
-            font-size: 0.82em;
+            padding: 0.1em 0.6em; border-radius: 1em;
+            font-size: 0.82em; font-weight: bold;
+        }
+        .court-games {
+            margin-left: auto; font-size: 0.75em; opacity: 0.85;
+        }
+
+        /* コートグループ */
+        .court-group { margin-bottom: 1em; }
+        .court-body {
+            background: #1a202c;
+            border-radius: 0 0 0.5em 0.5em;
+            padding: 0.5em;
+            display: flex; flex-direction: column; gap: 0.5em;
         }
 
         /* 試合カード */
-        .court-group { margin-bottom: 1em; }
         .match-card {
             background: #2d3748;
-            border-radius: 0 0 0.5em 0.5em;
-            overflow: hidden;
-        }
-        .match-card + .match-card {
             border-radius: 0.5em;
-            margin-top: 0.4em;
-        }
-
-        .match-row {
-            display: flex; align-items: stretch;
-            border-top: 1px solid #374151;
+            padding: 0.55em 0.6em;
             cursor: pointer;
             touch-action: manipulation;
-            min-height: 4.5em;
+            border: 2px solid #4a5568;
         }
-        .match-row:first-child { border-top: none; }
-        .match-row.done { opacity: 0.4; cursor: default; }
-        .match-row:not(.done):active { background: #3d4f66; }
+        .match-card.undone { border-color: #e07b2a; }
+        .match-card.done   { opacity: 0.45; cursor: default; border-color: #4a5568; }
+        .match-card.undone:active { opacity: 0.75; }
 
-        /* No.バッジ */
-        .match-no-col {
-            display: flex; align-items: center; justify-content: center;
-            width: 2.2em; flex-shrink: 0;
-            background: #1e2533;
-            font-size: 0.7em; color: #9ca3af; font-weight: bold;
-            writing-mode: vertical-rl; letter-spacing: 0.05em;
+        /* カード上部：No. */
+        .match-no {
+            font-size: 0.68em; color: #a0aec0;
+            font-weight: bold; margin-bottom: 0.35em;
+            letter-spacing: 0.04em;
         }
 
-        /* チーム列 */
-        .team-col {
-            flex: 1; display: flex; flex-direction: column;
-            justify-content: center; padding: 0.5em 0.4em;
-            min-width: 0;
+        /* カード本体：左チームボックス ／ 中央 ／ 右チームボックス */
+        .match-body {
+            display: flex; align-items: stretch; gap: 0.45em;
         }
-        .team-col.left  { align-items: flex-end;   border-right: 1px solid #374151; }
-        .team-col.right { align-items: flex-start;  border-left:  1px solid #374151; }
 
-        .player-name {
-            font-size: 1em; font-weight: bold; line-height: 1.35;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 100%;
-        }
-        .team-col.left  .player-name { color: #93c5fd; }
-        .team-col.right .player-name { color: #86efac; }
-
-        /* 中央（スコア or 入力） */
-        .center-col {
-            flex-shrink: 0; width: 3.2em;
+        /* チームボックス */
+        .team-box {
+            flex: 1; background: #fff; border-radius: 0.4em;
+            padding: 0.45em 0.5em;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 0.1em;
+            gap: 0.08em; min-width: 0;
         }
-        .score-display {
-            font-size: 1.3em; font-weight: bold; color: #fff;
-            line-height: 1; text-align: center;
+        .player-name {
+            font-size: 1em; font-weight: bold; color: #1a202c;
+            text-align: center; line-height: 1.35;
+            word-break: break-all;
         }
-        .score-hyphen { font-size: 0.7em; color: #6b7280; }
-        .enter-icon {
-            font-size: 1.6em; color: #e07b2a;
+
+        /* 中央エリア */
+        .center-col {
+            flex-shrink: 0; width: 2.8em;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.1em;
         }
-        .done-badge {
-            font-size: 0.6em; color: #4ade80; font-weight: bold;
-            text-align: center; line-height: 1.3;
+        .enter-arrow {
+            font-size: 2em; color: #e07b2a; line-height: 1;
+        }
+        .score-num {
+            font-size: 1.5em; font-weight: bold; color: #fff; line-height: 1;
+        }
+        .score-sep {
+            font-size: 0.72em; color: #718096; line-height: 1;
+        }
+        .done-label {
+            font-size: 0.58em; color: #68d391; font-weight: bold;
+            margin-top: 0.2em;
         }
     </style>
 </head>
@@ -237,7 +241,10 @@ async function init() {
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         leagues = data;
-        if (!leagues.length) { showError('リーグが登録されていません<br>基本設定シートを確認してください'); return; }
+        if (!leagues.length) {
+            showError('リーグが登録されていません<br>基本設定シートを確認してください');
+            return;
+        }
         if (leagues.length === 1) {
             await selectLeague(leagues[0]);
         } else {
@@ -283,56 +290,58 @@ function renderMatches(matches, league) {
 
     const keys = Object.keys(courts).sort();
     if (!keys.length) {
-        document.getElementById('match-list').innerHTML = '<div style="color:#9ca3af;padding:2em;text-align:center;">試合が見つかりません</div>';
+        document.getElementById('match-list').innerHTML =
+            '<div style="color:#a0aec0;padding:2em;text-align:center;">試合が見つかりません</div>';
         return;
     }
 
     let html = '';
     for (const court of keys) {
-        const ms = courts[court];
-        html += `<div class="court-group">
+        html += `
+        <div class="court-group">
             <div class="court-header">
-                <span class="court-tag">${esc(court)}コート</span>
+                <span class="court-badge">${esc(court)}コート</span>
                 <span>${esc(league.name)}</span>
-                <span style="margin-left:auto;font-size:0.78em;opacity:0.8;">${league.games}ゲームマッチ</span>
+                <span class="court-games">${league.games}ゲームマッチ</span>
             </div>
-            <div class="match-card">`;
+            <div class="court-body">`;
 
-        for (const m of ms) {
+        for (const m of courts[court]) {
             const isDone = m.done;
             const t1 = m.team1 || [];
             const t2 = m.team2 || [];
 
-            // 左チーム（名前列）
-            const leftHtml = t1.map(n =>
-                `<div class="player-name">${esc(n)}</div>`
-            ).join('');
+            // チームボックスの中身
+            const t1html = t1.length
+                ? t1.map(n => `<div class="player-name">${esc(n)}</div>`).join('')
+                : '<div class="player-name" style="color:#aaa;">未定</div>';
+            const t2html = t2.length
+                ? t2.map(n => `<div class="player-name">${esc(n)}</div>`).join('')
+                : '<div class="player-name" style="color:#aaa;">未定</div>';
 
-            // 右チーム（名前列）
-            const rightHtml = t2.map(n =>
-                `<div class="player-name">${esc(n)}</div>`
-            ).join('');
-
-            // 中央
+            // 中央：スコア or 入力矢印
             let centerHtml;
             if (isDone && m.scoreA != null) {
                 centerHtml = `
-                    <div class="score-display">${m.scoreA}</div>
-                    <div class="score-hyphen">─</div>
-                    <div class="score-display">${m.scoreB}</div>
-                    <div class="done-badge">終了</div>`;
+                    <div class="score-num">${m.scoreA}</div>
+                    <div class="score-sep">─</div>
+                    <div class="score-num">${m.scoreB}</div>
+                    <div class="done-label">終了</div>`;
             } else {
-                centerHtml = `<div class="enter-icon">▶</div>`;
+                centerHtml = `<div class="enter-arrow">▶</div>`;
             }
 
             const onclick = isDone ? '' : `onclick="goScore(${m.no})"`;
+
             html += `
-                <div class="match-row ${isDone ? 'done' : ''}" ${onclick}>
-                    <div class="match-no-col">No.${m.no}</div>
-                    <div class="team-col left">${leftHtml}</div>
+            <div class="match-card ${isDone ? 'done' : 'undone'}" ${onclick}>
+                <div class="match-no">No.${m.no}</div>
+                <div class="match-body">
+                    <div class="team-box">${t1html}</div>
                     <div class="center-col">${centerHtml}</div>
-                    <div class="team-col right">${rightHtml}</div>
-                </div>`;
+                    <div class="team-box">${t2html}</div>
+                </div>
+            </div>`;
         }
 
         html += `</div></div>`;
