@@ -251,7 +251,7 @@ async function init() {
 
 function renderLeagues() {
     document.getElementById('league-list').innerHTML = leagues.map(l =>
-        `<button class="league-btn" onclick='selectLeague(${JSON.stringify(l)})'>
+        `<button class="league-btn" onclick='selectLeague(${JSON.stringify(l).replace(/"/g,"&quot;")})'>
             <span>${esc(l.name)}</span>
             <span class="league-badge">${l.games}ゲームマッチ</span>
          </button>`
