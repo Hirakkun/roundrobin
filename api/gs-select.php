@@ -141,16 +141,16 @@ header('Content-Type: text/html; charset=UTF-8');
             word-break: break-all;
         }
         .center-col {
-            flex-shrink: 0; width: 4.5em;
+            flex-shrink: 0; width: 2.8em;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 0.1em;
         }
         .enter-arrow { font-size: 0.85em; font-weight: bold; color: #e07b2a; line-height: 1; }
         .score-row {
-            display: flex; align-items: center; gap: 0.2em;
+            display: flex; align-items: center; gap: 0;
         }
-        .score-num { font-size: 1.4em; font-weight: bold; color: #fff; line-height: 1; }
-        .score-sep { font-size: 0.9em; color: #718096; line-height: 1; }
+        .score-num { font-size: 1.1em; font-weight: bold; color: #fff; line-height: 1; }
+        .score-sep { font-size: 0.6em; color: #718096; line-height: 1; padding: 0 0.1em; }
         .done-label {
             font-size: 0.58em; color: #68d391; font-weight: bold;
             margin-top: 0.25em;
