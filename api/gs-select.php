@@ -351,16 +351,16 @@ function buildStandings(matches) {
         if (!m.team1.length || !m.team1[0] || !m.team2.length || !m.team2[0]) continue;
         const t1key = m.team1.join('\n');
         const t2key = m.team2.join('\n');
-        if (!teams[t1key]) teams[t1key] = { name: m.team1.join(' '), wins: 0, played: 0, diff: 0 };
-        if (!teams[t2key]) teams[t2key] = { name: m.team2.join(' '), wins: 0, played: 0, diff: 0 };
+        if (!teams[t1key]) teams[t1key] = { name: m.team1.join(' '), wins: 0, losses: 0, played: 0, diff: 0 };
+        if (!teams[t2key]) teams[t2key] = { name: m.team2.join(' '), wins: 0, losses: 0, played: 0, diff: 0 };
 
         if (m.done && m.scoreA != null && m.scoreB != null) {
             teams[t1key].played++;
             teams[t2key].played++;
             teams[t1key].diff += (m.scoreA - m.scoreB);
             teams[t2key].diff += (m.scoreB - m.scoreA);
-            if (m.scoreA > m.scoreB)      teams[t1key].wins++;
-            else if (m.scoreB > m.scoreA) teams[t2key].wins++;
+            if (m.scoreA > m.scoreB)      { teams[t1key].wins++; teams[t2key].losses++; }
+            else if (m.scoreB > m.scoreA) { teams[t2key].wins++; teams[t1key].losses++; }
         }
     }
 
@@ -391,6 +391,7 @@ function buildStandings(matches) {
             '<td class="' + rankClass + '">' + t.rank + '</td>' +
             '<td class="name-cell">' + esc(t.name) + '</td>' +
             '<td>' + t.wins + '</td>' +
+            '<td>' + t.losses + '</td>' +
             '<td class="' + diffClass + '">' + diffStr + '</td>' +
             '</tr>';
     }
@@ -398,7 +399,7 @@ function buildStandings(matches) {
     return '<div class="standings-section">' +
         '<div class="standings-title">&#x1F4CA; 簡易版順位速報</div>' +
         '<table class="standings-table">' +
-        '<thead><tr><th>順位</th><th>ペア名</th><th>勝数</th><th>得失ゲーム差</th></tr></thead>' +
+        '<thead><tr><th>順位</th><th>ペア名</th><th>勝数</th><th>敗数</th><th>ゲーム差</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table></div>';
 }
 
