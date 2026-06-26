@@ -155,6 +155,47 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.58em; color: #68d391; font-weight: bold;
             margin-top: 0.25em;
         }
+
+        /* 順位表 */
+        .standings-section {
+            margin-top: 1em;
+            background: #1a202c;
+            border-radius: 0.5em;
+            overflow: hidden;
+        }
+        .standings-title {
+            background: #2b4a7a;
+            padding: 0.45em 0.85em;
+            font-size: 0.88em; font-weight: bold;
+        }
+        .standings-table {
+            width: 100%; border-collapse: collapse;
+            font-size: 0.82em;
+        }
+        .standings-table thead tr {
+            background: #2d3748;
+            color: #a0aec0; font-size: 0.85em;
+        }
+        .standings-table th,
+        .standings-table td {
+            padding: 0.5em 0.6em;
+            text-align: center;
+            border-bottom: 1px solid #2d3748;
+        }
+        .standings-table td.name-cell {
+            text-align: left;
+        }
+        .standings-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .standings-table tbody tr:nth-child(odd) {
+            background: #222c3a;
+        }
+        .rank-1 { color: #f6c90e; font-weight: bold; font-size: 1.1em; }
+        .rank-2 { color: #c0c0c0; font-weight: bold; }
+        .rank-3 { color: #cd7f32; font-weight: bold; }
+        .diff-pos { color: #68d391; }
+        .diff-neg { color: #fc8181; }
     </style>
 </head>
 <body>
@@ -300,7 +341,55 @@ function renderMatches(matches, league) {
         html += '</div></div>';
     }
 
-    document.getElementById('match-list').innerHTML = html;
+    document.getElementById('match-list').innerHTML = html + buildStandings(matches);
+}
+
+function buildStandings(matches) {
+    const teams = {};
+
+    for (const m of matches) {
+        if (!m.team1.length || !m.team1[0] || !m.team2.length || !m.team2[0]) continue;
+        const t1key = m.team1.join('\n');
+        const t2key = m.team2.join('\n');
+        if (!teams[t1key]) teams[t1key] = { name: m.team1.join(' '), wins: 0, diff: 0 };
+        if (!teams[t2key]) teams[t2key] = { name: m.team2.join(' '), wins: 0, diff: 0 };
+
+        if (m.done && m.scoreA != null && m.scoreB != null) {
+            teams[t1key].diff += (m.scoreA - m.scoreB);
+            teams[t2key].diff += (m.scoreB - m.scoreA);
+            if (m.scoreA > m.scoreB)      teams[t1key].wins++;
+            else if (m.scoreB > m.scoreA) teams[t2key].wins++;
+        }
+    }
+
+    const sorted = Object.values(teams).sort((a, b) =>
+        b.wins !== a.wins ? b.wins - a.wins : b.diff - a.diff
+    );
+
+    let rank = 1;
+    sorted.forEach((t, i) => {
+        if (i > 0 && (sorted[i].wins !== sorted[i-1].wins || sorted[i].diff !== sorted[i-1].diff)) rank = i + 1;
+        t.rank = rank;
+    });
+
+    let rows = '';
+    for (const t of sorted) {
+        const rankClass = t.rank === 1 ? 'rank-1' : t.rank === 2 ? 'rank-2' : t.rank === 3 ? 'rank-3' : '';
+        const diffStr  = t.diff > 0 ? '+' + t.diff : String(t.diff);
+        const diffClass = t.diff > 0 ? 'diff-pos' : t.diff < 0 ? 'diff-neg' : '';
+        rows += '<tr>' +
+            '<td class="' + rankClass + '">' + t.rank + '</td>' +
+            '<td class="name-cell">' + esc(t.name) + '</td>' +
+            '<td>' + t.wins + '</td>' +
+            '<td class="' + diffClass + '">' + diffStr + '</td>' +
+            '</tr>';
+    }
+
+    return '<div class="standings-section">' +
+        '<div class="standings-title">&#x1F4CA; 簡易版順位速報</div>' +
+        '<table class="standings-table">' +
+        '<thead><tr><th>順位</th><th>ペア名</th><th>勝数</th><th>得失ゲーム差</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table></div>';
 }
 
 function goScore(no) {
