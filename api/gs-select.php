@@ -280,9 +280,10 @@ async function selectLeague(league) {
 }
 
 function renderMatches(matches, league) {
-    // コート別グループ化
+    // チーム名が空の試合は除外してコート別グループ化
     const courts = {};
     for (const m of matches) {
+        if (!m.team1.length || !m.team1[0] || !m.team2.length || !m.team2[0]) continue;
         const key = m.court || '－';
         if (!courts[key]) courts[key] = [];
         courts[key].push(m);
