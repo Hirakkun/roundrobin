@@ -141,16 +141,19 @@ header('Content-Type: text/html; charset=UTF-8');
             word-break: break-all;
         }
         .center-col {
-            flex-shrink: 0; width: 2.8em;
+            flex-shrink: 0; width: 4.5em;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 0.1em;
         }
         .enter-arrow { font-size: 0.85em; font-weight: bold; color: #e07b2a; line-height: 1; }
-        .score-num { font-size: 1.5em; font-weight: bold; color: #fff; line-height: 1; }
-        .score-sep { font-size: 0.72em; color: #718096; line-height: 1; }
+        .score-row {
+            display: flex; align-items: center; gap: 0.2em;
+        }
+        .score-num { font-size: 1.4em; font-weight: bold; color: #fff; line-height: 1; }
+        .score-sep { font-size: 0.9em; color: #718096; line-height: 1; }
         .done-label {
             font-size: 0.58em; color: #68d391; font-weight: bold;
-            margin-top: 0.2em;
+            margin-top: 0.25em;
         }
     </style>
 </head>
@@ -273,9 +276,11 @@ function renderMatches(matches, league) {
 
             let centerHtml;
             if (isDone && m.scoreA != null) {
-                centerHtml = '<div class="score-num">' + m.scoreA + '</div>' +
-                    '<div class="score-sep">\u2015</div>' +
+                centerHtml = '<div class="score-row">' +
+                    '<div class="score-num">' + m.scoreA + '</div>' +
+                    '<div class="score-sep">-</div>' +
                     '<div class="score-num">' + m.scoreB + '</div>' +
+                    '</div>' +
                     '<div class="done-label">\u7d42\u4e86</div>';
             } else {
                 centerHtml = '<div class="enter-arrow">vs</div>';
