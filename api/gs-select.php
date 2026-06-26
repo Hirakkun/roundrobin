@@ -6,7 +6,7 @@ header('Content-Type: text/html; charset=UTF-8');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>試合選択 - スコア入力</title>
+    <title>隧ｦ蜷磯∈謚・- 繧ｹ繧ｳ繧｢蜈･蜉・/title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -19,7 +19,7 @@ header('Content-Type: text/html; charset=UTF-8');
             font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', Arial, sans-serif;
         }
 
-        /* ヘッダー */
+        /* 繝倥ャ繝繝ｼ */
         header {
             background: #1a202c;
             padding: 0.55em 0.9em;
@@ -38,7 +38,7 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .refresh-btn:active { opacity: 0.7; }
 
-        /* ローディング */
+        /* 繝ｭ繝ｼ繝・ぅ繝ｳ繧ｰ */
         #loading-view {
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
@@ -59,7 +59,7 @@ header('Content-Type: text/html; charset=UTF-8');
             40%          { transform: scale(1);  opacity: 1;  }
         }
 
-        /* エラー */
+        /* 繧ｨ繝ｩ繝ｼ */
         #error-view { padding: 1em; display: none; }
         .error-box {
             background: #3e1010; border: 1px solid #c62828;
@@ -73,7 +73,7 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.88em; cursor: pointer;
         }
 
-        /* リーグ選択 */
+        /* 繝ｪ繝ｼ繧ｰ驕ｸ謚・*/
         #league-screen { padding: 1em; display: none; }
         .section-label {
             font-size: 0.8em; color: #a0aec0;
@@ -95,7 +95,7 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.72em; white-space: nowrap;
         }
 
-        /* 試合一覧 */
+        /* 隧ｦ蜷井ｸ隕ｧ */
         #match-screen { padding: 0.7em; display: none; }
 
         .back-btn {
@@ -108,7 +108,7 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .back-btn:active { opacity: 0.7; }
 
-        /* コートヘッダー */
+        /* 繧ｳ繝ｼ繝医・繝・ム繝ｼ */
         .court-header {
             background: #e07b2a;
             border-radius: 0.5em 0.5em 0 0;
@@ -125,7 +125,7 @@ header('Content-Type: text/html; charset=UTF-8');
             margin-left: auto; font-size: 0.75em; opacity: 0.85;
         }
 
-        /* コートグループ */
+        /* 繧ｳ繝ｼ繝医げ繝ｫ繝ｼ繝・*/
         .court-group { margin-bottom: 1em; }
         .court-body {
             background: #1a202c;
@@ -134,7 +134,7 @@ header('Content-Type: text/html; charset=UTF-8');
             display: flex; flex-direction: column; gap: 0.5em;
         }
 
-        /* 試合カード */
+        /* 隧ｦ蜷医き繝ｼ繝・*/
         .match-card {
             background: #2d3748;
             border-radius: 0.5em;
@@ -147,19 +147,19 @@ header('Content-Type: text/html; charset=UTF-8');
         .match-card.done   { opacity: 0.45; cursor: default; border-color: #4a5568; }
         .match-card.undone:active { opacity: 0.75; }
 
-        /* カード上部：No. */
+        /* 繧ｫ繝ｼ繝我ｸ企Κ・哢o. */
         .match-no {
             font-size: 0.68em; color: #a0aec0;
             font-weight: bold; margin-bottom: 0.35em;
             letter-spacing: 0.04em;
         }
 
-        /* カード本体：左チームボックス ／ 中央 ／ 右チームボックス */
+        /* 繧ｫ繝ｼ繝画悽菴難ｼ壼ｷｦ繝√・繝繝懊ャ繧ｯ繧ｹ ・・荳ｭ螟ｮ ・・蜿ｳ繝√・繝繝懊ャ繧ｯ繧ｹ */
         .match-body {
             display: flex; align-items: stretch; gap: 0.45em;
         }
 
-        /* チームボックス */
+        /* 繝√・繝繝懊ャ繧ｯ繧ｹ */
         .team-box {
             flex: 1; background: #fff; border-radius: 0.4em;
             padding: 0.45em 0.5em;
@@ -173,7 +173,7 @@ header('Content-Type: text/html; charset=UTF-8');
             word-break: break-all;
         }
 
-        /* 中央エリア */
+        /* 荳ｭ螟ｮ繧ｨ繝ｪ繧｢ */
         .center-col {
             flex-shrink: 0; width: 2.8em;
             display: flex; flex-direction: column;
@@ -197,39 +197,39 @@ header('Content-Type: text/html; charset=UTF-8');
 <body>
 
 <header>
-    <h1>🎾 テニス大会 スコア入力</h1>
-    <button class="refresh-btn" onclick="reload()">🔄 更新</button>
+    <h1>疾 繝・ル繧ｹ螟ｧ莨・繧ｹ繧ｳ繧｢蜈･蜉・/h1>
+    <button class="refresh-btn" onclick="reload()">売 譖ｴ譁ｰ</button>
 </header>
 
-<!-- リーグ選択 -->
+<!-- 繝ｪ繝ｼ繧ｰ驕ｸ謚・-->
 <div id="league-screen">
-    <div class="section-label">リーグを選択してください</div>
+    <div class="section-label">繝ｪ繝ｼ繧ｰ繧帝∈謚槭＠縺ｦ縺上□縺輔＞</div>
     <div id="league-list"></div>
 </div>
 
-<!-- 試合一覧 -->
+<!-- 隧ｦ蜷井ｸ隕ｧ -->
 <div id="match-screen">
-    <button class="back-btn" onclick="backToLeague()">◀ リーグ選択に戻る</button>
+    <button class="back-btn" onclick="backToLeague()">笳 繝ｪ繝ｼ繧ｰ驕ｸ謚槭↓謌ｻ繧・/button>
     <div id="match-list"></div>
 </div>
 
-<!-- ローディング -->
+<!-- 繝ｭ繝ｼ繝・ぅ繝ｳ繧ｰ -->
 <div id="loading-view">
     <div class="spinner"><span></span><span></span><span></span></div>
-    読み込み中...
+    隱ｭ縺ｿ霎ｼ縺ｿ荳ｭ...
 </div>
 
-<!-- エラー -->
+<!-- 繧ｨ繝ｩ繝ｼ -->
 <div id="error-view">
     <div class="error-box" id="error-msg"></div>
-    <button class="retry-btn" onclick="reload()">再試行</button>
+    <button class="retry-btn" onclick="reload()">蜀崎ｩｦ陦・/button>
 </div>
 
 <script>
-// ── 設定 ─────────────────────────────────────────────────────
+// 笏笏 險ｭ螳・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 const GAS_URL    = 'https://script.google.com/macros/s/AKfycby2xk6p1twOlpMseEFEPsbxw3ocjYR19Z2Erw-68HtymddD6580Oj6JtDugmKUWkM1B9g/exec';
 const SCORE_PAGE = '/gs-score';
-// ─────────────────────────────────────────────────────────────
+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 let leagues       = [];
 let currentLeague = null;
@@ -240,9 +240,12 @@ async function init() {
         const res  = await fetch(GAS_URL + '?action=getLeagues');
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        leagues = data;
+        leagues = data.leagues;
+        if (data.eventName) {
+            document.getElementById('site-title').textContent = '🎾' + data.eventName + '　スコア入力';
+        }
         if (!leagues.length) {
-            showError('リーグが登録されていません<br>基本設定シートを確認してください');
+            showError('繝ｪ繝ｼ繧ｰ縺檎匳骭ｲ縺輔ｌ縺ｦ縺・∪縺帙ｓ<br>蝓ｺ譛ｬ險ｭ螳壹す繝ｼ繝医ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞');
             return;
         }
         if (leagues.length === 1) {
@@ -252,7 +255,7 @@ async function init() {
             showView('league');
         }
     } catch (e) {
-        showError('リーグ情報の取得に失敗しました<br>' + e.message);
+        showError('繝ｪ繝ｼ繧ｰ諠・ｱ縺ｮ蜿門ｾ励↓螟ｱ謨励＠縺ｾ縺励◆<br>' + e.message);
     }
 }
 
@@ -260,7 +263,7 @@ function renderLeagues() {
     document.getElementById('league-list').innerHTML = leagues.map(l =>
         `<button class="league-btn" onclick='selectLeague(${JSON.stringify(l).replace(/"/g,"&quot;")})'>
             <span>${esc(l.name)}</span>
-            <span class="league-badge">${l.games}ゲームマッチ</span>
+            <span class="league-badge">${l.games}繧ｲ繝ｼ繝繝槭ャ繝・/span>
          </button>`
     ).join('');
 }
@@ -275,16 +278,16 @@ async function selectLeague(league) {
         renderMatches(data, league);
         showView('match');
     } catch (e) {
-        showError('試合一覧の取得に失敗しました<br>' + e.message);
+        showError('隧ｦ蜷井ｸ隕ｧ縺ｮ蜿門ｾ励↓螟ｱ謨励＠縺ｾ縺励◆<br>' + e.message);
     }
 }
 
 function renderMatches(matches, league) {
-    // チーム名が空の試合は除外してコート別グループ化
+    // 繝√・繝蜷阪′遨ｺ縺ｮ隧ｦ蜷医・髯､螟悶＠縺ｦ繧ｳ繝ｼ繝亥挨繧ｰ繝ｫ繝ｼ繝怜喧
     const courts = {};
     for (const m of matches) {
         if (!m.team1.length || !m.team1[0] || !m.team2.length || !m.team2[0]) continue;
-        const key = m.court || '－';
+        const key = m.court || '・・;
         if (!courts[key]) courts[key] = [];
         courts[key].push(m);
     }
@@ -292,7 +295,7 @@ function renderMatches(matches, league) {
     const keys = Object.keys(courts).sort();
     if (!keys.length) {
         document.getElementById('match-list').innerHTML =
-            '<div style="color:#a0aec0;padding:2em;text-align:center;">試合が見つかりません</div>';
+            '<div style="color:#a0aec0;padding:2em;text-align:center;">隧ｦ蜷医′隕九▽縺九ｊ縺ｾ縺帙ｓ</div>';
         return;
     }
 
@@ -301,9 +304,9 @@ function renderMatches(matches, league) {
         html += `
         <div class="court-group">
             <div class="court-header">
-                <span class="court-badge">${esc(court)}コート</span>
+                <span class="court-badge">${esc(court)}繧ｳ繝ｼ繝・/span>
                 <span>${esc(league.name)}</span>
-                <span class="court-games">${league.games}ゲームマッチ</span>
+                <span class="court-games">${league.games}繧ｲ繝ｼ繝繝槭ャ繝・/span>
             </div>
             <div class="court-body">`;
 
@@ -312,24 +315,24 @@ function renderMatches(matches, league) {
             const t1 = m.team1 || [];
             const t2 = m.team2 || [];
 
-            // チームボックスの中身
+            // 繝√・繝繝懊ャ繧ｯ繧ｹ縺ｮ荳ｭ霄ｫ
             const t1html = t1.length
                 ? t1.map(n => `<div class="player-name">${esc(n)}</div>`).join('')
-                : '<div class="player-name" style="color:#aaa;">未定</div>';
+                : '<div class="player-name" style="color:#aaa;">譛ｪ螳・/div>';
             const t2html = t2.length
                 ? t2.map(n => `<div class="player-name">${esc(n)}</div>`).join('')
-                : '<div class="player-name" style="color:#aaa;">未定</div>';
+                : '<div class="player-name" style="color:#aaa;">譛ｪ螳・/div>';
 
-            // 中央：スコア or 入力矢印
+            // 荳ｭ螟ｮ・壹せ繧ｳ繧｢ or 蜈･蜉帷泙蜊ｰ
             let centerHtml;
             if (isDone && m.scoreA != null) {
                 centerHtml = `
                     <div class="score-num">${m.scoreA}</div>
-                    <div class="score-sep">─</div>
+                    <div class="score-sep">笏</div>
                     <div class="score-num">${m.scoreB}</div>
-                    <div class="done-label">終了</div>`;
+                    <div class="done-label">邨ゆｺ・/div>`;
             } else {
-                centerHtml = `<div class="enter-arrow">▶</div>`;
+                centerHtml = `<div class="enter-arrow">笆ｶ</div>`;
             }
 
             const onclick = isDone ? '' : `onclick="goScore(${m.no})"`;
@@ -377,7 +380,7 @@ function showView(name) {
 }
 
 function showError(msg) {
-    document.getElementById('error-msg').innerHTML = '⚠️ ' + msg;
+    document.getElementById('error-msg').innerHTML = '笞・・' + msg;
     showView('error');
 }
 
@@ -391,3 +394,4 @@ init();
 </script>
 </body>
 </html>
+
