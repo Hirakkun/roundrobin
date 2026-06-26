@@ -289,7 +289,7 @@ function renderMatches(matches, league) {
             const onclick = isDone ? '' : 'onclick="goScore(' + m.no + ')"';
 
             html += '<div class="match-card ' + (isDone ? 'done' : 'undone') + '" ' + onclick + '>' +
-                '<div class="match-no">No.' + m.no + '</div>' +
+                '<div class="match-no">第' + m.no + '試合</div>' +
                 '<div class="match-body">' +
                 '<div class="team-box">' + t1html + '</div>' +
                 '<div class="center-col">' + centerHtml + '</div>' +
