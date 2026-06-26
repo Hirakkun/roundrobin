@@ -351,10 +351,12 @@ function buildStandings(matches) {
         if (!m.team1.length || !m.team1[0] || !m.team2.length || !m.team2[0]) continue;
         const t1key = m.team1.join('\n');
         const t2key = m.team2.join('\n');
-        if (!teams[t1key]) teams[t1key] = { name: m.team1.join(' '), wins: 0, diff: 0 };
-        if (!teams[t2key]) teams[t2key] = { name: m.team2.join(' '), wins: 0, diff: 0 };
+        if (!teams[t1key]) teams[t1key] = { name: m.team1.join(' '), wins: 0, played: 0, diff: 0 };
+        if (!teams[t2key]) teams[t2key] = { name: m.team2.join(' '), wins: 0, played: 0, diff: 0 };
 
         if (m.done && m.scoreA != null && m.scoreB != null) {
+            teams[t1key].played++;
+            teams[t2key].played++;
             teams[t1key].diff += (m.scoreA - m.scoreB);
             teams[t2key].diff += (m.scoreB - m.scoreA);
             if (m.scoreA > m.scoreB)      teams[t1key].wins++;
@@ -362,13 +364,21 @@ function buildStandings(matches) {
         }
     }
 
-    const sorted = Object.values(teams).sort((a, b) =>
-        b.wins !== a.wins ? b.wins - a.wins : b.diff - a.diff
-    );
+    const sorted = Object.values(teams).sort((a, b) => {
+        const rateA = a.played > 0 ? a.wins / a.played : 0;
+        const rateB = b.played > 0 ? b.wins / b.played : 0;
+        if (rateB !== rateA) return rateB - rateA;
+        return b.diff - a.diff;
+    });
 
     let rank = 1;
     sorted.forEach((t, i) => {
-        if (i > 0 && (sorted[i].wins !== sorted[i-1].wins || sorted[i].diff !== sorted[i-1].diff)) rank = i + 1;
+        if (i > 0) {
+            const prev = sorted[i - 1];
+            const rateA = t.played    > 0 ? t.wins    / t.played    : 0;
+            const rateB = prev.played > 0 ? prev.wins / prev.played : 0;
+            if (rateA !== rateB || t.diff !== prev.diff) rank = i + 1;
+        }
         t.rank = rank;
     });
 
