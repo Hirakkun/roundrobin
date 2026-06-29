@@ -51,13 +51,14 @@ function _ok(obj) {
 }
 
 // ── リーグ一覧取得 ────────────────────────────────────────
-// 基本設定シート: A列=リーグ名, B列=ゲーム数
+// 基本設定シート: A列=リーグ名, B列=ゲーム数, H6=大会名
 function getLeagues() {
   const ss   = SpreadsheetApp.getActiveSpreadsheet();
   const sh   = ss.getSheetByName('基本設定');
   if (!sh) throw new Error('「基本設定」シートが見つかりません');
 
-  const vals = sh.getDataRange().getValues();
+  const vals      = sh.getDataRange().getValues();
+  const eventName = String(sh.getRange('H6').getValue() || '').trim();
   const list = [];
   for (let i = 0; i < vals.length; i++) {
     const name  = String(vals[i][0] || '').trim();
@@ -67,7 +68,7 @@ function getLeagues() {
       list.push({ name, games });
     }
   }
-  return list;
+  return { eventName, leagues: list };
 }
 
 // ── 試合一覧取得 ─────────────────────────────────────────
@@ -168,8 +169,8 @@ function saveScore(data) {
     sh.getRange(sRow, 28).setValue(winB); // AB: 勝セットB
     sh.getRange(sRow, 29).setValue(winB); // AC: 勝数B
 
-    // Y,Z: 各ゲームのポイント（最大5行）
-    for (let g = 0; g < gs.length && g < 5; g++) {
+    // Y,Z: 各ゲームのポイント
+    for (let g = 0; g < gs.length; g++) {
       sh.getRange(sRow + g, 25).setValue(gs[g].a); // Y: ポイントA
       sh.getRange(sRow + g, 26).setValue(gs[g].b); // Z: ポイントB
     }
