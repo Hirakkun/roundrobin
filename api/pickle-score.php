@@ -225,6 +225,28 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .done-next-btn:active { opacity: 0.75; }
 
+        /* ===== オプション選択 ===== */
+        .opt-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.4em;
+        }
+        .opt-label {
+            color: #c5cae9; font-size: 0.78em; font-weight: bold;
+            min-width: 4.2em; text-align: right;
+        }
+        .opt-btn {
+            flex: 1; max-width: 5em; padding: 0.45em 0.2em;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 0.5em;
+            background: transparent; color: #c5cae9;
+            font-size: 0.85em; font-weight: bold; cursor: pointer;
+            touch-action: manipulation;
+        }
+        .opt-btn.sel {
+            background: #fff; color: #283593; border-color: #fff;
+        }
+        .opt-btn:active { opacity: 0.8; }
+
         /* ===== トグルスイッチ ===== */
         .toggle-row {
             display: flex; align-items: center; justify-content: center;
@@ -262,12 +284,24 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <!-- ① サーブ選択 -->
 <div class="setup-screen" id="serve-setup" style="display:flex;">
-    <div class="setup-match-title">ピックルボール ／ 11点先取</div>
+    <div class="setup-match-title" id="setup-title">ピックルボール ／ 11点先取</div>
+    <div class="opt-row">
+        <span class="opt-label">種目</span>
+        <button class="opt-btn" id="mode-singles" onclick="setMode(false)">シングルス</button>
+        <button class="opt-btn sel" id="mode-doubles" onclick="setMode(true)">ダブルス</button>
+    </div>
+    <div class="opt-row">
+        <span class="opt-label">先取点</span>
+        <button class="opt-btn" id="pts-7"  onclick="setPoints(7)">7</button>
+        <button class="opt-btn sel" id="pts-11" onclick="setPoints(11)">11</button>
+        <button class="opt-btn" id="pts-15" onclick="setPoints(15)">15</button>
+        <button class="opt-btn" id="pts-21" onclick="setPoints(21)">21</button>
+    </div>
     <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
-    <button class="setup-btn t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
-    <button class="setup-btn t2" onclick="onServeSelect(2)">プレイヤー3・4</button>
+    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
+    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)">プレイヤー3・4</button>
     <div class="toggle-row">
-        <span>チェンジコート（6点時）</span>
+        <span id="toggle-change-label">チェンジコート（6点時）</span>
         <button class="toggle-switch on" id="toggle-change" onclick="toggleChangeEnds()"></button>
         <span class="toggle-state" id="toggle-change-state">あり</span>
     </div>
@@ -275,7 +309,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <!-- ② コートサイド選択 -->
 <div class="setup-screen" id="court-setup">
-    <div class="setup-match-title">ピックルボール ／ 11点先取</div>
+    <div class="setup-match-title" id="court-title">ピックルボール ／ 11点先取</div>
     <h2>&#x1F3D3; サーバーはどちら側ですか？</h2>
     <div class="sub" id="court-sub"></div>
     <div class="court-side-select">
@@ -308,7 +342,7 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="court-info-bar">
         <span>&#x1F3D3; ピックルボール</span>
         <div style="display:flex; align-items:center; gap:0.5em;">
-            <span class="games-badge">11点先取</span>
+            <span class="games-badge" id="games-badge-txt">11点先取</span>
             <button class="back-link" onclick="confirmReset()">リセット</button>
         </div>
     </div>
@@ -362,15 +396,18 @@ header('Content-Type: text/html; charset=UTF-8');
 
 <script>
 // ── 設定 ─────────────────────────────────────────────────────
-const WIN_POINT  = 11;   // 11点先取（2点差）
-const team1Label = 'プレイヤー1・2';
-const team2Label = 'プレイヤー3・4';
+let isDoubles  = true;  // ダブルス / シングルス
+let winPoint   = 11;    // 先取点（7/11/15/21・2点差）
+let team1Label = 'プレイヤー1・2';
+let team2Label = 'プレイヤー3・4';
+// エンドチェンジは先取点の半分（切り上げ）到達時: 7→4, 11→6, 15→8, 21→11
+function changeAt() { return Math.ceil(winPoint / 2); }
 // ─────────────────────────────────────────────────────────────
 
 // スコア状態
 let leftTeam      = 1;   // 画面左のチーム (1 or 2)
 let servingTeam   = 1;   // サーブ権を持つチーム
-let serverNum     = 2;   // サーバー番号（試合開始時は #2 から）
+let serverNum     = 2;   // サーバー番号（ダブルス開始時は #2 から）
 let score_t1      = 0;
 let score_t2      = 0;
 let game_is_over  = false;
@@ -378,6 +415,35 @@ let historyStack  = [];
 let changeEndsEnabled = true;  // チェンジコート あり/なし
 let changedEnds       = false; // このゲームでチェンジコート済みか
 let pendingChange     = false; // エンドチェンジ確認待ちか
+
+// ── 種目・先取点選択 ─────────────────────────────────────────
+window.setMode = function(doubles) {
+    isDoubles = doubles;
+    document.getElementById('mode-singles').classList.toggle('sel', !doubles);
+    document.getElementById('mode-doubles').classList.toggle('sel', doubles);
+    team1Label = doubles ? 'プレイヤー1・2' : 'プレイヤー1';
+    team2Label = doubles ? 'プレイヤー3・4' : 'プレイヤー2';
+    document.getElementById('serve-btn-t1').textContent = team1Label;
+    document.getElementById('serve-btn-t2').textContent = team2Label;
+    updateSetupLabels();
+};
+
+window.setPoints = function(p) {
+    winPoint = p;
+    [7, 11, 15, 21].forEach(function(v) {
+        document.getElementById('pts-' + v).classList.toggle('sel', v === p);
+    });
+    updateSetupLabels();
+};
+
+function updateSetupLabels() {
+    const title = 'ピックルボール ／ ' + winPoint + '点先取';
+    document.getElementById('setup-title').textContent = title;
+    document.getElementById('court-title').textContent = title;
+    document.getElementById('games-badge-txt').textContent = winPoint + '点先取';
+    document.getElementById('toggle-change-label').textContent =
+        'チェンジコート（' + changeAt() + '点時）';
+}
 
 // ── チェンジコートトグル ──────────────────────────────────────
 window.toggleChangeEnds = function() {
@@ -389,6 +455,7 @@ window.toggleChangeEnds = function() {
 // ── ① サーブ選択 ─────────────────────────────────────────────
 window.onServeSelect = function(team) {
     servingTeam = team;
+    serverNum   = isDoubles ? 2 : 1; // ダブルスは0-0-2スタート
     document.getElementById('serve-setup').style.display = 'none';
     document.getElementById('court-sub').textContent =
         '「' + (team === 1 ? team1Label : team2Label) + '」がサーブします';
@@ -401,7 +468,7 @@ window.onCourtSideSelect = function(side) {
     document.getElementById('court-setup').style.display = 'none';
     document.getElementById('main-container').style.display = 'flex';
     updateDisplay();
-    setUmpire('0 - 0 - 2　プレイボール');
+    setUmpire(isDoubles ? '0 - 0 - 2　プレイボール' : '0 - 0　プレイボール');
 };
 
 // ── ラリー勝ち（ピックルボール：サイドアウト制） ──────────────
@@ -427,15 +494,15 @@ window.rallyWon = function(side) {
         if (winner === 1) score_t1++;
         else              score_t2++;
 
-        // エンドチェンジ：どちらかが6点に達した時（1回のみ・確認ボタン待ち）
+        // エンドチェンジ：どちらかが先取点の半分に達した時（1回のみ・確認ボタン待ち）
         if (changeEndsEnabled && !changedEnds &&
-            (score_t1 === 6 || score_t2 === 6)) {
+            (score_t1 === changeAt() || score_t2 === changeAt())) {
             pendingChange = true;
             justChangedEnds = true;
         }
     } else {
         // レシーブ側がラリーに勝つ → 得点なし・フォルト処理
-        if (serverNum === 1) {
+        if (isDoubles && serverNum === 1) {
             serverNum = 2;                 // セカンドサーバーへ
         } else {
             servingTeam = 3 - servingTeam; // サイドアウト
@@ -445,9 +512,7 @@ window.rallyWon = function(side) {
 
     updateDisplay();
     if (justChangedEnds) {
-        const sv = servingTeam === 1 ? score_t1 : score_t2;
-        const rc = servingTeam === 1 ? score_t2 : score_t1;
-        setUmpire(sv + ' - ' + rc + ' - ' + serverNum + '　エンドチェンジ',
+        setUmpire(baseCall() + '　エンドチェンジ',
                   '（コート交代後、エンドチェンジ完了ボタンを押してください）');
         togglePointButtons(true);
         document.getElementById('btn-confirm').style.display = 'block';
@@ -470,13 +535,20 @@ window.handleChangeConfirm = function() {
 };
 
 // ── コール（サーバー得点－レシーバー得点－サーバー番号） ─────
+function baseCall() {
+    const sv = servingTeam === 1 ? score_t1 : score_t2;
+    const rc = servingTeam === 1 ? score_t2 : score_t1;
+    // ダブルスはサーバー番号付き、シングルスは得点のみ
+    return isDoubles ? sv + ' - ' + rc + ' - ' + serverNum : sv + ' - ' + rc;
+}
+
 function updateUmpireCall() {
     if (game_is_over) return;
     const sv = servingTeam === 1 ? score_t1 : score_t2;
     const rc = servingTeam === 1 ? score_t2 : score_t1;
-    let call = sv + ' - ' + rc + ' - ' + serverNum;
+    let call = baseCall();
     // サーブ側が次の1点で勝てる状況 → ゲームポイント
-    if (sv >= WIN_POINT - 1 && sv - rc >= 1) call += '　ゲームポイント';
+    if (sv >= winPoint - 1 && sv - rc >= 1) call += '　ゲームポイント';
     setUmpire(call);
 }
 
@@ -491,7 +563,7 @@ function setUmpire(msg, sub) {
 function checkGameWinner() {
     const hi   = Math.max(score_t1, score_t2);
     const diff = Math.abs(score_t1 - score_t2);
-    if (hi >= WIN_POINT && diff >= 2) {
+    if (hi >= winPoint && diff >= 2) {
         game_is_over = true;
         togglePointButtons(true);
         document.getElementById('pickle-ball').style.display = 'none';
@@ -552,7 +624,7 @@ function confirmReset() {
 
 window.resetAll = function() {
     score_t1 = 0; score_t2 = 0;
-    servingTeam = 1; serverNum = 2;
+    servingTeam = 1; serverNum = isDoubles ? 2 : 1;
     game_is_over = false;
     historyStack = [];
     changedEnds  = false;
@@ -591,9 +663,10 @@ function updateDisplay() {
     document.getElementById('role-left').textContent  = leftIsServing  ? 'サーブ' : 'レシーブ';
     document.getElementById('role-right').textContent = !leftIsServing ? 'サーブ' : 'レシーブ';
 
-    // サーバー情報
+    // サーバー情報（シングルスはサーバー番号なし）
     document.getElementById('server-info').textContent =
-        (servingTeam === 1 ? team1Label : team2Label) + '　第' + serverNum + 'サーバー';
+        (servingTeam === 1 ? team1Label : team2Label) +
+        (isDoubles ? '　第' + serverNum + 'サーバー' : '');
 
     updateBall();
 }
