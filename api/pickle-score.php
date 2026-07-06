@@ -219,6 +219,29 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .done-next-btn:active { opacity: 0.75; }
 
+        /* ===== トグルスイッチ ===== */
+        .toggle-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.6em; color: #fff; font-size: 0.9em; font-weight: bold;
+        }
+        .toggle-switch {
+            position: relative; width: 2.9em; height: 1.5em;
+            background: rgba(255,255,255,0.25); border-radius: 1em;
+            border: none; cursor: pointer; flex-shrink: 0;
+            transition: background 0.2s;
+            touch-action: manipulation;
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute;
+            top: 0.15em; left: 0.15em;
+            width: 1.2em; height: 1.2em;
+            background: #fff; border-radius: 50%;
+            transition: left 0.2s;
+        }
+        .toggle-switch.on { background: #43a047; }
+        .toggle-switch.on::after { left: 1.55em; }
+        .toggle-state { min-width: 2.5em; text-align: left; opacity: 0.9; }
+
         @keyframes pulse-end {
             0%,100% { background:#dc3545; box-shadow:0 0.22em 0 #8b0000,0 0.3em 0.7em rgba(0,0,0,.4); }
             50%      { background:#f04858; box-shadow:0 0.22em 0 #8b0000,0 0.5em 1.6em rgba(220,53,69,.75),0 0 22px rgba(220,53,69,.55); }
@@ -233,6 +256,11 @@ header('Content-Type: text/html; charset=UTF-8');
     <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
     <button class="setup-btn t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
     <button class="setup-btn t2" onclick="onServeSelect(2)">プレイヤー3・4</button>
+    <div class="toggle-row">
+        <span>チェンジコート（6点時）</span>
+        <button class="toggle-switch on" id="toggle-change" onclick="toggleChangeEnds()"></button>
+        <span class="toggle-state" id="toggle-change-state">あり</span>
+    </div>
 </div>
 
 <!-- ② コートサイド選択 -->
@@ -336,6 +364,15 @@ let score_t1      = 0;
 let score_t2      = 0;
 let game_is_over  = false;
 let historyStack  = [];
+let changeEndsEnabled = true;  // チェンジコート あり/なし
+let changedEnds       = false; // このゲームでチェンジコート済みか
+
+// ── チェンジコートトグル ──────────────────────────────────────
+window.toggleChangeEnds = function() {
+    changeEndsEnabled = !changeEndsEnabled;
+    document.getElementById('toggle-change').classList.toggle('on', changeEndsEnabled);
+    document.getElementById('toggle-change-state').textContent = changeEndsEnabled ? 'あり' : 'なし';
+};
 
 // ── ① サーブ選択 ─────────────────────────────────────────────
 window.onServeSelect = function(team) {
@@ -366,15 +403,25 @@ window.rallyWon = function(side) {
     historyStack.push({
         score_t1: score_t1, score_t2: score_t2,
         servingTeam: servingTeam, serverNum: serverNum,
+        leftTeam: leftTeam, changedEnds: changedEnds,
         umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
     });
 
     const winner = side === 'left' ? leftTeam : (3 - leftTeam);
+    let justChangedEnds = false;
 
     if (winner === servingTeam) {
         // サーブ側がラリーに勝つ → 得点
         if (winner === 1) score_t1++;
         else              score_t2++;
+
+        // チェンジコート：どちらかが6点に達した時（1回のみ）
+        if (changeEndsEnabled && !changedEnds &&
+            (score_t1 === 6 || score_t2 === 6)) {
+            changedEnds = true;
+            leftTeam = 3 - leftTeam;
+            justChangedEnds = true;
+        }
     } else {
         // レシーブ側がラリーに勝つ → 得点なし・フォルト処理
         if (serverNum === 1) {
@@ -386,7 +433,14 @@ window.rallyWon = function(side) {
     }
 
     updateDisplay();
-    updateUmpireCall();
+    if (justChangedEnds) {
+        const sv = servingTeam === 1 ? score_t1 : score_t2;
+        const rc = servingTeam === 1 ? score_t2 : score_t1;
+        setUmpire(sv + ' - ' + rc + ' - ' + serverNum + '　チェンジコート',
+                  '（コートを交代してください。画面の左右も入れ替わりました）');
+    } else {
+        updateUmpireCall();
+    }
     checkGameWinner();
 };
 
@@ -451,6 +505,8 @@ window.undoLastPoint = function() {
     score_t2    = last.score_t2;
     servingTeam = last.servingTeam;
     serverNum   = last.serverNum;
+    leftTeam    = last.leftTeam;
+    changedEnds = last.changedEnds;
     updateDisplay();
     setUmpire(last.umpireMsg);
 };
@@ -465,6 +521,7 @@ window.resetAll = function() {
     servingTeam = 1; serverNum = 2;
     game_is_over = false;
     historyStack = [];
+    changedEnds  = false;
     togglePointButtons(false);
     document.getElementById('btn-end').style.display = 'none';
     document.getElementById('done-screen').style.display = 'none';
