@@ -160,6 +160,12 @@ header('Content-Type: text/html; charset=UTF-8');
             transition: transform .08s, box-shadow .08s;
             touch-action: manipulation;
         }
+        .action-button.confirm {
+            background: #ffc107; color: #333;
+            box-shadow: 0 0.22em 0 #a07800, 0 0.3em 0.7em rgba(0,0,0,.3);
+            animation: pulse-confirm 1.5s ease-in-out infinite;
+        }
+        .action-button.confirm:active { box-shadow: 0 0.08em 0 #a07800, 0 0.1em 0.2em rgba(0,0,0,.2); }
         .action-button.end {
             background: #dc3545; color: #fff; padding: 1em;
             box-shadow: 0 0.22em 0 #8b0000, 0 0.3em 0.7em rgba(0,0,0,.4);
@@ -242,6 +248,10 @@ header('Content-Type: text/html; charset=UTF-8');
         .toggle-switch.on::after { left: 1.55em; }
         .toggle-state { min-width: 2.5em; text-align: left; opacity: 0.9; }
 
+        @keyframes pulse-confirm {
+            0%,100% { background:#ffc107; box-shadow:0 0.22em 0 #a07800,0 0.3em 0.7em rgba(0,0,0,.3); }
+            50%      { background:#ffd04c; box-shadow:0 0.22em 0 #a07800,0 0.5em 1.6em rgba(255,193,7,.75),0 0 22px rgba(255,193,7,.55); }
+        }
         @keyframes pulse-end {
             0%,100% { background:#dc3545; box-shadow:0 0.22em 0 #8b0000,0 0.3em 0.7em rgba(0,0,0,.4); }
             50%      { background:#f04858; box-shadow:0 0.22em 0 #8b0000,0 0.5em 1.6em rgba(220,53,69,.75),0 0 22px rgba(220,53,69,.55); }
@@ -322,6 +332,7 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="umpire-call-area"><div id="umpire-msg">プレイボール</div></div>
     <hr>
 
+    <button id="btn-confirm" class="action-button confirm" onclick="handleChangeConfirm()">エンドチェンジ完了</button>
     <button id="btn-end" class="action-button end" onclick="handleMatchEnd()">試合終了</button>
 
     <div class="point-score-row">
@@ -366,6 +377,7 @@ let game_is_over  = false;
 let historyStack  = [];
 let changeEndsEnabled = true;  // チェンジコート あり/なし
 let changedEnds       = false; // このゲームでチェンジコート済みか
+let pendingChange     = false; // エンドチェンジ確認待ちか
 
 // ── チェンジコートトグル ──────────────────────────────────────
 window.toggleChangeEnds = function() {
@@ -389,13 +401,13 @@ window.onCourtSideSelect = function(side) {
     document.getElementById('court-setup').style.display = 'none';
     document.getElementById('main-container').style.display = 'flex';
     updateDisplay();
-    updateUmpireCall();
+    setUmpire('0 - 0 - 2　プレイボール');
 };
 
 // ── ラリー勝ち（ピックルボール：サイドアウト制） ──────────────
 let _debounce = false;
 window.rallyWon = function(side) {
-    if (game_is_over) return;
+    if (game_is_over || pendingChange) return;
     if (_debounce) return;
     _debounce = true;
     setTimeout(function() { _debounce = false; }, 400);
@@ -415,11 +427,10 @@ window.rallyWon = function(side) {
         if (winner === 1) score_t1++;
         else              score_t2++;
 
-        // チェンジコート：どちらかが6点に達した時（1回のみ）
+        // エンドチェンジ：どちらかが6点に達した時（1回のみ・確認ボタン待ち）
         if (changeEndsEnabled && !changedEnds &&
             (score_t1 === 6 || score_t2 === 6)) {
-            changedEnds = true;
-            leftTeam = 3 - leftTeam;
+            pendingChange = true;
             justChangedEnds = true;
         }
     } else {
@@ -436,12 +447,26 @@ window.rallyWon = function(side) {
     if (justChangedEnds) {
         const sv = servingTeam === 1 ? score_t1 : score_t2;
         const rc = servingTeam === 1 ? score_t2 : score_t1;
-        setUmpire(sv + ' - ' + rc + ' - ' + serverNum + '　チェンジコート',
-                  '（コートを交代してください。画面の左右も入れ替わりました）');
+        setUmpire(sv + ' - ' + rc + ' - ' + serverNum + '　エンドチェンジ',
+                  '（コート交代後、エンドチェンジ完了ボタンを押してください）');
+        togglePointButtons(true);
+        document.getElementById('btn-confirm').style.display = 'block';
     } else {
         updateUmpireCall();
     }
     checkGameWinner();
+};
+
+// ── エンドチェンジ完了 ────────────────────────────────────────
+window.handleChangeConfirm = function() {
+    if (!pendingChange) return;
+    pendingChange = false;
+    changedEnds   = true;
+    leftTeam      = 3 - leftTeam;
+    document.getElementById('btn-confirm').style.display = 'none';
+    togglePointButtons(false);
+    updateDisplay();
+    updateUmpireCall();
 };
 
 // ── コール（サーバー得点－レシーバー得点－サーバー番号） ─────
@@ -449,7 +474,10 @@ function updateUmpireCall() {
     if (game_is_over) return;
     const sv = servingTeam === 1 ? score_t1 : score_t2;
     const rc = servingTeam === 1 ? score_t2 : score_t1;
-    setUmpire(sv + ' - ' + rc + ' - ' + serverNum);
+    let call = sv + ' - ' + rc + ' - ' + serverNum;
+    // サーブ側が次の1点で勝てる状況 → ゲームポイント
+    if (sv >= WIN_POINT - 1 && sv - rc >= 1) call += '　ゲームポイント';
+    setUmpire(call);
 }
 
 function setUmpire(msg, sub) {
@@ -500,6 +528,12 @@ window.undoLastPoint = function() {
         document.getElementById('btn-end').style.display = 'none';
     }
 
+    if (pendingChange) {
+        pendingChange = false;
+        togglePointButtons(false);
+        document.getElementById('btn-confirm').style.display = 'none';
+    }
+
     const last = historyStack.pop();
     score_t1    = last.score_t1;
     score_t2    = last.score_t2;
@@ -522,6 +556,8 @@ window.resetAll = function() {
     game_is_over = false;
     historyStack = [];
     changedEnds  = false;
+    pendingChange = false;
+    document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
     document.getElementById('btn-end').style.display = 'none';
     document.getElementById('done-screen').style.display = 'none';
