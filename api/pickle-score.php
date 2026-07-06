@@ -598,24 +598,26 @@ function updateDisplay() {
     updateBall();
 }
 
-// サーブ位置：自チーム得点が偶数なら右サイド、奇数なら左サイド
+// サーブ位置（ピックルボールルール）：
+//   サーブ側チームの得点が偶数 → 右サービスコートから、奇数 → 左サービスコートから
+//   画面はコートを上から見た配置。左チームは右向きに構えるため右コート=画面下、
+//   右チームは左向きに構えるため右コート=画面上になる
 function updateBall() {
     const ball = document.getElementById('pickle-ball');
-    if (game_is_over) { ball.style.display = 'none'; return; }
+    if (game_is_over || pendingChange) { ball.style.display = 'none'; return; }
     ball.style.display = 'block';
     ball.style.top = ''; ball.style.bottom = '';
     ball.style.left = ''; ball.style.right = '';
 
     const svScore = servingTeam === 1 ? score_t1 : score_t2;
-    const even = svScore % 2 === 0;
+    const rightCourt = svScore % 2 === 0; // 偶数=右サービスコート
     const leftIsServing = (servingTeam === leftTeam);
-    // 偶数=右サイド（画面では下）、奇数=左サイド（画面では上）として簡易表示
     if (leftIsServing) {
-        even ? (ball.style.bottom='5px', ball.style.left='10%')
-             : (ball.style.top   ='5px', ball.style.left='10%');
+        rightCourt ? (ball.style.bottom='5px', ball.style.left='10%')
+                   : (ball.style.top   ='5px', ball.style.left='10%');
     } else {
-        even ? (ball.style.bottom='5px', ball.style.right='10%')
-             : (ball.style.top   ='5px', ball.style.right='10%');
+        rightCourt ? (ball.style.top   ='5px', ball.style.right='10%')
+                   : (ball.style.bottom='5px', ball.style.right='10%');
     }
 }
 
