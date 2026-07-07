@@ -235,7 +235,8 @@ header('Content-Type: text/html; charset=UTF-8');
             min-width: 4.2em; text-align: right;
         }
         .opt-btn {
-            flex: 1; max-width: 5em; padding: 0.45em 0.2em;
+            flex: 1; max-width: 7.5em; padding: 0.45em 0.2em;
+            white-space: nowrap;
             border: 2px solid rgba(255,255,255,0.4);
             border-radius: 0.5em;
             background: transparent; color: #c5cae9;
@@ -415,6 +416,8 @@ let historyStack  = [];
 let changeEndsEnabled = true;  // チェンジコート あり/なし
 let changedEnds       = false; // このゲームでチェンジコート済みか
 let pendingChange     = false; // エンドチェンジ確認待ちか
+let posFlip           = false; // ダブルス：第1→第2サーバー交代時は立ち位置を
+                               // 移動しないため、偶奇ルールと逆側からサーブする状態
 
 // ── 種目・先取点選択 ─────────────────────────────────────────
 window.setMode = function(doubles) {
@@ -484,6 +487,7 @@ window.rallyWon = function(side) {
         score_t1: score_t1, score_t2: score_t2,
         servingTeam: servingTeam, serverNum: serverNum,
         leftTeam: leftTeam, changedEnds: changedEnds,
+        posFlip: posFlip,
         umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
     });
 
@@ -505,9 +509,11 @@ window.rallyWon = function(side) {
         // レシーブ側がラリーに勝つ → 得点なし・フォルト処理
         if (isDoubles && serverNum === 1) {
             serverNum = 2;                 // セカンドサーバーへ
+            posFlip = !posFlip;            // 立ち位置は移動しない → 反対側からサーブ
         } else {
             servingTeam = 3 - servingTeam; // サイドアウト
             serverNum = 1;
+            posFlip = false;               // 新しいチームは偶奇ルールどおり
         }
     }
 
@@ -642,6 +648,7 @@ window.undoLastPoint = function() {
     serverNum   = last.serverNum;
     leftTeam    = last.leftTeam;
     changedEnds = last.changedEnds;
+    posFlip     = last.posFlip;
     updateDisplay();
     updateUmpireCall(); // 復元した状態からコール＋フリガナを再計算
 };
@@ -658,6 +665,7 @@ window.resetAll = function() {
     historyStack = [];
     changedEnds  = false;
     pendingChange = false;
+    posFlip = false;
     document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
     document.getElementById('btn-end').style.display = 'none';
@@ -712,7 +720,9 @@ function updateBall() {
     ball.style.left = ''; ball.style.right = '';
 
     const svScore = servingTeam === 1 ? score_t1 : score_t2;
-    const rightCourt = svScore % 2 === 0; // 偶数=右サービスコート
+    // 偶数=右サービスコート。ただしダブルスで第2サーバーに交代した直後は
+    // プレイヤーが立ち位置を移動しないため反対側（posFlip）からサーブ
+    const rightCourt = (svScore % 2 === 0) !== posFlip;
     const leftIsServing = (servingTeam === leftTeam);
     if (leftIsServing) {
         rightCourt ? (ball.style.bottom='5px', ball.style.left='10%')
