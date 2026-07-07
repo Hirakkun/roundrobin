@@ -468,7 +468,8 @@ window.onCourtSideSelect = function(side) {
     document.getElementById('court-setup').style.display = 'none';
     document.getElementById('main-container').style.display = 'flex';
     updateDisplay();
-    setUmpire(isDoubles ? '0 - 0 - 2　プレイボール' : '0 - 0　プレイボール');
+    setUmpire(isDoubles ? '0 - 0 - 2　プレイボール' : '0 - 0　プレイボール',
+              isDoubles ? 'ゼロ・ゼロ・ツー' : 'ゼロ・ゼロ');
 };
 
 // ── ラリー勝ち（ピックルボール：サイドアウト制） ──────────────
@@ -513,7 +514,8 @@ window.rallyWon = function(side) {
     updateDisplay();
     if (justChangedEnds) {
         setUmpire(baseCall() + '　エンドチェンジ',
-                  '（コート交代後、エンドチェンジ完了ボタンを押してください）');
+                  [baseCallKana(),
+                   '（コート交代後、エンドチェンジ完了ボタンを押してください）']);
         togglePointButtons(true);
         document.getElementById('btn-confirm').style.display = 'block';
     } else {
@@ -535,11 +537,29 @@ window.handleChangeConfirm = function() {
 };
 
 // ── コール（サーバー得点－レシーバー得点－サーバー番号） ─────
+// 数字のカタカナ読み
+function kana(n) {
+    const k = ['ゼロ','ワン','ツー','スリー','フォー','ファイブ','シックス','セブン',
+               'エイト','ナイン','テン','イレブン','トゥエルブ','サーティーン',
+               'フォーティーン','フィフティーン','シックスティーン','セブンティーン',
+               'エイティーン','ナインティーン','トゥエンティ','トゥエンティワン',
+               'トゥエンティツー','トゥエンティスリー','トゥエンティフォー','トゥエンティファイブ'];
+    return k[n] !== undefined ? k[n] : String(n);
+}
+
 function baseCall() {
     const sv = servingTeam === 1 ? score_t1 : score_t2;
     const rc = servingTeam === 1 ? score_t2 : score_t1;
     // ダブルスはサーバー番号付き、シングルスは得点のみ
     return isDoubles ? sv + ' - ' + rc + ' - ' + serverNum : sv + ' - ' + rc;
+}
+
+function baseCallKana() {
+    const sv = servingTeam === 1 ? score_t1 : score_t2;
+    const rc = servingTeam === 1 ? score_t2 : score_t1;
+    return isDoubles
+        ? kana(sv) + '・' + kana(rc) + '・' + kana(serverNum)
+        : kana(sv) + '・' + kana(rc);
 }
 
 function updateUmpireCall() {
@@ -549,14 +569,22 @@ function updateUmpireCall() {
     let call = baseCall();
     // サーブ側が次の1点で勝てる状況 → ゲームポイント
     if (sv >= winPoint - 1 && sv - rc >= 1) call += '　ゲームポイント';
-    setUmpire(call);
+    setUmpire(call, baseCallKana());
 }
 
+// sub: 文字列または文字列の配列（配列は改行して表示）
 function setUmpire(msg, sub) {
     const el = document.getElementById('umpire-msg');
     el.dataset.msg = msg;
-    if (sub) el.innerHTML = escHtml(msg) + '<span class="umpire-sub">' + escHtml(sub) + '</span>';
-    else     el.textContent = msg;
+    if (sub) {
+        const subs = Array.isArray(sub) ? sub : [sub];
+        el.innerHTML = escHtml(msg) +
+            subs.map(function(s) {
+                return '<span class="umpire-sub">' + escHtml(s) + '</span>';
+            }).join('');
+    } else {
+        el.textContent = msg;
+    }
 }
 
 // ── ゲーム終了チェック（11点・2点差） ─────────────────────────
@@ -569,7 +597,8 @@ function checkGameWinner() {
         document.getElementById('pickle-ball').style.display = 'none';
         const l = leftTeam === 1 ? score_t1 : score_t2;
         const r = leftTeam === 1 ? score_t2 : score_t1;
-        setUmpire('ゲームセット ' + l + ' - ' + r, '（試合終了ボタンを押してください）');
+        setUmpire('ゲームセット ' + l + ' - ' + r,
+                  [kana(l) + '・' + kana(r), '（試合終了ボタンを押してください）']);
         document.getElementById('btn-end').style.display = 'block';
     }
 }
@@ -614,7 +643,7 @@ window.undoLastPoint = function() {
     leftTeam    = last.leftTeam;
     changedEnds = last.changedEnds;
     updateDisplay();
-    setUmpire(last.umpireMsg);
+    updateUmpireCall(); // 復元した状態からコール＋フリガナを再計算
 };
 
 // ── リセット ──────────────────────────────────────────────────
