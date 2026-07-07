@@ -186,14 +186,6 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .score-point.p1-bg { background: #cce5ff; }
         .score-point.p2-bg { background: #d4edda; }
-        .pickle-ball {
-            position: absolute; font-size: 1.4em; opacity: .8;
-            user-select: none; transition: all .3s; display: none;
-        }
-
-        .server-info-area { padding: 0.5em; background: #f9f9f9; flex-shrink: 0; }
-        .server-info-label { font-size: 0.8em; font-weight: 600; color: #555; }
-        .server-info-value { font-size: 1.3em; font-weight: bold; color: #333; }
         hr { border: 0; height: 1px; background: #eee; }
 
         /* ===== 完了画面 ===== */
@@ -400,11 +392,6 @@ header('Content-Type: text/html; charset=UTF-8');
         <button class="role-button" id="role-right">レシーブ</button>
     </div>
 
-    <div class="team-name-row">
-        <div class="team-name-block t1" id="name-left"></div>
-        <div class="team-name-block t2" id="name-right"></div>
-    </div>
-
     <div class="player-name-row">
         <button id="btn-left"  class="score-button p1" onclick="rallyWon('left')">ラリー勝ち</button>
         <button id="btn-right" class="score-button p2" onclick="rallyWon('right')">ラリー勝ち</button>
@@ -419,17 +406,10 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="point-score-row">
         <div id="pt-left"  class="score-point p1-bg" onclick="rallyWon('left')">0</div>
         <div id="pt-right" class="score-point p2-bg" onclick="rallyWon('right')">0</div>
-        <div id="pickle-ball" class="pickle-ball">&#x1F3D3;</div>
         <div class="pos-name pos-lt" id="pos-lt"></div>
         <div class="pos-name pos-lb" id="pos-lb"></div>
         <div class="pos-name pos-rt" id="pos-rt"></div>
         <div class="pos-name pos-rb" id="pos-rb"></div>
-    </div>
-    <hr>
-
-    <div class="server-info-area">
-        <div class="server-info-label">サーバー</div>
-        <div class="server-info-value" id="server-info">-</div>
     </div>
 </div>
 
@@ -685,7 +665,7 @@ function checkGameWinner() {
     if (hi >= winPoint && diff >= 2) {
         game_is_over = true;
         togglePointButtons(true);
-        document.getElementById('pickle-ball').style.display = 'none';
+        updatePositions(); // サーバーハイライトを消す
         const l = leftTeam === 1 ? score_t1 : score_t2;
         const r = leftTeam === 1 ? score_t2 : score_t1;
         setUmpire('ゲームセット ' + l + ' - ' + r,
@@ -767,9 +747,6 @@ function updateDisplay() {
     const leftLabel  = leftTeam === 1 ? team1Label : team2Label;
     const rightLabel = leftTeam === 1 ? team2Label : team1Label;
 
-    document.getElementById('name-left').textContent  = leftLabel;
-    document.getElementById('name-right').textContent = rightLabel;
-
     document.getElementById('btn-left').innerHTML =
         '<span class="btn-team-name">' + escHtml(leftLabel) + '</span>' +
         '<span class="btn-point-label">ラリー勝ち</span>';
@@ -787,18 +764,10 @@ function updateDisplay() {
     document.getElementById('role-left').textContent  = leftIsServing  ? 'サーブ' : 'レシーブ';
     document.getElementById('role-right').textContent = !leftIsServing ? 'サーブ' : 'レシーブ';
 
-    // サーバー情報（シングルスはサーバー番号なし）
-    const svPlayers = servingTeam === 1 ? team1Players : team2Players;
-    const svName = isDoubles ? svPlayers[teamPos[servingTeam][ballRightCourt() ? 0 : 1]]
-                             : svPlayers[0];
-    document.getElementById('server-info').textContent =
-        svName + (isDoubles ? '（第' + serverNum + 'サーバー）' : '');
-
-    updateBall();
     updatePositions();
 }
 
-// サーブ位置が右コートかどうか（ボールマーク・サーバー特定に共通で使用）
+// サーブ位置が右コートかどうか（サーバー特定に使用）
 function ballRightCourt() {
     const svScore = servingTeam === 1 ? score_t1 : score_t2;
     return (svScore % 2 === 0) !== posFlip;
@@ -841,35 +810,15 @@ function updatePositions() {
         }
     }
 
-    // サーバーをハイライト
+    // サーバーをハイライトし、ラケットマークを氏名の外側に付ける
     const servingLeft = (servingTeam === leftTeam);
     const serverEl = servingLeft ? (rightCourt ? lb : lt)
                                  : (rightCourt ? rt : rb);
-    if (!game_is_over && !pendingChange) serverEl.classList.add('server');
-}
-
-// サーブ位置（ピックルボールルール）：
-//   サーブ側チームの得点が偶数 → 右サービスコートから、奇数 → 左サービスコートから
-//   画面はコートを上から見た配置。左チームは右向きに構えるため右コート=画面下、
-//   右チームは左向きに構えるため右コート=画面上になる
-function updateBall() {
-    const ball = document.getElementById('pickle-ball');
-    if (game_is_over || pendingChange) { ball.style.display = 'none'; return; }
-    ball.style.display = 'block';
-    ball.style.top = ''; ball.style.bottom = '';
-    ball.style.left = ''; ball.style.right = '';
-
-    const svScore = servingTeam === 1 ? score_t1 : score_t2;
-    // 偶数=右サービスコート。ただしダブルスで第2サーバーに交代した直後は
-    // プレイヤーが立ち位置を移動しないため反対側（posFlip）からサーブ
-    const rightCourt = (svScore % 2 === 0) !== posFlip;
-    const leftIsServing = (servingTeam === leftTeam);
-    if (leftIsServing) {
-        rightCourt ? (ball.style.bottom='5px', ball.style.left='10%')
-                   : (ball.style.top   ='5px', ball.style.left='10%');
-    } else {
-        rightCourt ? (ball.style.top   ='5px', ball.style.right='10%')
-                   : (ball.style.bottom='5px', ball.style.right='10%');
+    if (!game_is_over && !pendingChange) {
+        serverEl.classList.add('server');
+        serverEl.textContent = servingLeft
+            ? '\u{1F3D3}' + serverEl.textContent   // 左側は名前の左（外側）
+            : serverEl.textContent + '\u{1F3D3}';  // 右側は名前の右（外側）
     }
 }
 
