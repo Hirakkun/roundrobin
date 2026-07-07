@@ -248,6 +248,40 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .opt-btn:active { opacity: 0.8; }
 
+        /* ===== 氏名入力 ===== */
+        .name-section {
+            display: flex; flex-direction: column; gap: 0.4em;
+        }
+        .name-row {
+            display: flex; align-items: center; gap: 0.4em;
+        }
+        .name-team-label {
+            font-size: 0.7em; font-weight: bold; color: #fff;
+            padding: 0.25em 0.5em; border-radius: 0.4em;
+            min-width: 4.6em; text-align: center; flex-shrink: 0;
+        }
+        .name-team-label.t1c { background: #1565c0; }
+        .name-team-label.t2c { background: #2e7d32; }
+        .name-input {
+            flex: 1; min-width: 0; padding: 0.4em 0.5em;
+            border: none; border-radius: 0.4em;
+            font-size: 0.85em; font-weight: bold;
+        }
+
+        /* ===== 立ち位置表示 ===== */
+        .pos-name {
+            position: absolute; font-size: 0.62em; font-weight: bold;
+            color: #333; background: rgba(255,255,255,0.75);
+            padding: 0.15em 0.5em; border-radius: 0.4em;
+            max-width: 45%; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; pointer-events: none; z-index: 2;
+        }
+        .pos-name.server { background: #ffc107; color: #333; }
+        .pos-lt { top: 5px;    left: 5px; }
+        .pos-lb { bottom: 5px; left: 5px; }
+        .pos-rt { top: 5px;    right: 5px; }
+        .pos-rb { bottom: 5px; right: 5px; }
+
         /* ===== トグルスイッチ ===== */
         .toggle-row {
             display: flex; align-items: center; justify-content: center;
@@ -297,6 +331,18 @@ header('Content-Type: text/html; charset=UTF-8');
         <button class="opt-btn sel" id="pts-11" onclick="setPoints(11)">11</button>
         <button class="opt-btn" id="pts-15" onclick="setPoints(15)">15</button>
         <button class="opt-btn" id="pts-21" onclick="setPoints(21)">21</button>
+    </div>
+    <div class="name-section">
+        <div class="name-row">
+            <span class="name-team-label t1c">チーム1</span>
+            <input class="name-input" id="nm-1" placeholder="プレイヤー1" oninput="refreshServeButtons()">
+            <input class="name-input" id="nm-2" placeholder="プレイヤー2" oninput="refreshServeButtons()">
+        </div>
+        <div class="name-row">
+            <span class="name-team-label t2c">チーム2</span>
+            <input class="name-input" id="nm-3" placeholder="プレイヤー3" oninput="refreshServeButtons()">
+            <input class="name-input" id="nm-4" placeholder="プレイヤー4" oninput="refreshServeButtons()">
+        </div>
     </div>
     <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
     <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
@@ -374,6 +420,10 @@ header('Content-Type: text/html; charset=UTF-8');
         <div id="pt-left"  class="score-point p1-bg" onclick="rallyWon('left')">0</div>
         <div id="pt-right" class="score-point p2-bg" onclick="rallyWon('right')">0</div>
         <div id="pickle-ball" class="pickle-ball">&#x1F3D3;</div>
+        <div class="pos-name pos-lt" id="pos-lt"></div>
+        <div class="pos-name pos-lb" id="pos-lb"></div>
+        <div class="pos-name pos-rt" id="pos-rt"></div>
+        <div class="pos-name pos-rb" id="pos-rb"></div>
     </div>
     <hr>
 
@@ -419,15 +469,44 @@ let pendingChange     = false; // エンドチェンジ確認待ちか
 let posFlip           = false; // ダブルス：第1→第2サーバー交代時は立ち位置を
                                // 移動しないため、偶奇ルールと逆側からサーブする状態
 
+// プレイヤー名（[右コート側, 左コート側] の並びで管理）
+let team1Players = ['プレイヤー1', 'プレイヤー2'];
+let team2Players = ['プレイヤー3', 'プレイヤー4'];
+// 各チームのコート内立ち位置: [右コートの選手index, 左コートの選手index]
+let teamPos = { 1: [0, 1], 2: [0, 1] };
+
+// ── 氏名入力 ─────────────────────────────────────────────────
+function readNames() {
+    const v = function(id, def) {
+        const el = document.getElementById(id);
+        return (el && el.value.trim()) ? el.value.trim() : def;
+    };
+    if (isDoubles) {
+        team1Players = [v('nm-1','プレイヤー1'), v('nm-2','プレイヤー2')];
+        team2Players = [v('nm-3','プレイヤー3'), v('nm-4','プレイヤー4')];
+    } else {
+        team1Players = [v('nm-1','プレイヤー1')];
+        team2Players = [v('nm-3','プレイヤー2')];
+    }
+    team1Label = team1Players.join('・');
+    team2Label = team2Players.join('・');
+}
+
+window.refreshServeButtons = function() {
+    readNames();
+    document.getElementById('serve-btn-t1').textContent = team1Label;
+    document.getElementById('serve-btn-t2').textContent = team2Label;
+};
+
 // ── 種目・先取点選択 ─────────────────────────────────────────
 window.setMode = function(doubles) {
     isDoubles = doubles;
     document.getElementById('mode-singles').classList.toggle('sel', !doubles);
     document.getElementById('mode-doubles').classList.toggle('sel', doubles);
-    team1Label = doubles ? 'プレイヤー1・2' : 'プレイヤー1';
-    team2Label = doubles ? 'プレイヤー3・4' : 'プレイヤー2';
-    document.getElementById('serve-btn-t1').textContent = team1Label;
-    document.getElementById('serve-btn-t2').textContent = team2Label;
+    document.getElementById('nm-2').style.display = doubles ? '' : 'none';
+    document.getElementById('nm-4').style.display = doubles ? '' : 'none';
+    document.getElementById('nm-3').placeholder = doubles ? 'プレイヤー3' : 'プレイヤー2';
+    refreshServeButtons();
     updateSetupLabels();
 };
 
@@ -457,8 +536,10 @@ window.toggleChangeEnds = function() {
 
 // ── ① サーブ選択 ─────────────────────────────────────────────
 window.onServeSelect = function(team) {
+    readNames();
     servingTeam = team;
     serverNum   = isDoubles ? 2 : 1; // ダブルスは0-0-2スタート
+    teamPos     = { 1: [0, 1], 2: [0, 1] }; // 入力順1人目が右コートスタート
     document.getElementById('serve-setup').style.display = 'none';
     document.getElementById('court-sub').textContent =
         '「' + (team === 1 ? team1Label : team2Label) + '」がサーブします';
@@ -488,6 +569,7 @@ window.rallyWon = function(side) {
         servingTeam: servingTeam, serverNum: serverNum,
         leftTeam: leftTeam, changedEnds: changedEnds,
         posFlip: posFlip,
+        teamPos: { 1: teamPos[1].slice(), 2: teamPos[2].slice() },
         umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
     });
 
@@ -495,9 +577,12 @@ window.rallyWon = function(side) {
     let justChangedEnds = false;
 
     if (winner === servingTeam) {
-        // サーブ側がラリーに勝つ → 得点
+        // サーブ側がラリーに勝つ → 得点。得点したチームは左右の立ち位置を入れ替える
         if (winner === 1) score_t1++;
         else              score_t2++;
+        if (isDoubles) {
+            teamPos[winner] = [teamPos[winner][1], teamPos[winner][0]];
+        }
 
         // エンドチェンジ：どちらかが先取点の半分に達した時（1回のみ・確認ボタン待ち）
         if (changeEndsEnabled && !changedEnds &&
@@ -649,6 +734,7 @@ window.undoLastPoint = function() {
     leftTeam    = last.leftTeam;
     changedEnds = last.changedEnds;
     posFlip     = last.posFlip;
+    teamPos     = last.teamPos;
     updateDisplay();
     updateUmpireCall(); // 復元した状態からコール＋フリガナを再計算
 };
@@ -666,6 +752,7 @@ window.resetAll = function() {
     changedEnds  = false;
     pendingChange = false;
     posFlip = false;
+    teamPos = { 1: [0, 1], 2: [0, 1] };
     document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
     document.getElementById('btn-end').style.display = 'none';
@@ -701,11 +788,64 @@ function updateDisplay() {
     document.getElementById('role-right').textContent = !leftIsServing ? 'サーブ' : 'レシーブ';
 
     // サーバー情報（シングルスはサーバー番号なし）
+    const svPlayers = servingTeam === 1 ? team1Players : team2Players;
+    const svName = isDoubles ? svPlayers[teamPos[servingTeam][ballRightCourt() ? 0 : 1]]
+                             : svPlayers[0];
     document.getElementById('server-info').textContent =
-        (servingTeam === 1 ? team1Label : team2Label) +
-        (isDoubles ? '　第' + serverNum + 'サーバー' : '');
+        svName + (isDoubles ? '（第' + serverNum + 'サーバー）' : '');
 
     updateBall();
+    updatePositions();
+}
+
+// サーブ位置が右コートかどうか（ボールマーク・サーバー特定に共通で使用）
+function ballRightCourt() {
+    const svScore = servingTeam === 1 ? score_t1 : score_t2;
+    return (svScore % 2 === 0) !== posFlip;
+}
+
+// ── プレイヤー立ち位置表示 ────────────────────────────────────
+// 画面はコートを上から見た配置：
+//   左チームの右コート=画面下、左コート=画面上
+//   右チームの右コート=画面上、左コート=画面下
+function updatePositions() {
+    const lt = document.getElementById('pos-lt');
+    const lb = document.getElementById('pos-lb');
+    const rt = document.getElementById('pos-rt');
+    const rb = document.getElementById('pos-rb');
+    [lt, lb, rt, rb].forEach(function(el) {
+        el.textContent = '';
+        el.classList.remove('server');
+    });
+
+    const leftT   = leftTeam;
+    const rightT  = 3 - leftTeam;
+    const nameOf  = function(t, i) {
+        return (t === 1 ? team1Players : team2Players)[i] || '';
+    };
+    const rightCourt = ballRightCourt();
+
+    if (isDoubles) {
+        lb.textContent = nameOf(leftT,  teamPos[leftT][0]);  // 左チーム右コート
+        lt.textContent = nameOf(leftT,  teamPos[leftT][1]);  // 左チーム左コート
+        rt.textContent = nameOf(rightT, teamPos[rightT][0]); // 右チーム右コート
+        rb.textContent = nameOf(rightT, teamPos[rightT][1]); // 右チーム左コート
+    } else {
+        // シングルス：サーバーの得点の偶奇で両者の位置が決まる（レシーバーは対角）
+        if (rightCourt) {
+            lb.textContent = nameOf(leftT, 0);
+            rt.textContent = nameOf(rightT, 0);
+        } else {
+            lt.textContent = nameOf(leftT, 0);
+            rb.textContent = nameOf(rightT, 0);
+        }
+    }
+
+    // サーバーをハイライト
+    const servingLeft = (servingTeam === leftTeam);
+    const serverEl = servingLeft ? (rightCourt ? lb : lt)
+                                 : (rightCourt ? rt : rb);
+    if (!game_is_over && !pendingChange) serverEl.classList.add('server');
 }
 
 // サーブ位置（ピックルボールルール）：
