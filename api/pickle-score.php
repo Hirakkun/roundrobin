@@ -87,7 +87,9 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ===== メイン画面 ===== */
         .container {
-            width: 100%; min-height: 100vh; background: #fff;
+            width: 100%; background: #fff;
+            height: 100vh; height: 100dvh; /* スマホの1画面に収める */
+            overflow: hidden;
             display: none; flex-direction: column;
         }
         .header-row {
@@ -177,9 +179,14 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .action-button.end:active { box-shadow: 0 0.08em 0 #8b0000, 0 0.1em 0.2em rgba(0,0,0,.2); }
 
-        .point-score-row { position: relative; display: flex; flex: 1; min-height: 0; }
+        .point-score-row {
+            position: relative; display: flex; flex: 1;
+            min-height: 4em; overflow: hidden;
+        }
         .score-point {
-            font-size: 5.5em; font-weight: 700; flex: 1;
+            /* 画面の残り高さに応じて自動縮小し、1画面からはみ出さないようにする */
+            font-size: min(5.5em, 22dvh, 22vh);
+            font-weight: 700; flex: 1;
             text-align: center; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             touch-action: manipulation;
