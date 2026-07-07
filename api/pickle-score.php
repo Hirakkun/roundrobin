@@ -446,8 +446,9 @@ let historyStack  = [];
 let changeEndsEnabled = true;  // チェンジコート あり/なし
 let changedEnds       = false; // このゲームでチェンジコート済みか
 let pendingChange     = false; // エンドチェンジ確認待ちか
-let posFlip           = false; // ダブルス：第1→第2サーバー交代時は立ち位置を
-                               // 移動しないため、偶奇ルールと逆側からサーブする状態
+// ダブルスのサーブコート（true=右）。サイドアウト時は必ず右からスタートし、
+// 得点時（ペアが入替）と第1→第2サーバー交代時（立ち位置は移動しない）に反対側へ移る
+let serveRight        = true;
 
 // プレイヤー名（[右コート側, 左コート側] の並びで管理）
 let team1Players = ['プレイヤー1', 'プレイヤー2'];
@@ -519,6 +520,7 @@ window.onServeSelect = function(team) {
     readNames();
     servingTeam = team;
     serverNum   = isDoubles ? 2 : 1; // ダブルスは0-0-2スタート
+    serveRight  = true;              // ゲーム開始は右コートから
     teamPos     = { 1: [0, 1], 2: [0, 1] }; // 入力順1人目が右コートスタート
     document.getElementById('serve-setup').style.display = 'none';
     document.getElementById('court-sub').textContent =
@@ -548,7 +550,7 @@ window.rallyWon = function(side) {
         score_t1: score_t1, score_t2: score_t2,
         servingTeam: servingTeam, serverNum: serverNum,
         leftTeam: leftTeam, changedEnds: changedEnds,
-        posFlip: posFlip,
+        serveRight: serveRight,
         teamPos: { 1: teamPos[1].slice(), 2: teamPos[2].slice() },
         umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
     });
@@ -562,6 +564,7 @@ window.rallyWon = function(side) {
         else              score_t2++;
         if (isDoubles) {
             teamPos[winner] = [teamPos[winner][1], teamPos[winner][0]];
+            serveRight = !serveRight; // 同じサーバーがサイドを変えて打つ
         }
 
         // エンドチェンジ：どちらかが先取点の半分に達した時（1回のみ・確認ボタン待ち）
@@ -573,12 +576,12 @@ window.rallyWon = function(side) {
     } else {
         // レシーブ側がラリーに勝つ → 得点なし・フォルト処理
         if (isDoubles && serverNum === 1) {
-            serverNum = 2;                 // セカンドサーバーへ
-            posFlip = !posFlip;            // 立ち位置は移動しない → 反対側からサーブ
+            serverNum = 2;                  // セカンドサーバーへ
+            serveRight = !serveRight;       // 立ち位置は移動しない → 反対側からサーブ
         } else {
-            servingTeam = 3 - servingTeam; // サイドアウト
+            servingTeam = 3 - servingTeam;  // サイドアウト
             serverNum = 1;
-            posFlip = false;               // 新しいチームは偶奇ルールどおり
+            serveRight = true;              // サイドアウト後は必ず右コートからスタート
         }
     }
 
@@ -713,7 +716,7 @@ window.undoLastPoint = function() {
     serverNum   = last.serverNum;
     leftTeam    = last.leftTeam;
     changedEnds = last.changedEnds;
-    posFlip     = last.posFlip;
+    serveRight  = last.serveRight;
     teamPos     = last.teamPos;
     updateDisplay();
     updateUmpireCall(); // 復元した状態からコール＋フリガナを再計算
@@ -731,7 +734,7 @@ window.resetAll = function() {
     historyStack = [];
     changedEnds  = false;
     pendingChange = false;
-    posFlip = false;
+    serveRight = true;
     teamPos = { 1: [0, 1], 2: [0, 1] };
     document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
@@ -768,9 +771,12 @@ function updateDisplay() {
 }
 
 // サーブ位置が右コートかどうか（サーバー特定に使用）
+// ダブルス：serveRight 状態で管理（サイドアウト後は必ず右から）
+// シングルス：サーバー自身の得点が偶数なら右、奇数なら左
 function ballRightCourt() {
+    if (isDoubles) return serveRight;
     const svScore = servingTeam === 1 ? score_t1 : score_t2;
-    return (svScore % 2 === 0) !== posFlip;
+    return svScore % 2 === 0;
 }
 
 // ── プレイヤー立ち位置表示 ────────────────────────────────────
