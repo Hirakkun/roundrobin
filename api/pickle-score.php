@@ -288,10 +288,10 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ===== 立ち位置表示 ===== */
         .pos-name {
-            position: absolute; font-size: 0.62em; font-weight: bold;
+            position: absolute; font-size: 1.25em; font-weight: bold;
             color: #333; background: rgba(255,255,255,0.75);
             padding: 0.15em 0.5em; border-radius: 0.4em;
-            max-width: 45%; overflow: hidden; text-overflow: ellipsis;
+            max-width: 48%; overflow: hidden; text-overflow: ellipsis;
             white-space: nowrap; pointer-events: none; z-index: 2;
         }
         .pos-name.server { background: #ffc107; color: #333; }
