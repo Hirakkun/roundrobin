@@ -260,6 +260,25 @@ header('Content-Type: text/html; charset=UTF-8');
             font-size: 0.85em; font-weight: bold;
         }
 
+        /* ===== 登録済みプレイヤー ===== */
+        .chips-label {
+            color: #c5cae9; font-size: 0.62em; margin-top: 0.2em;
+        }
+        .chips-area {
+            display: flex; flex-wrap: wrap; gap: 0.4em;
+            max-height: 5.5em; overflow-y: auto;
+        }
+        .chip {
+            background: #fff; color: #283593;
+            border-radius: 1em; padding: 0.3em 0.9em;
+            font-size: 0.78em; font-weight: bold;
+            cursor: pointer; user-select: none;
+            touch-action: pan-y; position: relative;
+            transition: transform 0.15s, opacity 0.15s;
+            white-space: nowrap;
+        }
+        .chip:active { opacity: 0.75; }
+
         /* ===== 立ち位置表示 ===== */
         .pos-name {
             position: absolute; font-size: 0.62em; font-weight: bold;
@@ -335,6 +354,8 @@ header('Content-Type: text/html; charset=UTF-8');
             <input class="name-input" id="nm-3" placeholder="プレイヤー3" oninput="refreshServeButtons()">
             <input class="name-input" id="nm-4" placeholder="プレイヤー4" oninput="refreshServeButtons()">
         </div>
+        <div class="chips-label" id="chips-label" style="display:none;">登録済みプレイヤー（タップで入力／左右にスワイプで削除）</div>
+        <div class="chips-area" id="chips-area"></div>
     </div>
     <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
     <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
@@ -477,7 +498,108 @@ window.refreshServeButtons = function() {
     readNames();
     document.getElementById('serve-btn-t1').textContent = team1Label;
     document.getElementById('serve-btn-t2').textContent = team2Label;
+    renderChips();
 };
+
+// ── プレイヤー名の保存・候補表示（localStorage） ──────────────
+const PLAYERS_KEY = 'pickleScorePlayers';
+
+function loadPlayers() {
+    try {
+        const arr = JSON.parse(localStorage.getItem(PLAYERS_KEY) || '[]');
+        return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+}
+
+function savePlayers(arr) {
+    try { localStorage.setItem(PLAYERS_KEY, JSON.stringify(arr.slice(0, 100))); } catch (e) {}
+}
+
+// 入力された名前を履歴に追加（デフォルト名は除外）
+function storeEnteredNames() {
+    const stored = loadPlayers();
+    visibleNameInputs().forEach(function(el) {
+        const n = el.value.trim();
+        if (n && !/^プレイヤー\d+$/.test(n) && stored.indexOf(n) < 0) stored.push(n);
+    });
+    savePlayers(stored);
+}
+
+function visibleNameInputs() {
+    return ['nm-1','nm-2','nm-3','nm-4']
+        .map(function(id) { return document.getElementById(id); })
+        .filter(function(el) { return el && el.style.display !== 'none'; });
+}
+
+function renderChips() {
+    const area  = document.getElementById('chips-area');
+    const label = document.getElementById('chips-label');
+    if (!area) return;
+    const used = visibleNameInputs().map(function(el) { return el.value.trim(); });
+    const avail = loadPlayers().filter(function(n) { return used.indexOf(n) < 0; });
+
+    label.style.display = avail.length ? '' : 'none';
+    area.innerHTML = '';
+    avail.forEach(function(name) {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = name;
+        attachChipEvents(chip, name);
+        area.appendChild(chip);
+    });
+}
+
+function attachChipEvents(chip, name) {
+    let startX = null, moved = false;
+
+    chip.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX; moved = false;
+    }, { passive: true });
+
+    chip.addEventListener('touchmove', function(e) {
+        if (startX === null) return;
+        const dx = e.touches[0].clientX - startX;
+        if (Math.abs(dx) > 8) moved = true;
+        chip.style.transform = 'translateX(' + dx + 'px)';
+        chip.style.opacity = Math.max(0.2, 1 - Math.abs(dx) / 120);
+    }, { passive: true });
+
+    chip.addEventListener('touchend', function(e) {
+        e.preventDefault(); // 後続のclick発火による二重入力を防ぐ
+        const dx = (e.changedTouches[0].clientX - (startX === null ? e.changedTouches[0].clientX : startX));
+        startX = null;
+        if (Math.abs(dx) > 60) {
+            // スワイプで削除
+            savePlayers(loadPlayers().filter(function(n) { return n !== name; }));
+            renderChips();
+            return;
+        }
+        chip.style.transform = ''; chip.style.opacity = '';
+        if (!moved) fillName(name); // タップで入力
+    });
+
+    // PC用：クリックで入力（削除はスワイプ相当がないためダブルクリック）
+    let clickTimer = null;
+    chip.addEventListener('click', function() {
+        if (clickTimer) return;
+        clickTimer = setTimeout(function() {
+            clickTimer = null;
+            fillName(name);
+        }, 250);
+    });
+    chip.addEventListener('dblclick', function() {
+        if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+        savePlayers(loadPlayers().filter(function(n) { return n !== name; }));
+        renderChips();
+    });
+}
+
+function fillName(name) {
+    const empty = visibleNameInputs().find(function(el) { return !el.value.trim(); });
+    if (!empty) return;
+    empty.value = name;
+    refreshServeButtons();
+}
 
 // ── 種目・先取点選択 ─────────────────────────────────────────
 window.setMode = function(doubles) {
@@ -518,6 +640,7 @@ window.toggleChangeEnds = function() {
 // ── ① サーブ選択 ─────────────────────────────────────────────
 window.onServeSelect = function(team) {
     readNames();
+    storeEnteredNames(); // 入力された名前を履歴に保存
     servingTeam = team;
     serverNum   = isDoubles ? 2 : 1; // ダブルスは0-0-2スタート
     serveRight  = true;              // ゲーム開始は右コートから
@@ -838,6 +961,9 @@ function escHtml(s) {
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// 初期表示：保存済みプレイヤーの候補を表示
+renderChips();
 </script>
 </body>
 </html>
