@@ -333,6 +333,66 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .back-config-btn:active { opacity: 0.7; }
 
+        /* ===== サーブ・配置設定画面 ===== */
+        .s2-q {
+            color: #fff; font-size: 1.05em; font-weight: bold;
+            text-align: center; margin-top: 0.3em;
+        }
+        .serve-arrows {
+            display: flex; width: 100%; max-width: 18em;
+            align-self: center;
+        }
+        .serve-arrow {
+            flex: 1; font-size: 3em; line-height: 1;
+            background: none; border: none; cursor: pointer;
+            color: rgba(255,255,255,0.3);
+            transition: color 0.15s, transform 0.1s;
+            touch-action: manipulation;
+        }
+        .serve-arrow.sel { color: #29b6f6; text-shadow: 0 0 8px rgba(41,182,246,0.7); }
+        .serve-arrow:active { transform: scale(0.9); }
+
+        .court-diagram {
+            position: relative; width: 100%; max-width: 22em;
+            align-self: center; padding-top: 0.9em;
+        }
+        .swap-sides-btn {
+            position: absolute; top: -0.15em; left: 50%;
+            transform: translateX(-50%); z-index: 3;
+            font-size: 1.5em; color: #e53935;
+            background: #fff; border: none; border-radius: 1em;
+            padding: 0 0.35em; cursor: pointer; line-height: 1.3;
+            box-shadow: 0 1px 3px rgba(0,0,0,.45);
+            touch-action: manipulation;
+        }
+        .swap-sides-btn:active { transform: translateX(-50%) scale(0.9); }
+        .court-box {
+            display: flex; border: 3px solid #fff; border-radius: 0.3em;
+            min-height: 10em; background: rgba(255,255,255,0.08);
+        }
+        .court-col {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: space-between;
+            padding: 0.8em 0.3em;
+        }
+        .cd-net { width: 3px; background: #fff; flex-shrink: 0; }
+        .cd-name {
+            color: #fff; font-weight: bold; font-size: 0.95em;
+            text-align: center; width: 100%; word-break: break-all;
+            min-height: 1.2em;
+        }
+        .swap-pair-btn {
+            font-size: 1.5em; color: #43a047;
+            background: #fff; border: none; border-radius: 1em;
+            padding: 0 0.35em; cursor: pointer; line-height: 1.3;
+            box-shadow: 0 1px 3px rgba(0,0,0,.45);
+            touch-action: manipulation; margin: 0.3em 0;
+        }
+        .swap-pair-btn:active { transform: scale(0.9); }
+        /* シングルスは配置入替不可 */
+        .court-box.singles .swap-pair-btn { display: none; }
+        .court-box.singles .court-col { justify-content: center; }
+
         @keyframes pulse-confirm {
             0%,100% { background:#ffc107; box-shadow:0 0.22em 0 #a07800,0 0.3em 0.7em rgba(0,0,0,.3); }
             50%      { background:#ffd04c; box-shadow:0 0.22em 0 #a07800,0 0.5em 1.6em rgba(255,193,7,.75),0 0 22px rgba(255,193,7,.55); }
@@ -355,10 +415,16 @@ header('Content-Type: text/html; charset=UTF-8');
     </div>
     <div class="opt-row">
         <span class="opt-label">先取点</span>
+        <button class="opt-btn" id="pts-5"  onclick="setPoints(5)">5</button>
         <button class="opt-btn" id="pts-7"  onclick="setPoints(7)">7</button>
         <button class="opt-btn sel" id="pts-11" onclick="setPoints(11)">11</button>
         <button class="opt-btn" id="pts-15" onclick="setPoints(15)">15</button>
         <button class="opt-btn" id="pts-21" onclick="setPoints(21)">21</button>
+    </div>
+    <div class="toggle-row">
+        <span id="toggle-change-label">チェンジコート（6点時）</span>
+        <button class="toggle-switch on" id="toggle-change" onclick="toggleChangeEnds()"></button>
+        <span class="toggle-state" id="toggle-change-state">あり</span>
     </div>
     <div class="name-section">
         <div class="name-row">
@@ -374,39 +440,39 @@ header('Content-Type: text/html; charset=UTF-8');
         <div class="chips-label" id="chips-label" style="display:none;">登録済みプレイヤー（タップで入力／左右にスワイプで削除）</div>
         <div class="chips-area" id="chips-area"></div>
     </div>
-    <div class="toggle-row">
-        <span id="toggle-change-label">チェンジコート（6点時）</span>
-        <button class="toggle-switch on" id="toggle-change" onclick="toggleChangeEnds()"></button>
-        <span class="toggle-state" id="toggle-change-state">あり</span>
-    </div>
     <button class="setup-btn t1" id="config-next-btn" onclick="goServeSelect()" style="text-align:center;">次へ &#x25B6;</button>
 </div>
 
-<!-- ② サーブ選択 -->
-<div class="setup-screen" id="serve-setup">
-    <div class="setup-match-title" id="serve-title">ピックルボール</div>
-    <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
-    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
-    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)">プレイヤー3・4</button>
-    <button class="back-config-btn" onclick="backToConfig()">&#x25C0; 設定に戻る</button>
-</div>
+<!-- ② サーブ・配置設定（統合） -->
+<div class="setup-screen" id="setup2">
+    <div class="setup-match-title">ピックルボール</div>
 
-<!-- ③ コートサイド選択 -->
-<div class="setup-screen" id="court-setup">
-    <div class="setup-match-title" id="court-title">ピックルボール</div>
-    <h2>&#x1F3D3; サーバーはどちら側ですか？</h2>
-    <div class="sub" id="court-sub"></div>
-    <div class="court-side-select">
-        <button class="court-half left-half" onclick="onCourtSideSelect('left')">
-            <div class="half-arrow">&#x2190;</div>
-            <div class="half-word">左</div>
-        </button>
-        <div class="court-net-div"></div>
-        <button class="court-half right-half" onclick="onCourtSideSelect('right')">
-            <div class="half-arrow">&#x2192;</div>
-            <div class="half-word">右</div>
-        </button>
+    <h2 class="s2-q">サーバー側はどちらですか？</h2>
+    <div class="serve-arrows">
+        <button class="serve-arrow sel" id="sa-left"  onclick="setServeSide('left')">&#x2B07;</button>
+        <button class="serve-arrow"     id="sa-right" onclick="setServeSide('right')">&#x2B07;</button>
     </div>
+
+    <h2 class="s2-q">選手の配置を合わせて下さい</h2>
+    <div class="court-diagram">
+        <button class="swap-sides-btn" id="swap-sides" onclick="swapSides()">&#x2194;</button>
+        <div class="court-box" id="court-box">
+            <div class="court-col">
+                <div class="cd-name" id="cd-l-top"></div>
+                <button class="swap-pair-btn" onclick="swapPair('left')">&#x2195;</button>
+                <div class="cd-name" id="cd-l-bot"></div>
+            </div>
+            <div class="cd-net"></div>
+            <div class="court-col">
+                <div class="cd-name" id="cd-r-top"></div>
+                <button class="swap-pair-btn" onclick="swapPair('right')">&#x2195;</button>
+                <div class="cd-name" id="cd-r-bot"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="setup-btn t1" onclick="startGame()" style="text-align:center;">次へ &#x25B6;</button>
+    <button class="back-config-btn" onclick="backToConfig()">&#x25C0; 設定に戻る</button>
 </div>
 
 <!-- 完了画面 -->
@@ -520,8 +586,6 @@ function readNames() {
 
 window.refreshServeButtons = function() {
     readNames();
-    document.getElementById('serve-btn-t1').textContent = team1Label;
-    document.getElementById('serve-btn-t2').textContent = team2Label;
     renderChips();
 };
 
@@ -639,7 +703,7 @@ window.setMode = function(doubles) {
 
 window.setPoints = function(p) {
     winPoint = p;
-    [7, 11, 15, 21].forEach(function(v) {
+    [5, 7, 11, 15, 21].forEach(function(v) {
         document.getElementById('pts-' + v).classList.toggle('sel', v === p);
     });
     updateSetupLabels();
@@ -651,17 +715,72 @@ function updateSetupLabels() {
         'チェンジコート（' + changeAt() + '点時）';
 }
 
-// ── 設定画面 → サーブ選択画面 ────────────────────────────────
+// ── 設定画面 → サーブ・配置設定画面 ─────────────────────────
+let setupServeSide = 'left'; // どちらの側がサーブするか
+
 window.goServeSelect = function() {
     readNames();
+    // 初期状態：チーム1が左、入力順1人目が右コート、左側サーブ
+    leftTeam       = 1;
+    teamPos        = { 1: [0, 1], 2: [0, 1] };
+    setupServeSide = 'left';
+    renderSetup2();
     document.getElementById('config-setup').style.display = 'none';
-    document.getElementById('serve-setup').style.display = 'flex';
+    document.getElementById('setup2').style.display = 'flex';
 };
 
 window.backToConfig = function() {
-    document.getElementById('serve-setup').style.display = 'none';
+    document.getElementById('setup2').style.display = 'none';
     document.getElementById('config-setup').style.display = 'flex';
 };
+
+// サーブ側選択
+window.setServeSide = function(side) {
+    setupServeSide = side;
+    renderSetup2();
+};
+
+// 左右チーム入れ替え
+window.swapSides = function() {
+    leftTeam = 3 - leftTeam;
+    renderSetup2();
+};
+
+// チーム内の1st/2nd（コート配置）入れ替え
+window.swapPair = function(side) {
+    const team = (side === 'left') ? leftTeam : (3 - leftTeam);
+    teamPos[team] = [teamPos[team][1], teamPos[team][0]];
+    renderSetup2();
+};
+
+// 設定画面の描画
+function renderSetup2() {
+    document.getElementById('sa-left').classList.toggle('sel',  setupServeSide === 'left');
+    document.getElementById('sa-right').classList.toggle('sel', setupServeSide === 'right');
+
+    const box    = document.getElementById('court-box');
+    const leftT  = leftTeam;
+    const rightT = 3 - leftTeam;
+    const nameOf = function(t, i) {
+        return (t === 1 ? team1Players : team2Players)[i] || '';
+    };
+
+    box.classList.toggle('singles', !isDoubles);
+
+    if (isDoubles) {
+        // 左列：上=左コート(idx1), 下=右コート(idx0)
+        document.getElementById('cd-l-top').textContent = nameOf(leftT,  teamPos[leftT][1]);
+        document.getElementById('cd-l-bot').textContent = nameOf(leftT,  teamPos[leftT][0]);
+        // 右列：上=右コート(idx0), 下=左コート(idx1)
+        document.getElementById('cd-r-top').textContent = nameOf(rightT, teamPos[rightT][0]);
+        document.getElementById('cd-r-bot').textContent = nameOf(rightT, teamPos[rightT][1]);
+    } else {
+        document.getElementById('cd-l-top').textContent = nameOf(leftT, 0);
+        document.getElementById('cd-l-bot').textContent = '';
+        document.getElementById('cd-r-top').textContent = nameOf(rightT, 0);
+        document.getElementById('cd-r-bot').textContent = '';
+    }
+}
 
 // ── チェンジコートトグル ──────────────────────────────────────
 window.toggleChangeEnds = function() {
@@ -670,24 +789,14 @@ window.toggleChangeEnds = function() {
     document.getElementById('toggle-change-state').textContent = changeEndsEnabled ? 'あり' : 'なし';
 };
 
-// ── ① サーブ選択 ─────────────────────────────────────────────
-window.onServeSelect = function(team) {
+// ── ゲーム開始 ────────────────────────────────────────────────
+window.startGame = function() {
     readNames();
     storeEnteredNames(); // 入力された名前を履歴に保存
-    servingTeam = team;
+    servingTeam = (setupServeSide === 'left') ? leftTeam : (3 - leftTeam);
     serverNum   = isDoubles ? 2 : 1; // ダブルスは0-0-2スタート
     serveRight  = true;              // ゲーム開始は右コートから
-    teamPos     = { 1: [0, 1], 2: [0, 1] }; // 入力順1人目が右コートスタート
-    document.getElementById('serve-setup').style.display = 'none';
-    document.getElementById('court-sub').textContent =
-        '「' + (team === 1 ? team1Label : team2Label) + '」がサーブします';
-    document.getElementById('court-setup').style.display = 'flex';
-};
-
-// ── ② コートサイド選択 ───────────────────────────────────────
-window.onCourtSideSelect = function(side) {
-    leftTeam = (side === 'left') ? servingTeam : (servingTeam === 1 ? 2 : 1);
-    document.getElementById('court-setup').style.display = 'none';
+    document.getElementById('setup2').style.display = 'none';
     document.getElementById('main-container').style.display = 'flex';
     updateDisplay();
     setUmpire(isDoubles ? '0 - 0 - 2　プレイボール' : '0 - 0　プレイボール',
@@ -849,15 +958,15 @@ window.undoLastPoint = function() {
     if (!confirm(msg)) return;
 
     if (historyStack.length === 0) {
-        // スコア開始前に戻る（設定は保持しサーブ選択画面へ）
+        // スコア開始前に戻る（設定は保持しサーブ・配置設定画面へ）
         game_is_over = false;
         pendingChange = false;
         togglePointButtons(false);
         document.getElementById('btn-confirm').style.display = 'none';
         document.getElementById('btn-end').style.display = 'none';
         document.getElementById('main-container').style.display = 'none';
-        document.getElementById('court-setup').style.display = 'none';
-        document.getElementById('serve-setup').style.display = 'flex';
+        renderSetup2();
+        document.getElementById('setup2').style.display = 'flex';
         return;
     }
 
@@ -905,8 +1014,7 @@ window.resetAll = function() {
     document.getElementById('btn-end').style.display = 'none';
     document.getElementById('done-screen').style.display = 'none';
     document.getElementById('main-container').style.display = 'none';
-    document.getElementById('court-setup').style.display = 'none';
-    document.getElementById('serve-setup').style.display = 'none';
+    document.getElementById('setup2').style.display = 'none';
     document.getElementById('config-setup').style.display = 'flex';
 };
 
