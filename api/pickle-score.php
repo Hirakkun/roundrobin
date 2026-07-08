@@ -338,19 +338,10 @@ header('Content-Type: text/html; charset=UTF-8');
             color: #fff; font-size: 1.05em; font-weight: bold;
             text-align: center; margin-top: 0.3em;
         }
-        .serve-arrows {
-            display: flex; width: 100%; max-width: 18em;
-            align-self: center;
+        .s2-hint {
+            color: #c5cae9; font-size: 0.75em;
+            text-align: center; line-height: 1.5;
         }
-        .serve-arrow {
-            flex: 1; font-size: 3em; line-height: 1;
-            background: none; border: none; cursor: pointer;
-            color: rgba(255,255,255,0.3);
-            transition: color 0.15s, transform 0.1s;
-            touch-action: manipulation;
-        }
-        .serve-arrow.sel { color: #29b6f6; text-shadow: 0 0 8px rgba(41,182,246,0.7); }
-        .serve-arrow:active { transform: scale(0.9); }
 
         .court-diagram {
             position: relative; width: 100%; max-width: 22em;
@@ -380,6 +371,23 @@ header('Content-Type: text/html; charset=UTF-8');
             color: #fff; font-weight: bold; font-size: 0.95em;
             text-align: center; width: 100%; word-break: break-all;
             min-height: 1.2em;
+        }
+        /* 1stサーブ候補（タップ可能） */
+        .cd-name.candidate {
+            cursor: pointer;
+            background: rgba(255,255,255,0.12);
+            border: 1px dashed rgba(255,255,255,0.45);
+            border-radius: 0.4em; padding: 0.2em 0.1em;
+            touch-action: manipulation;
+        }
+        .cd-name.candidate:active { opacity: 0.7; }
+        .cd-name.serving {
+            background: rgba(255,193,7,0.25);
+            border: 1px solid #ffc107;
+        }
+        .setup-btn:disabled {
+            background: #9e9e9e; color: rgba(255,255,255,0.6);
+            cursor: not-allowed;
         }
         .swap-pair-btn {
             font-size: 1.5em; color: #43a047;
@@ -447,13 +455,8 @@ header('Content-Type: text/html; charset=UTF-8');
 <div class="setup-screen" id="setup2">
     <div class="setup-match-title">ピックルボール</div>
 
-    <h2 class="s2-q">サーバー側はどちらですか？</h2>
-    <div class="serve-arrows">
-        <button class="serve-arrow sel" id="sa-left"  onclick="setServeSide('left')">&#x2B07;</button>
-        <button class="serve-arrow"     id="sa-right" onclick="setServeSide('right')">&#x2B07;</button>
-    </div>
-
-    <h2 class="s2-q">選手の配置を合わせて下さい</h2>
+    <h2 class="s2-q">選手配置、コート、サーブを合わせてください</h2>
+    <div class="s2-hint" id="s2-hint">最初にサーブする選手の名前をタップしてください</div>
     <div class="court-diagram">
         <button class="swap-sides-btn" id="swap-sides" onclick="swapSides()">&#x2194;</button>
         <div class="court-box" id="court-box">
@@ -471,7 +474,7 @@ header('Content-Type: text/html; charset=UTF-8');
         </div>
     </div>
 
-    <button class="setup-btn t1" onclick="startGame()" style="text-align:center;">次へ &#x25B6;</button>
+    <button class="setup-btn t1" id="s2-next" onclick="startGame()" style="text-align:center;" disabled>次へ &#x25B6;</button>
     <button class="back-config-btn" onclick="backToConfig()">&#x25C0; 設定に戻る</button>
 </div>
 
@@ -716,14 +719,14 @@ function updateSetupLabels() {
 }
 
 // ── 設定画面 → サーブ・配置設定画面 ─────────────────────────
-let setupServeSide = 'left'; // どちらの側がサーブするか
+let setupServeSide = null; // どちらの側がサーブするか（未選択=null）
 
 window.goServeSelect = function() {
     readNames();
-    // 初期状態：チーム1が左、入力順1人目が右コート、左側サーブ
+    // 初期状態：チーム1が左、入力順1人目が右コート、サーブ未選択
     leftTeam       = 1;
     teamPos        = { 1: [0, 1], 2: [0, 1] };
-    setupServeSide = 'left';
+    setupServeSide = null;
     renderSetup2();
     document.getElementById('config-setup').style.display = 'none';
     document.getElementById('setup2').style.display = 'flex';
@@ -734,15 +737,16 @@ window.backToConfig = function() {
     document.getElementById('config-setup').style.display = 'flex';
 };
 
-// サーブ側選択
+// サーブ側選択（1stサーブ候補の名前タップ）
 window.setServeSide = function(side) {
-    setupServeSide = side;
+    setupServeSide = (setupServeSide === side) ? null : side; // 再タップで解除
     renderSetup2();
 };
 
-// 左右チーム入れ替え
+// 左右チーム入れ替え（サーブ選択はリセット）
 window.swapSides = function() {
     leftTeam = 3 - leftTeam;
+    setupServeSide = null;
     renderSetup2();
 };
 
@@ -755,31 +759,61 @@ window.swapPair = function(side) {
 
 // 設定画面の描画
 function renderSetup2() {
-    document.getElementById('sa-left').classList.toggle('sel',  setupServeSide === 'left');
-    document.getElementById('sa-right').classList.toggle('sel', setupServeSide === 'right');
-
     const box    = document.getElementById('court-box');
     const leftT  = leftTeam;
     const rightT = 3 - leftTeam;
     const nameOf = function(t, i) {
         return (t === 1 ? team1Players : team2Players)[i] || '';
     };
+    const lt = document.getElementById('cd-l-top');
+    const lb = document.getElementById('cd-l-bot');
+    const rt = document.getElementById('cd-r-top');
+    const rb = document.getElementById('cd-r-bot');
 
     box.classList.toggle('singles', !isDoubles);
 
+    // 全リセット
+    [lt, lb, rt, rb].forEach(function(el) {
+        el.classList.remove('candidate', 'serving');
+        el.onclick = null;
+    });
+
+    // 1stサーブ候補（右サービスコートの選手）
+    let candL, candR;
     if (isDoubles) {
         // 左列：上=左コート(idx1), 下=右コート(idx0)
-        document.getElementById('cd-l-top').textContent = nameOf(leftT,  teamPos[leftT][1]);
-        document.getElementById('cd-l-bot').textContent = nameOf(leftT,  teamPos[leftT][0]);
+        lt.textContent = nameOf(leftT,  teamPos[leftT][1]);
+        lb.textContent = nameOf(leftT,  teamPos[leftT][0]);
         // 右列：上=右コート(idx0), 下=左コート(idx1)
-        document.getElementById('cd-r-top').textContent = nameOf(rightT, teamPos[rightT][0]);
-        document.getElementById('cd-r-bot').textContent = nameOf(rightT, teamPos[rightT][1]);
+        rt.textContent = nameOf(rightT, teamPos[rightT][0]);
+        rb.textContent = nameOf(rightT, teamPos[rightT][1]);
+        candL = lb; candR = rt;
     } else {
-        document.getElementById('cd-l-top').textContent = nameOf(leftT, 0);
-        document.getElementById('cd-l-bot').textContent = '';
-        document.getElementById('cd-r-top').textContent = nameOf(rightT, 0);
-        document.getElementById('cd-r-bot').textContent = '';
+        lt.textContent = nameOf(leftT, 0);
+        lb.textContent = '';
+        rt.textContent = nameOf(rightT, 0);
+        rb.textContent = '';
+        candL = lt; candR = rt;
     }
+
+    candL.classList.add('candidate');
+    candR.classList.add('candidate');
+    candL.onclick = function() { setServeSide('left'); };
+    candR.onclick = function() { setServeSide('right'); };
+
+    // 選択されたサーバーにラケットマーク（氏名の外側）
+    if (setupServeSide === 'left') {
+        candL.classList.add('serving');
+        candL.textContent = '\u{1F3D3}' + candL.textContent;
+    } else if (setupServeSide === 'right') {
+        candR.classList.add('serving');
+        candR.textContent = candR.textContent + '\u{1F3D3}';
+    }
+
+    // サーブ未選択の間は「次へ」を無効化
+    document.getElementById('s2-next').disabled = (setupServeSide === null);
+    document.getElementById('s2-hint').style.display =
+        (setupServeSide === null) ? '' : 'none';
 }
 
 // ── チェンジコートトグル ──────────────────────────────────────
@@ -791,6 +825,7 @@ window.toggleChangeEnds = function() {
 
 // ── ゲーム開始 ────────────────────────────────────────────────
 window.startGame = function() {
+    if (setupServeSide === null) return; // サーブ未選択なら開始不可
     readNames();
     storeEnteredNames(); // 入力された名前を履歴に保存
     servingTeam = (setupServeSide === 'left') ? leftTeam : (3 - leftTeam);
