@@ -291,9 +291,16 @@ header('Content-Type: text/html; charset=UTF-8');
             position: absolute; font-size: 1.25em; font-weight: bold;
             color: #333; background: rgba(255,255,255,0.75);
             padding: 0.15em 0.5em; border-radius: 0.4em;
-            max-width: 48%; overflow: hidden; text-overflow: ellipsis;
-            white-space: nowrap; pointer-events: none; z-index: 2;
+            max-width: 48%; pointer-events: none; z-index: 2;
+            display: flex; align-items: center; gap: 0.1em;
         }
+        .pos-name:empty { display: none; }
+        /* 氏名部分だけ短縮し、ラケットマークは常に表示 */
+        .pos-name .pn-txt {
+            overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; min-width: 0;
+        }
+        .pos-name .pn-racket { flex-shrink: 0; }
         .pos-name.server { background: #ffc107; color: #333; }
         .pos-lt { top: 5px;    left: 5px; }
         .pos-lb { bottom: 5px; left: 5px; }
@@ -474,7 +481,7 @@ header('Content-Type: text/html; charset=UTF-8');
         </div>
     </div>
 
-    <button class="setup-btn t1" id="s2-next" onclick="startGame()" style="text-align:center;" disabled>次へ &#x25B6;</button>
+    <button class="setup-btn t1" id="s2-next" onclick="startGame()" style="text-align:center;" disabled>試合開始 &#x25B6;</button>
     <button class="back-config-btn" onclick="backToConfig()">&#x25C0; 設定に戻る</button>
 </div>
 
@@ -1096,6 +1103,10 @@ function updatePositions() {
     const lb = document.getElementById('pos-lb');
     const rt = document.getElementById('pos-rt');
     const rb = document.getElementById('pos-rb');
+    // 氏名は短縮対象のspanに入れる（ラケットマークは別spanで常に表示）
+    const setName = function(el, name) {
+        el.innerHTML = name ? '<span class="pn-txt">' + escHtml(name) + '</span>' : '';
+    };
     [lt, lb, rt, rb].forEach(function(el) {
         el.textContent = '';
         el.classList.remove('server');
@@ -1109,18 +1120,18 @@ function updatePositions() {
     const rightCourt = ballRightCourt();
 
     if (isDoubles) {
-        lb.textContent = nameOf(leftT,  teamPos[leftT][0]);  // 左チーム右コート
-        lt.textContent = nameOf(leftT,  teamPos[leftT][1]);  // 左チーム左コート
-        rt.textContent = nameOf(rightT, teamPos[rightT][0]); // 右チーム右コート
-        rb.textContent = nameOf(rightT, teamPos[rightT][1]); // 右チーム左コート
+        setName(lb, nameOf(leftT,  teamPos[leftT][0]));  // 左チーム右コート
+        setName(lt, nameOf(leftT,  teamPos[leftT][1]));  // 左チーム左コート
+        setName(rt, nameOf(rightT, teamPos[rightT][0])); // 右チーム右コート
+        setName(rb, nameOf(rightT, teamPos[rightT][1])); // 右チーム左コート
     } else {
         // シングルス：サーバーの得点の偶奇で両者の位置が決まる（レシーバーは対角）
         if (rightCourt) {
-            lb.textContent = nameOf(leftT, 0);
-            rt.textContent = nameOf(rightT, 0);
+            setName(lb, nameOf(leftT, 0));
+            setName(rt, nameOf(rightT, 0));
         } else {
-            lt.textContent = nameOf(leftT, 0);
-            rb.textContent = nameOf(rightT, 0);
+            setName(lt, nameOf(leftT, 0));
+            setName(rb, nameOf(rightT, 0));
         }
     }
 
@@ -1130,9 +1141,10 @@ function updatePositions() {
                                  : (rightCourt ? rt : rb);
     if (!game_is_over && !pendingChange) {
         serverEl.classList.add('server');
-        serverEl.textContent = servingLeft
-            ? '\u{1F3D3}' + serverEl.textContent   // 左側は名前の左（外側）
-            : serverEl.textContent + '\u{1F3D3}';  // 右側は名前の右（外側）
+        const racket = '<span class="pn-racket">\u{1F3D3}</span>';
+        serverEl.innerHTML = servingLeft
+            ? racket + serverEl.innerHTML   // 左側は名前の左（外側）
+            : serverEl.innerHTML + racket;  // 右側は名前の右（外側）
     }
 }
 
