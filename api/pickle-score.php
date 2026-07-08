@@ -323,6 +323,16 @@ header('Content-Type: text/html; charset=UTF-8');
         .toggle-switch.on::after { left: 1.55em; }
         .toggle-state { min-width: 2.5em; text-align: left; opacity: 0.9; }
 
+        .back-config-btn {
+            background: none; border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 0.5em; color: rgba(255,255,255,0.85);
+            font-size: 0.85em; font-weight: bold;
+            padding: 0.5em 1em; cursor: pointer;
+            align-self: center; margin-top: 0.3em;
+            touch-action: manipulation;
+        }
+        .back-config-btn:active { opacity: 0.7; }
+
         @keyframes pulse-confirm {
             0%,100% { background:#ffc107; box-shadow:0 0.22em 0 #a07800,0 0.3em 0.7em rgba(0,0,0,.3); }
             50%      { background:#ffd04c; box-shadow:0 0.22em 0 #a07800,0 0.5em 1.6em rgba(255,193,7,.75),0 0 22px rgba(255,193,7,.55); }
@@ -335,9 +345,9 @@ header('Content-Type: text/html; charset=UTF-8');
 </head>
 <body>
 
-<!-- ① サーブ選択 -->
-<div class="setup-screen" id="serve-setup" style="display:flex;">
-    <div class="setup-match-title" id="setup-title">ピックルボール ／ 11点先取</div>
+<!-- ① 設定画面 -->
+<div class="setup-screen" id="config-setup" style="display:flex;">
+    <div class="setup-match-title" id="setup-title">ピックルボール</div>
     <div class="opt-row">
         <span class="opt-label">種目</span>
         <button class="opt-btn" id="mode-singles" onclick="setMode(false)">シングルス</button>
@@ -364,19 +374,26 @@ header('Content-Type: text/html; charset=UTF-8');
         <div class="chips-label" id="chips-label" style="display:none;">登録済みプレイヤー（タップで入力／左右にスワイプで削除）</div>
         <div class="chips-area" id="chips-area"></div>
     </div>
-    <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
-    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
-    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)">プレイヤー3・4</button>
     <div class="toggle-row">
         <span id="toggle-change-label">チェンジコート（6点時）</span>
         <button class="toggle-switch on" id="toggle-change" onclick="toggleChangeEnds()"></button>
         <span class="toggle-state" id="toggle-change-state">あり</span>
     </div>
+    <button class="setup-btn t1" id="config-next-btn" onclick="goServeSelect()" style="text-align:center;">次へ &#x25B6;</button>
 </div>
 
-<!-- ② コートサイド選択 -->
+<!-- ② サーブ選択 -->
+<div class="setup-screen" id="serve-setup">
+    <div class="setup-match-title" id="serve-title">ピックルボール</div>
+    <h2>&#x1F3D3; 最初にサーブするチームは？</h2>
+    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)">プレイヤー1・2</button>
+    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)">プレイヤー3・4</button>
+    <button class="back-config-btn" onclick="backToConfig()">&#x25C0; 設定に戻る</button>
+</div>
+
+<!-- ③ コートサイド選択 -->
 <div class="setup-screen" id="court-setup">
-    <div class="setup-match-title" id="court-title">ピックルボール ／ 11点先取</div>
+    <div class="setup-match-title" id="court-title">ピックルボール</div>
     <h2>&#x1F3D3; サーバーはどちら側ですか？</h2>
     <div class="sub" id="court-sub"></div>
     <div class="court-side-select">
@@ -629,13 +646,22 @@ window.setPoints = function(p) {
 };
 
 function updateSetupLabels() {
-    const title = 'ピックルボール ／ ' + winPoint + '点先取';
-    document.getElementById('setup-title').textContent = title;
-    document.getElementById('court-title').textContent = title;
     document.getElementById('games-badge-txt').textContent = winPoint + '点先取';
     document.getElementById('toggle-change-label').textContent =
         'チェンジコート（' + changeAt() + '点時）';
 }
+
+// ── 設定画面 → サーブ選択画面 ────────────────────────────────
+window.goServeSelect = function() {
+    readNames();
+    document.getElementById('config-setup').style.display = 'none';
+    document.getElementById('serve-setup').style.display = 'flex';
+};
+
+window.backToConfig = function() {
+    document.getElementById('serve-setup').style.display = 'none';
+    document.getElementById('config-setup').style.display = 'flex';
+};
 
 // ── チェンジコートトグル ──────────────────────────────────────
 window.toggleChangeEnds = function() {
@@ -823,7 +849,15 @@ window.undoLastPoint = function() {
     if (!confirm(msg)) return;
 
     if (historyStack.length === 0) {
-        resetAll();
+        // スコア開始前に戻る（設定は保持しサーブ選択画面へ）
+        game_is_over = false;
+        pendingChange = false;
+        togglePointButtons(false);
+        document.getElementById('btn-confirm').style.display = 'none';
+        document.getElementById('btn-end').style.display = 'none';
+        document.getElementById('main-container').style.display = 'none';
+        document.getElementById('court-setup').style.display = 'none';
+        document.getElementById('serve-setup').style.display = 'flex';
         return;
     }
 
@@ -872,7 +906,8 @@ window.resetAll = function() {
     document.getElementById('done-screen').style.display = 'none';
     document.getElementById('main-container').style.display = 'none';
     document.getElementById('court-setup').style.display = 'none';
-    document.getElementById('serve-setup').style.display = 'flex';
+    document.getElementById('serve-setup').style.display = 'none';
+    document.getElementById('config-setup').style.display = 'flex';
 };
 
 // ── 表示更新 ──────────────────────────────────────────────────
