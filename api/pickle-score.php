@@ -455,6 +455,7 @@ header('Content-Type: text/html; charset=UTF-8');
         <div class="chips-label" id="chips-label" style="display:none;">登録済みプレイヤー（タップで入力／左右にスワイプで削除）</div>
         <div class="chips-area" id="chips-area"></div>
     </div>
+    <button class="back-config-btn" onclick="clearTeamNames()">&#x1F5D1; チームリセット</button>
     <button class="setup-btn t1" id="config-next-btn" onclick="goServeSelect()" style="text-align:center;">次へ &#x25B6;</button>
 </div>
 
@@ -1051,6 +1052,7 @@ window.resetAll = function() {
     pendingChange = false;
     serveRight = true;
     teamPos = { 1: [0, 1], 2: [0, 1] };
+    clearTeamNames(); // 氏名欄を空欄に戻す（候補チップに復帰）
     document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
     document.getElementById('btn-end').style.display = 'none';
@@ -1058,6 +1060,14 @@ window.resetAll = function() {
     document.getElementById('main-container').style.display = 'none';
     document.getElementById('setup2').style.display = 'none';
     document.getElementById('config-setup').style.display = 'flex';
+};
+
+// ── チームリセット（氏名欄をすべて空欄に） ────────────────────
+window.clearTeamNames = function() {
+    ['nm-1','nm-2','nm-3','nm-4'].forEach(function(id) {
+        document.getElementById(id).value = '';
+    });
+    refreshServeButtons();
 };
 
 // ── 表示更新 ──────────────────────────────────────────────────
