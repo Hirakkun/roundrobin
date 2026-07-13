@@ -129,9 +129,12 @@ header('Content-Type: text/html; charset=UTF-8');
         .event-bubble {
             position: relative; flex-shrink: 0;
             background: #fff; border-radius: 0.6em;
-            padding: 0.5em 0.7em; min-height: 2.4em;
+            padding: 0.5em 0.7em; min-height: 4em;
             font-size: 1.15em; font-weight: bold; color: #222;
-            text-align: left; margin-top: 0.2em;
+            text-align: left;
+            /* コート＋吹き出しのまとまりを縦中央に寄せて
+               配置設定画面のコート位置と揃える */
+            margin-top: auto;
             display: flex; align-items: center;
         }
         .event-bubble::after {
@@ -182,6 +185,7 @@ header('Content-Type: text/html; charset=UTF-8');
         .mc-half {
             flex: 1; min-width: 0; border: none; cursor: pointer;
             background: transparent; color: #fff;
+            font: inherit; /* button要素は既定でフォントを継承しないため明示 */
             display: flex; flex-direction: column;
             align-items: center; justify-content: space-between;
             padding: 0.6em 0.2em;
@@ -289,7 +293,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ===== 立ち位置表示 ===== */
         .pos-name {
-            font-size: 1.05em; font-weight: bold; color: #fff;
+            font-size: 0.95em; font-weight: bold; color: #fff;
             padding: 0.15em 0.45em; border-radius: 0.5em;
             max-width: 100%; pointer-events: none;
             display: flex; align-items: center; gap: 0.1em;
@@ -312,6 +316,9 @@ header('Content-Type: text/html; charset=UTF-8');
             flex-shrink: 0; background: #1565c0;
             border-radius: 0.7em; padding: 0.4em 0.5em 0.5em;
             text-align: center; color: #fff;
+            min-height: 5em;
+            margin-bottom: auto;
+            display: flex; flex-direction: column; justify-content: center;
         }
         .call-main {
             font-size: 1.9em; font-weight: bold; line-height: 1.25;
