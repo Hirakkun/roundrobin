@@ -87,10 +87,11 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ===== メイン画面 ===== */
         .container {
-            width: 100%; background: #fff;
+            width: 100%; background: #283593;
             height: 100vh; height: 100dvh; /* スマホの1画面に収める */
             overflow: hidden;
             display: none; flex-direction: column;
+            padding: 0 0.5em 0.5em; gap: 0.5em;
         }
         .header-row {
             display: flex; justify-content: space-between; align-items: stretch;
@@ -124,35 +125,24 @@ header('Content-Type: text/html; charset=UTF-8');
         .team-name-block.t1 { background: #e3f2fd; color: #0d47a1; }
         .team-name-block.t2 { background: #e8f5e9; color: #1b5e20; }
 
-        .player-name-row { display: flex; flex-shrink: 0; }
-        .score-button {
-            flex: 1; padding: 0.7em 0.3em; font-size: 0.85em;
-            border: none; cursor: pointer; font-weight: bold;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 0.2em;
-            touch-action: manipulation;
+        /* ポイント以外の審判コール（上の吹き出し） */
+        .event-bubble {
+            position: relative; flex-shrink: 0;
+            background: #fff; border-radius: 0.6em;
+            padding: 0.5em 0.7em; min-height: 2.4em;
+            font-size: 1.15em; font-weight: bold; color: #222;
+            text-align: left; margin-top: 0.2em;
+            display: flex; align-items: center;
         }
-        .score-button .btn-team-name   { font-size: 0.85em; opacity: 0.9; line-height: 1.3; }
-        .score-button .btn-point-label { font-size: 1.4em; font-weight: bold; line-height: 1; }
-        .score-button.p1 { background: #1565c0; color: #fff; }
-        .score-button.p2 { background: #2e7d32; color: #fff; }
-        .score-button:disabled { background: #ccc; cursor: not-allowed; }
-
-        .umpire-call-area {
-            position: relative; font-size: 1.15em; font-weight: bold; color: #333;
-            padding: 0.5em 0.7em; min-height: 1.4em; background: #e9f5ff;
-            border: 2px solid #aed9f7; border-radius: 0.5em; margin: 0.45em;
-            flex-shrink: 0; text-align: center;
-        }
-        .umpire-sub {
-            display: block; font-size: 0.65em; font-weight: normal;
-            color: #555; margin-top: 0.2em;
-        }
-        .umpire-call-area::after {
-            content: ''; position: absolute; bottom: -0.6em;
+        .event-bubble::after {
+            content: ''; position: absolute; bottom: -0.55em;
             left: 50%; transform: translateX(-50%);
             border-width: 0.6em 0.6em 0; border-style: solid;
-            border-color: #e9f5ff transparent transparent; z-index: 1;
+            border-color: #fff transparent transparent; z-index: 1;
+        }
+        .umpire-sub {
+            display: block; font-size: 0.62em; font-weight: normal;
+            color: #555; margin-top: 0.15em;
         }
 
         .action-button {
@@ -179,21 +169,28 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .action-button.end:active { box-shadow: 0 0.08em 0 #8b0000, 0 0.1em 0.2em rgba(0,0,0,.2); }
 
-        .point-score-row {
-            position: relative; display: flex; flex: 1;
-            min-height: 4em; overflow: hidden;
+        /* コート（タップでラリー勝ち入力） */
+        .main-court {
+            display: flex; flex: 1; min-height: 6em;
+            border: 3px solid #fff; border-radius: 0.4em;
+            overflow: hidden;
         }
-        .score-point {
-            /* 画面の残り高さに応じて自動縮小し、1画面からはみ出さないようにする */
-            font-size: min(5.5em, 22dvh, 22vh);
-            font-weight: 700; flex: 1;
-            text-align: center; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+        .mc-half {
+            flex: 1; min-width: 0; border: none; cursor: pointer;
+            background: transparent; color: #fff;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: space-between;
+            padding: 0.5em 0.2em;
             touch-action: manipulation;
         }
-        .score-point.p1-bg { background: #cce5ff; }
-        .score-point.p2-bg { background: #d4edda; }
-        hr { border: 0; height: 1px; background: #eee; }
+        .mc-half:active { background: rgba(255,255,255,0.12); }
+        .mc-half:disabled { opacity: 0.55; cursor: not-allowed; }
+        .mc-net { width: 3px; background: #fff; flex-shrink: 0; }
+        .mc-score {
+            /* 画面の残り高さに応じて自動縮小 */
+            font-size: min(4.5em, 16dvh, 16vh);
+            font-weight: 700; line-height: 1; color: #fff;
+        }
 
         /* ===== 完了画面 ===== */
         #done-screen {
@@ -288,24 +285,36 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ===== 立ち位置表示 ===== */
         .pos-name {
-            position: absolute; font-size: 1.25em; font-weight: bold;
-            color: #333; background: rgba(255,255,255,0.75);
-            padding: 0.15em 0.5em; border-radius: 0.4em;
-            max-width: 48%; pointer-events: none; z-index: 2;
+            font-size: 1.05em; font-weight: bold; color: #fff;
+            padding: 0.15em 0.45em; border-radius: 0.5em;
+            max-width: 100%; pointer-events: none;
             display: flex; align-items: center; gap: 0.1em;
+            min-height: 1.6em;
+            border: 1px solid transparent;
         }
-        .pos-name:empty { display: none; }
         /* 氏名部分だけ短縮し、ラケットマークは常に表示 */
         .pos-name .pn-txt {
             overflow: hidden; text-overflow: ellipsis;
             white-space: nowrap; min-width: 0;
         }
         .pos-name .pn-racket { flex-shrink: 0; }
-        .pos-name.server { background: #ffc107; color: #333; }
-        .pos-lt { top: 5px;    left: 5px; }
-        .pos-lb { bottom: 5px; left: 5px; }
-        .pos-rt { top: 5px;    right: 5px; }
-        .pos-rb { bottom: 5px; right: 5px; }
+        .pos-name.server {
+            background: rgba(255,193,7,0.2); color: #ffd54f;
+            border-color: #ffc107;
+        }
+
+        /* コールするポイント（下の吹き出し） */
+        .call-bubble {
+            flex-shrink: 0; background: #1565c0;
+            border-radius: 0.7em; padding: 0.4em 0.5em 0.5em;
+            text-align: center; color: #fff;
+        }
+        .call-main {
+            font-size: 1.9em; font-weight: bold; line-height: 1.25;
+        }
+        .call-kana {
+            font-size: 0.85em; color: #c5cae9; min-height: 1.2em;
+        }
 
         /* ===== トグルスイッチ ===== */
         .toggle-row {
@@ -514,24 +523,31 @@ header('Content-Type: text/html; charset=UTF-8');
         <button class="role-button" id="role-right">レシーブ</button>
     </div>
 
-    <div class="player-name-row">
-        <button id="btn-left"  class="score-button p1" onclick="rallyWon('left')">ラリー勝ち</button>
-        <button id="btn-right" class="score-button p2" onclick="rallyWon('right')">ラリー勝ち</button>
-    </div>
+    <!-- ポイント以外の審判コール（吹き出し） -->
+    <div class="event-bubble"><div id="event-msg"></div></div>
 
-    <div class="umpire-call-area"><div id="umpire-msg">プレイボール</div></div>
-    <hr>
+    <!-- コート（タップでラリー勝ち入力） -->
+    <div class="main-court">
+        <button class="mc-half" id="mc-left" onclick="rallyWon('left')">
+            <div class="pos-name" id="pos-lt"></div>
+            <div class="mc-score" id="pt-left">0</div>
+            <div class="pos-name" id="pos-lb"></div>
+        </button>
+        <div class="mc-net"></div>
+        <button class="mc-half" id="mc-right" onclick="rallyWon('right')">
+            <div class="pos-name" id="pos-rt"></div>
+            <div class="mc-score" id="pt-right">0</div>
+            <div class="pos-name" id="pos-rb"></div>
+        </button>
+    </div>
 
     <button id="btn-confirm" class="action-button confirm" onclick="handleChangeConfirm()">エンドチェンジ完了</button>
     <button id="btn-end" class="action-button end" onclick="handleMatchEnd()">試合終了</button>
 
-    <div class="point-score-row">
-        <div id="pt-left"  class="score-point p1-bg" onclick="rallyWon('left')">0</div>
-        <div id="pt-right" class="score-point p2-bg" onclick="rallyWon('right')">0</div>
-        <div class="pos-name pos-lt" id="pos-lt"></div>
-        <div class="pos-name pos-lb" id="pos-lb"></div>
-        <div class="pos-name pos-rt" id="pos-rt"></div>
-        <div class="pos-name pos-rb" id="pos-rb"></div>
+    <!-- コールするポイント（吹き出し） -->
+    <div class="call-bubble">
+        <div class="call-main" id="call-main">-</div>
+        <div class="call-kana" id="call-kana"></div>
     </div>
 </div>
 
@@ -842,8 +858,9 @@ window.startGame = function() {
     document.getElementById('setup2').style.display = 'none';
     document.getElementById('main-container').style.display = 'flex';
     updateDisplay();
-    setUmpire(isDoubles ? '0 - 0 - 2　プレイボール' : '0 - 0　プレイボール',
-              isDoubles ? 'ゼロ・ゼロ・ツー' : 'ゼロ・ゼロ');
+    setEvent('プレイボール');
+    setCall(isDoubles ? '0 - 0 - 2' : '0 - 0',
+            isDoubles ? 'ゼロ・ゼロ・ツー' : 'ゼロ・ゼロ');
 };
 
 // ── ラリー勝ち（ピックルボール：サイドアウト制） ──────────────
@@ -859,12 +876,12 @@ window.rallyWon = function(side) {
         servingTeam: servingTeam, serverNum: serverNum,
         leftTeam: leftTeam, changedEnds: changedEnds,
         serveRight: serveRight,
-        teamPos: { 1: teamPos[1].slice(), 2: teamPos[2].slice() },
-        umpireMsg: document.getElementById('umpire-msg').dataset.msg || ''
+        teamPos: { 1: teamPos[1].slice(), 2: teamPos[2].slice() }
     });
 
     const winner = side === 'left' ? leftTeam : (3 - leftTeam);
     let justChangedEnds = false;
+    let eventCall = ''; // ポイント以外の審判コール
 
     if (winner === servingTeam) {
         // サーブ側がラリーに勝つ → 得点。得点したチームは左右の立ち位置を入れ替える
@@ -886,21 +903,24 @@ window.rallyWon = function(side) {
         if (isDoubles && serverNum === 1) {
             serverNum = 2;                  // セカンドサーバーへ
             serveRight = !serveRight;       // 立ち位置は移動しない → 反対側からサーブ
+            eventCall = 'セカンドサーバー';
         } else {
             servingTeam = 3 - servingTeam;  // サイドアウト
             serverNum = 1;
             serveRight = true;              // サイドアウト後は必ず右コートからスタート
+            eventCall = 'サイドアウト';
         }
     }
 
     updateDisplay();
     if (justChangedEnds) {
-        setUmpire(baseCall() + '　エンドチェンジ',
-                  [baseCallKana(),
-                   '（コート交代後、エンドチェンジ完了ボタンを押してください）']);
+        setEvent('エンドチェンジ',
+                 '（コート交代後、エンドチェンジ完了ボタンを押してください）');
+        setCall(baseCall(), baseCallKana());
         togglePointButtons(true);
         document.getElementById('btn-confirm').style.display = 'block';
     } else {
+        setEvent(eventCall || autoEvent());
         updateUmpireCall();
     }
     checkGameWinner();
@@ -915,6 +935,7 @@ window.handleChangeConfirm = function() {
     document.getElementById('btn-confirm').style.display = 'none';
     togglePointButtons(false);
     updateDisplay();
+    setEvent(autoEvent());
     updateUmpireCall();
 };
 
@@ -944,20 +965,30 @@ function baseCallKana() {
         : kana(sv) + '・' + kana(rc);
 }
 
-function updateUmpireCall() {
-    if (game_is_over) return;
+// ポイント状況から自動判定するイベントコール（該当なしは空文字）
+function autoEvent() {
     const sv = servingTeam === 1 ? score_t1 : score_t2;
     const rc = servingTeam === 1 ? score_t2 : score_t1;
-    let call = baseCall();
     // サーブ側が次の1点で勝てる状況 → ゲームポイント
-    if (sv >= winPoint - 1 && sv - rc >= 1) call += '　ゲームポイント';
-    setUmpire(call, baseCallKana());
+    if (sv >= winPoint - 1 && sv - rc >= 1) return 'ゲームポイント';
+    return '';
 }
 
-// sub: 文字列または文字列の配列（配列は改行して表示）
-function setUmpire(msg, sub) {
-    const el = document.getElementById('umpire-msg');
-    el.dataset.msg = msg;
+// 下の吹き出し：コールするポイント
+function updateUmpireCall() {
+    if (game_is_over) return;
+    setCall(baseCall(), baseCallKana());
+}
+
+function setCall(main, kanaStr) {
+    document.getElementById('call-main').textContent = main;
+    document.getElementById('call-kana').textContent = kanaStr || '';
+}
+
+// 上の吹き出し：ポイント以外の審判コール（空なら文字を出さない）
+function setEvent(msg, sub) {
+    const el = document.getElementById('event-msg');
+    if (!msg) { el.textContent = ''; return; }
     if (sub) {
         const subs = Array.isArray(sub) ? sub : [sub];
         el.innerHTML = escHtml(msg) +
@@ -979,8 +1010,8 @@ function checkGameWinner() {
         updatePositions(); // サーバーハイライトを消す
         const l = leftTeam === 1 ? score_t1 : score_t2;
         const r = leftTeam === 1 ? score_t2 : score_t1;
-        setUmpire('ゲームセット ' + l + ' - ' + r,
-                  [kana(l) + '・' + kana(r), '（試合終了ボタンを押してください）']);
+        setEvent('ゲーム・アンド・マッチ', '（試合終了ボタンを押してください）');
+        setCall(l + ' - ' + r, kana(l) + '・' + kana(r));
         document.getElementById('btn-end').style.display = 'block';
     }
 }
@@ -1035,7 +1066,8 @@ window.undoLastPoint = function() {
     serveRight  = last.serveRight;
     teamPos     = last.teamPos;
     updateDisplay();
-    updateUmpireCall(); // 復元した状態からコール＋フリガナを再計算
+    setEvent(autoEvent());  // 復元した状態からイベントコールを再計算
+    updateUmpireCall();     // 復元した状態からポイントコールを再計算
 };
 
 // ── リセット ──────────────────────────────────────────────────
@@ -1072,16 +1104,6 @@ window.clearTeamNames = function() {
 
 // ── 表示更新 ──────────────────────────────────────────────────
 function updateDisplay() {
-    const leftLabel  = leftTeam === 1 ? team1Label : team2Label;
-    const rightLabel = leftTeam === 1 ? team2Label : team1Label;
-
-    document.getElementById('btn-left').innerHTML =
-        '<span class="btn-team-name">' + escHtml(leftLabel) + '</span>' +
-        '<span class="btn-point-label">ラリー勝ち</span>';
-    document.getElementById('btn-right').innerHTML =
-        '<span class="btn-team-name">' + escHtml(rightLabel) + '</span>' +
-        '<span class="btn-point-label">ラリー勝ち</span>';
-
     document.getElementById('pt-left').textContent  = leftTeam === 1 ? score_t1 : score_t2;
     document.getElementById('pt-right').textContent = leftTeam === 1 ? score_t2 : score_t1;
 
@@ -1159,8 +1181,8 @@ function updatePositions() {
 }
 
 function togglePointButtons(disabled) {
-    document.getElementById('btn-left').disabled  = disabled;
-    document.getElementById('btn-right').disabled = disabled;
+    document.getElementById('mc-left').disabled  = disabled;
+    document.getElementById('mc-right').disabled = disabled;
 }
 
 function escHtml(s) {
