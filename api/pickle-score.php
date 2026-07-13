@@ -169,10 +169,14 @@ header('Content-Type: text/html; charset=UTF-8');
         }
         .action-button.end:active { box-shadow: 0 0.08em 0 #8b0000, 0 0.1em 0.2em rgba(0,0,0,.2); }
 
-        /* コート（タップでラリー勝ち入力） */
+        /* コート（タップでラリー勝ち入力）
+           選手配置設定画面のコート（.court-box）と同じサイズ感に合わせる */
         .main-court {
-            display: flex; flex: 1; min-height: 6em;
-            border: 3px solid #fff; border-radius: 0.4em;
+            display: flex; flex-shrink: 0;
+            width: 100%; max-width: 22em; align-self: center;
+            min-height: 10em;
+            border: 3px solid #fff; border-radius: 0.3em;
+            background: rgba(255,255,255,0.08);
             overflow: hidden;
         }
         .mc-half {
@@ -180,16 +184,16 @@ header('Content-Type: text/html; charset=UTF-8');
             background: transparent; color: #fff;
             display: flex; flex-direction: column;
             align-items: center; justify-content: space-between;
-            padding: 0.5em 0.2em;
+            padding: 0.6em 0.2em;
             touch-action: manipulation;
         }
         .mc-half:active { background: rgba(255,255,255,0.12); }
         .mc-half:disabled { opacity: 0.55; cursor: not-allowed; }
         .mc-net { width: 3px; background: #fff; flex-shrink: 0; }
         .mc-score {
-            /* 画面の残り高さに応じて自動縮小 */
-            font-size: min(4.5em, 16dvh, 16vh);
+            font-size: 2.6em;
             font-weight: 700; line-height: 1; color: #fff;
+            padding: 0.15em 0;
         }
 
         /* ===== 完了画面 ===== */
