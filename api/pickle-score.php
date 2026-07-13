@@ -728,6 +728,30 @@ function fillName(name) {
 }
 
 // ── 種目・先取点選択 ─────────────────────────────────────────
+// ── 設定値のlocalStorage保存 ─────────────────────────────────
+const SETTINGS_KEY = 'pickleScoreSettings';
+
+function saveSettings() {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+            isDoubles: isDoubles,
+            winPoint: winPoint,
+            changeEndsEnabled: changeEndsEnabled
+        }));
+    } catch (e) {}
+}
+
+function loadSettings() {
+    try {
+        const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+        if (!s) return;
+        if (typeof s.isDoubles === 'boolean') setMode(s.isDoubles);
+        if ([5, 7, 11, 15, 21].indexOf(s.winPoint) >= 0) setPoints(s.winPoint);
+        if (typeof s.changeEndsEnabled === 'boolean' &&
+            s.changeEndsEnabled !== changeEndsEnabled) toggleChangeEnds();
+    } catch (e) {}
+}
+
 window.setMode = function(doubles) {
     isDoubles = doubles;
     document.getElementById('mode-singles').classList.toggle('sel', !doubles);
@@ -737,6 +761,7 @@ window.setMode = function(doubles) {
     document.getElementById('nm-3').placeholder = doubles ? 'プレイヤー3' : 'プレイヤー2';
     refreshServeButtons();
     updateSetupLabels();
+    saveSettings();
 };
 
 window.setPoints = function(p) {
@@ -745,6 +770,7 @@ window.setPoints = function(p) {
         document.getElementById('pts-' + v).classList.toggle('sel', v === p);
     });
     updateSetupLabels();
+    saveSettings();
 };
 
 function updateSetupLabels() {
@@ -856,6 +882,7 @@ window.toggleChangeEnds = function() {
     changeEndsEnabled = !changeEndsEnabled;
     document.getElementById('toggle-change').classList.toggle('on', changeEndsEnabled);
     document.getElementById('toggle-change-state').textContent = changeEndsEnabled ? 'あり' : 'なし';
+    saveSettings();
 };
 
 // ── ゲーム開始 ────────────────────────────────────────────────
@@ -1202,7 +1229,8 @@ function escHtml(s) {
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// 初期表示：保存済みプレイヤーの候補を表示
+// 初期表示：保存済み設定と候補プレイヤーを復元
+loadSettings();
 renderChips();
 </script>
 </body>
