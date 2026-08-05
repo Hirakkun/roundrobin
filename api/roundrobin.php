@@ -142,8 +142,10 @@ body { font-family: sans-serif; font-size: 1rem; color: #222; margin: 0; backgro
 .toggle-sw input:checked + .slider:before { transform:translateX(1.25rem); }
 .match-content { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.375rem; }
 .team { width: 40%; text-align: center; font-weight: bold; font-size: 1.25rem; padding: 1.5rem 0.25rem 0.625rem; border: 2.5px solid #aaa; border-radius: 0.625rem; background: #fafafa; min-height: 5.5rem; position: relative; display: flex; flex-direction: column; justify-content: center; }
-.team::before { content: "＋"; position: absolute; top: 0; left: 0; font-size: 1rem; color: #fff; background: #2e7d32; padding: 2px 7px; border-bottom-right-radius: 0.5rem; }
-.team::after  { content: "ー"; position: absolute; top: 0; right: 0; font-size: 1rem; color: #fff; background: #c62828; padding: 2px 7px; border-bottom-left-radius: 0.5rem; }
+/* 外側の角は .team の角丸（0.625rem − 枠線2.5px）に沿わせる。
+   指定しないと四隅でボタンの直角がカードの丸みからはみ出して見える */
+.team::before { content: "＋"; position: absolute; top: 0; left: 0; font-size: 1rem; color: #fff; background: #2e7d32; padding: 2px 7px; border-bottom-right-radius: 0.5rem; border-top-left-radius: 0.5rem; }
+.team::after  { content: "ー"; position: absolute; top: 0; right: 0; font-size: 1rem; color: #fff; background: #c62828; padding: 2px 7px; border-bottom-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
 .score-area { width: 20%; display: flex; flex-direction: column; align-items: stretch; gap: 1px; }
 .score-nums { font-size: 2.25rem; font-weight: bold; color: #222; display: flex; align-items: baseline; justify-content: center; gap: 2px; }
 .score-nums small { font-size: 1.25rem; color: #888; }
