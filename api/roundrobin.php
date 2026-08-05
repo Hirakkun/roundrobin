@@ -296,6 +296,16 @@ body.viewer-mode #initialSetup { display: none !important; }
             <span id="qrToggleBtn" style="font-size:0.8rem;color:#888;">▼</span>
         </div>
         <div id="qrPanelBody" style="display:none;">
+            <!-- コート数（初期設定から移設。id は既存コードが参照するため据え置き） -->
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
+                <div style="font-size:0.8125rem;font-weight:bold;color:#333;margin-bottom:8px;">🏸 コート数</div>
+                <div class="counter-row">
+                    <button type="button" class="counter-btn" onclick="changeCount('courts',-1)">－</button>
+                    <div class="counter-val" id="disp-courts"><?=$default_courts?></div>
+                    <button type="button" class="counter-btn" onclick="changeCount('courts',+1)">＋</button>
+                </div>
+                <div style="font-size:0.75rem;color:#888;margin-top:4px;">試合開始後の変更は次の試合から反映されます</div>
+            </div>
             <!-- ゲーム数設定 -->
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #eee;">
                 <div style="font-size:0.8125rem;font-weight:bold;color:#333;margin-bottom:8px;">🎾 ゲーム数（スコア入力）</div>
@@ -394,25 +404,8 @@ body.viewer-mode #initialSetup { display: none !important; }
             </div>
         </div>
         </div>
-        <!-- コート数・マッチングルール（名簿なし時のみ表示） -->
+        <!-- マッチングルール（コート数・ゲーム数は「⚙️ ゲーム設定」カードへ集約した） -->
         <div id="manualModeExtra" style="display:none;">
-        <div class="setup-card">
-            <div class="setup-label">🏸 コート数</div>
-            <div class="counter-row">
-                <button type="button" class="counter-btn" onclick="changeCount('courts',-1)">－</button>
-                <div class="counter-val" id="disp-courts"><?=$default_courts?></div>
-                <button type="button" class="counter-btn" onclick="changeCount('courts',+1)">＋</button>
-            </div>
-        </div>
-        <div class="setup-card">
-            <div class="setup-label">🎾 ゲーム数（スコア入力）</div>
-            <div class="counter-row">
-                <button type="button" class="counter-btn" onclick="changeMatchGames(-2)">－</button>
-                <div class="counter-val match-games-val">3</div>
-                <button type="button" class="counter-btn" onclick="changeMatchGames(+2)">＋</button>
-            </div>
-            <div class="match-games-desc-txt" style="font-size:0.75rem;color:#888;margin-top:4px;">3ゲームマッチ（2ゲーム先取）</div>
-        </div>
         <div class="setup-card">
             <div class="setup-label">🎯 マッチングルール</div>
             <div class="match-rule-row">
@@ -626,6 +619,9 @@ function selectRule(rule) {
 }
 
 function changeCount(key, delta) {
+    // コート数は「⚙️ ゲーム設定」内にあり試合中も操作できるため、
+    // changeCourts() と同じくイベント終了後は変更を受け付けない
+    if (key === 'courts' && isEventLocked()) return;
     if (key === 'players') {
         setupPlayers = Math.max(4, Math.min(200, setupPlayers + delta));
         document.getElementById('disp-players').textContent = setupPlayers;
@@ -1827,7 +1823,11 @@ async function registerGuest(playerId) {
 function changeCourts(delta) {
     if (isEventLocked()) return;
     state.courts = Math.max(1, Math.min(20, state.courts + delta));
+    // 「⚙️ ゲーム設定」内のコート数表示とも同期する（値がずれて見えるのを防ぐ）
+    setupCourts = state.courts;
     document.getElementById('disp-courts-live').textContent = state.courts;
+    const cfg = document.getElementById('disp-courts');
+    if (cfg) cfg.textContent = state.courts;
     saveState();
 }
 
