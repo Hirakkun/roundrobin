@@ -363,18 +363,21 @@
             display: flex; align-items: center; gap: 0.25em;
             cursor: pointer; user-select: none; font-size: 0.85em;
         }
+        /* アイコンの並びは 🌙（左） ／ ☀️（右）。
+           ノブは現在のテーマ側に寄せる（ライト=☀️側、ダーク=🌙側）。
+           display.html のトグルと同じ挙動に揃えてある */
         .theme-track {
             position: relative; width: 1.9em; height: 1.05em;
-            background: #777; border-radius: 1em;
+            background: #90caf9; border-radius: 1em;
             transition: background 0.3s; flex-shrink: 0;
         }
-        body.dark .theme-track { background: #90caf9; }
+        body.dark .theme-track { background: #777; }
         .theme-thumb {
-            position: absolute; left: 0.1em; top: 0.1em;
+            position: absolute; left: 0.95em; top: 0.1em;
             width: 0.85em; height: 0.85em;
             background: #fff; border-radius: 50%; transition: left 0.3s;
         }
-        body.dark .theme-thumb { left: 0.95em; }
+        body.dark .theme-thumb { left: 0.1em; }
 
         @keyframes pulse-confirm {
             0%, 100% { background: #ffc107; box-shadow: 0 0.22em 0 #a07800, 0 0.3em 0.7em rgba(0,0,0,.3); }
