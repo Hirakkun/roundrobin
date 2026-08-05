@@ -134,12 +134,6 @@
             touch-action: manipulation; margin: 0.35em 0;
         }
         .swap-pair-btn:active { transform: scale(0.9); }
-        /* デュース側スロット（＝そのチームの1人目・最初にサーブする位置）
-           flex-basis:100% で名前の下の行に回す */
-        .cd-name.first-server::after {
-            content: '1人目'; flex-basis: 100%;
-            font-size: 0.62em; font-weight: normal; opacity: 0.8;
-        }
         /* 未選択の間は開始できない */
         .setup-btn:disabled {
             background: #9e9e9e; color: rgba(255,255,255,0.6);
@@ -447,7 +441,7 @@
 <!-- 試合設定画面（コート配置＋サーブを1画面で選択） -->
 <div class="setup-screen" id="match-setup">
     <div class="setup-match-title" id="setup-match-title"></div>
-    <h2>コートとサーブを合わせてください</h2>
+    <h2>コート・サーブ位置を合わせてください</h2>
     <div class="sub" id="setup-hint">最初にサーブするチームをタップしてください</div>
     <!-- コートを上から見た配置。左半面は下、右半面は上がデュース側＝そのチームの
          1人目（最初にサーブを打つ位置）。↕ でペア内の並びを入れ替える -->
@@ -1013,7 +1007,6 @@ function renderSetupCourt() {
             // サーブ側チームのデュース枠の選手が最初のサーバー
             const ball = (isServing && isDeuce) ? '<span class="cd-serve-ball">🎾</span> ' : '';
             el.innerHTML = ball + (player ? renderName(player) : '');
-            el.classList.toggle('first-server', isDeuce);
         };
         slot(deuceIsBottom ? botId : topId, deuce, true);
         slot(deuceIsBottom ? topId : botId, ad,   false);
@@ -1387,13 +1380,26 @@ function updateRoleButtons() {
     document.getElementById('role-right').textContent = !leftIsServer ? 'サーブ' : 'レシーブ';
 }
 
-// 今サーブしている選手のスロット番号（0=デュース枠の選手＝1人目）
-// ダブルスのサーブ順は A1→B1→A2→B2→A1… の固定ローテーション。
-// 「そのチームが何回目のサービスゲームか」は完了ゲーム数から求まるので、
-// 状態を持たずに導出できる（＝「戻る」で巻き戻しても自動的に正しくなる）。
-function currentServerSlot() {
-    const n = set_score_t1 + set_score_t2;   // 完了ゲーム数 ＝ 現在のゲーム番号(0始まり)
-    return Math.floor(n / 2) % 2;
+// 現在のゲーム番号（0始まり）＝ 完了ゲーム数
+function currentGameIndex() { return set_score_t1 + set_score_t2; }
+
+// チームtの、このゲーム開始時点での [デュース側の選手, アド側の選手]。
+//
+// ルール: サービスゲームを打ち終えた選手は、最後のサーブ位置に関わらずアド側へ移る。
+// したがってチームの並びは「そのチームが消化したサービスゲーム数」が奇数のとき
+// 設定画面での初期配置から入れ替わる。
+//
+// 消化数はゲーム番号から求まるので状態を持つ必要がない。
+// これにより「戻る」で巻き戻しても、別端末から引き継いでも自動的に正しくなる
+// （set_score_t1/t2 と current_server はどちらの経路でも復元されるため）。
+function teamArrangement(team) {
+    const n = currentGameIndex();
+    // 第1ゲームをサーブしたチーム。偶数ゲームは第1ゲームと同じチームがサーブする
+    const firstTeam = (n % 2 === 0) ? current_server : (3 - current_server);
+    // 第0..n-1ゲームのうち、このチームが打ったサービスゲーム数
+    const served = (team === firstTeam) ? Math.ceil(n / 2) : Math.floor(n / 2);
+    const [p0, p1] = teamSlots(team);
+    return (served % 2 === 0) ? [p0, p1] : [p1, p0];
 }
 
 // コート四隅の選手名を更新する。
@@ -1402,19 +1408,18 @@ function currentServerSlot() {
 function updateCourtPositions() {
     const rightTeam = 3 - leftTeam;
     const isDeuce   = (game_score_t1 + game_score_t2) % 2 === 0; // 偶数ポイント＝デュースコートから
-    const srvSlot   = currentServerSlot();
 
     // そのチームの [デュース位置の選手, アド位置の選手] と、🎾 を置く位置を返す
     const layout = (team) => {
-        const slots = teamSlots(team);
+        // ゲーム開始時点の並び。サーブ側はこのデュース枠の選手がサーバー
+        const [deuce, ad] = teamArrangement(team);
         if (current_server !== team) {
-            return { deuce: slots[0], ad: slots[1], ball: null }; // レシーブ側は固定
+            return { deuce, ad, ball: null }; // レシーブ側はゲーム中固定
         }
-        const server  = slots[srvSlot];
-        const partner = slots[1 - srvSlot];
+        // サーブ側はポイントごとに上下が入れ替わる（サーバーが立つ側に🎾）
         return isDeuce
-            ? { deuce: server,  ad: partner, ball: 'deuce' }
-            : { deuce: partner, ad: server,  ball: 'ad' };
+            ? { deuce: deuce, ad: ad,    ball: 'deuce' }
+            : { deuce: ad,    ad: deuce, ball: 'ad' };
     };
 
     const set = (elId, player, isServing) => {
