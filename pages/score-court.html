@@ -112,10 +112,11 @@
             border: 2px solid #ffca28;
         }
         .cd-name {
-            color: #fff; font-weight: bold; font-size: 1.15em;
-            text-align: center; width: 100%; word-break: break-all;
+            color: #fff; font-weight: bold; font-size: 1.05em;
+            text-align: center; width: 100%;
             line-height: 1.25;
-            display: flex; align-items: center; justify-content: center; gap: 0.2em;
+            display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; gap: 0.2em;
         }
         .court-half.serving .cd-name { color: #1a237e; }
         .court-half.serving .cd-name .num-badge { background: #1a237e; color: #ffc107; }
@@ -124,6 +125,21 @@
             font-size: 1.9em; line-height: 1; height: 1.2em;
         }
         .cd-net { width: 4px; background: #fff; flex-shrink: 0; }
+        /* ペア内の並び替えボタン（半面タップと競合しないよう stopPropagation する） */
+        .swap-pair-btn {
+            font-size: 1.4em; color: #43a047;
+            background: #fff; border: none; border-radius: 1em;
+            padding: 0 0.35em; cursor: pointer; line-height: 1.3;
+            box-shadow: 0 1px 3px rgba(0,0,0,.45);
+            touch-action: manipulation; margin: 0.35em 0;
+        }
+        .swap-pair-btn:active { transform: scale(0.9); }
+        /* デュース側スロット（＝そのチームの1人目・最初にサーブする位置）
+           flex-basis:100% で名前の下の行に回す */
+        .cd-name.first-server::after {
+            content: '1人目'; flex-basis: 100%;
+            font-size: 0.62em; font-weight: normal; opacity: 0.8;
+        }
         /* 未選択の間は開始できない */
         .setup-btn:disabled {
             background: #9e9e9e; color: rgba(255,255,255,0.6);
@@ -146,7 +162,12 @@
 
         /* ===== メイン画面 ===== */
         .container {
-            width: 100%; min-height: 100%; background: #fff;
+            /* html に height:100% が無く min-height:100% が解決されないため、
+               ビューポート基準で高さを取る。これで .point-score-row の flex:1 が
+               余白を吸収し、四隅の選手名が実際の隅に配置される。
+               dvh はモバイルのアドレスバー分を除いた実高さ（非対応環境は vh にフォールバック） */
+            width: 100%; min-height: 100vh; min-height: 100dvh;
+            background: #fff;
             display: flex; flex-direction: column;
         }
 
@@ -172,25 +193,13 @@
             box-shadow: 0 0.07em 0 #7b0000, 0 0.08em 0.2em rgba(0,0,0,.25);
         }
 
-        /* チーム名 */
-        .team-name-row { display: flex; align-items: stretch; flex-shrink: 0; }
-        .team-name-block {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 0.15em 0.3em;
-            font-size: 0.95em; font-weight: bold;
-            text-align: center; line-height: 1.1; min-height: 0;
-            gap: 0;
-        }
-        .team-name-block.t1 { background: #e3f2fd; color: #0d47a1; }
-        .team-name-block.t2 { background: #e8f5e9; color: #1b5e20; }
-        .team-name-block .pname { display: flex; align-items: center; justify-content: center; gap: 0.25em; width: 100%; }
+        /* 選手番号バッジ */
         .num-badge {
             display: inline-flex; align-items: center; justify-content: center;
             width: 1.45em; height: 1.45em; border-radius: 50%;
             background: #1565c0; color: #fff;
             font-size: 0.75em; font-weight: bold; flex-shrink: 0;
         }
-        .team-name-block.t2 .num-badge { background: #2e7d32; }
 
         /* ポイントボタン */
         .player-name-row { display: flex; flex-shrink: 0; }
@@ -263,10 +272,32 @@
         }
         .score-point.p1-bg { background: #cce5ff; }
         .score-point.p2-bg { background: #d4edda; }
-        .tennis-ball {
-            position: absolute; font-size: 1.4em; opacity: .7;
-            user-select: none; transition: all .3s; display: none;
+
+        /* コート四隅の選手名。左半面は下＝デュース、右半面は上＝デュース */
+        .court-pos {
+            position: absolute; display: flex; align-items: center;
+            justify-content: center; gap: 0.2em;
+            font-size: 0.95em; font-weight: bold; line-height: 1.2;
+            padding: 0.15em 0.45em; border-radius: 0.4em;
+            max-width: 46%; text-align: center;
+            pointer-events: none; user-select: none;
+            transition: background .2s, color .2s;
         }
+        .court-pos.tl { top: 4px;    left: 4px;  }
+        .court-pos.bl { bottom: 4px; left: 4px;  }
+        .court-pos.tr { top: 4px;    right: 4px; }
+        .court-pos.br { bottom: 4px; right: 4px; }
+        .court-pos.tl, .court-pos.bl { color: #0d47a1; }
+        .court-pos.tr, .court-pos.br { color: #1b5e20; }
+        /* サーブしている選手 */
+        .court-pos.serving {
+            background: #ffc107; color: #1a237e;
+            box-shadow: 0 1px 4px rgba(0,0,0,.3);
+        }
+        .court-pos .num-badge { background: #1565c0; }
+        .court-pos.tr .num-badge, .court-pos.br .num-badge { background: #2e7d32; }
+        .court-pos.serving .num-badge { background: #1a237e; color: #ffc107; }
+        .cd-serve-ball { font-size: 1.1em; line-height: 1; }
 
         /* ゲームスコア */
         .set-score-area { padding: 0.5em; background: #f9f9f9; flex-shrink: 0; }
@@ -344,8 +375,9 @@
         body.dark .header-row { background: #111827; }
         body.dark .role-button { color: #bbb; }
         body.dark .role-button.is-serving { color: #64b5f6; background: #0d2b50; }
-        body.dark .team-name-block.t1 { background: #0d2137; color: #64b5f6; }
-        body.dark .team-name-block.t2 { background: #0a1f0d; color: #81c784; }
+        body.dark .court-pos.tl, body.dark .court-pos.bl { color: #64b5f6; }
+        body.dark .court-pos.tr, body.dark .court-pos.br { color: #81c784; }
+        body.dark .court-pos.serving { background: #ffc107; color: #1a237e; }
         body.dark .score-point { color: #fff; }
         body.dark .score-point.p1-bg { background: #0d2137; }
         body.dark .score-point.p2-bg { background: #0a1f0d; }
@@ -417,12 +449,24 @@
     <div class="setup-match-title" id="setup-match-title"></div>
     <h2>コートとサーブを合わせてください</h2>
     <div class="sub" id="setup-hint">最初にサーブするチームをタップしてください</div>
+    <!-- コートを上から見た配置。左半面は下、右半面は上がデュース側＝そのチームの
+         1人目（最初にサーブを打つ位置）。↕ でペア内の並びを入れ替える -->
     <div class="court-diagram">
         <button class="swap-sides-btn" onclick="swapSetupSides()" title="左右を入れ替え">&#x2194;</button>
         <div class="court-box">
-            <div class="court-half" id="setup-half-left"  onclick="onSetupTeamTap('left')"></div>
+            <div class="court-half" id="setup-half-left" onclick="onSetupTeamTap('left')">
+                <div class="cd-name" id="sl-top"></div>
+                <button class="swap-pair-btn" onclick="swapSetupPair('left', event)"
+                        title="ペア内の並びを入れ替え">&#x2195;</button>
+                <div class="cd-name" id="sl-bot"></div>
+            </div>
             <div class="cd-net"></div>
-            <div class="court-half" id="setup-half-right" onclick="onSetupTeamTap('right')"></div>
+            <div class="court-half" id="setup-half-right" onclick="onSetupTeamTap('right')">
+                <div class="cd-name" id="sr-top"></div>
+                <button class="swap-pair-btn" onclick="swapSetupPair('right', event)"
+                        title="ペア内の並びを入れ替え">&#x2195;</button>
+                <div class="cd-name" id="sr-bot"></div>
+            </div>
         </div>
     </div>
     <button class="setup-btn t1" id="setup-start-btn" onclick="startMatch()" disabled>試合開始 &#x25B6;</button>
@@ -466,11 +510,6 @@
         <button class="role-button" id="role-right">レシーブ</button>
     </div>
 
-    <div class="team-name-row">
-        <div class="team-name-block t1" id="name-left"></div>
-        <div class="team-name-block t2" id="name-right"></div>
-    </div>
-
     <div class="player-name-row">
         <button id="btn-left"  class="score-button p1" onclick="addPoint('left')">ポイント</button>
         <button id="btn-right" class="score-button p2" onclick="addPoint('right')">ポイント</button>
@@ -482,10 +521,15 @@
     <button id="btn-confirm" class="action-button confirm" onclick="handleGameConfirm()">次ゲームへ</button>
     <button id="btn-end"     class="action-button end"     onclick="handleMatchEnd()">試合終了</button>
 
+    <!-- コートを上から見た配置。左半面は下＝デュース側、右半面は上＝デュース側。
+         サーブ側のペアはポイントごとに上下が入れ替わり、🎾 はサーバーに付く -->
     <div class="point-score-row">
         <div id="pt-left"  class="score-point p1-bg" onclick="addPoint('left')">0</div>
         <div id="pt-right" class="score-point p2-bg" onclick="addPoint('right')">0</div>
-        <div id="tennis-ball" class="tennis-ball">🎾</div>
+        <div class="court-pos tl" id="pos-tl"></div>
+        <div class="court-pos bl" id="pos-bl"></div>
+        <div class="court-pos tr" id="pos-tr"></div>
+        <div class="court-pos br" id="pos-br"></div>
     </div>
     <hr>
 
@@ -650,7 +694,7 @@ function saveLocalState() {
     try {
         localStorage.setItem(SC_LS_KEY, JSON.stringify({
             mid: currentMid,
-            leftTeam, current_server,
+            leftTeam, current_server, teamSwapped,
             set_score_t1, set_score_t2,
             game_score_t1, game_score_t2,
             game_is_over, matchStarted,
@@ -673,6 +717,8 @@ function restoreLocalState(mid) {
         if (d.mid !== mid) return false;
         leftTeam       = d.leftTeam       ?? 1;
         current_server = d.current_server ?? 1;
+        teamSwapped    = { 1: !!(d.teamSwapped && d.teamSwapped[1]),
+                           2: !!(d.teamSwapped && d.teamSwapped[2]) };
         set_score_t1   = d.set_score_t1   ?? 0;
         set_score_t2   = d.set_score_t2   ?? 0;
         game_score_t1  = d.game_score_t1  ?? 0;
@@ -821,9 +867,10 @@ function onStateUpdate(state) {
             game_score_t1  = found.sc.pt1 || 0;
             game_score_t2  = found.sc.pt2 || 0;
             if (hasServInfo) {
-                // サーブ・コートサイドを Firebase から復元してメイン画面へ直接遷移
+                // サーブ・コートサイド・ペア内の並びを Firebase から復元してメイン画面へ
                 current_server = found.sc.server;
                 leftTeam       = found.sc.left;
+                teamSwapped    = { 1: !!found.sc.sw1, 2: !!found.sc.sw2 };
                 matchStarted   = true;
                 hideAll();
                 showMain();
@@ -902,7 +949,6 @@ function resetMatch() {
     document.getElementById('btn-end').style.display     = 'none';
     document.getElementById('btn-undo').style.display    = '';
     document.getElementById('umpire-msg').textContent    = 'プレイボール';
-    document.getElementById('tennis-ball').style.display = 'none';
     togglePointButtons(false);
 
     // 試合設定画面へ
@@ -921,12 +967,25 @@ function updateSetupTitles() {
 // leftTeam:       画面左＝コート左側に配置するチーム（↔ ボタンで入れ替え）
 let setupServeTeam = null;
 
+// teamSwapped[t] … チームtのペア内の並びを入れ替えたか（↕ ボタン）。
+// 各チームは [デュース側, アド側] の2枠を持ち、デュース側の選手がそのチームの
+// 1人目＝最初のサービスゲームを打つ選手になる。
+// コートは上から見た配置なので、デュース側は左半面なら下、右半面なら上。
+let teamSwapped = { 1: false, 2: false };
+
+// チームtの選手を [デュース側, アド側] の順で返す
+function teamSlots(team) {
+    const names = (team === 1 ? team1Names : team2Names) || [];
+    return teamSwapped[team] ? [names[1], names[0]] : [names[0], names[1]];
+}
+
 // 選択内容の初期化。新しい試合に入るとき・取消で戻るときだけ呼ぶ。
 // ※ showMatchSetup() 側でリセットしてはいけない。onStateUpdate は Firebase 更新の
 //   たびに showMatchSetup() を呼ぶため、主審が選択済みのサーブ側が消えてしまう。
 function resetSetupSelection() {
     setupServeTeam = null;
     leftTeam = 1;               // 既定はチーム1が左
+    teamSwapped = { 1: false, 2: false };
 }
 
 function showMatchSetup() {
@@ -940,29 +999,38 @@ function teamNamesToHTML(names) {
     return names.map(renderName).join(' / ');
 }
 
-// コート図の描画（左右のチーム名・サーブ表示・開始ボタンの活性）
+// コート図の描画（四隅の選手名・サーブ表示・開始ボタンの活性）
 function renderSetupCourt() {
-    const leftNames  = leftTeam === 1 ? team1Names : team2Names;
-    const rightNames = leftTeam === 1 ? team2Names : team1Names;
-    const rightTeam  = 3 - leftTeam;
+    const rightTeam = 3 - leftTeam;
 
-    const fill = (elId, names, team) => {
-        const el = document.getElementById(elId);
-        if (!el) return;
+    // 左半面は下、右半面は上がデュース側（＝1人目・最初にサーブする位置）
+    const fill = (team, topId, botId, deuceIsBottom) => {
+        const [deuce, ad] = teamSlots(team);
         const isServing = setupServeTeam === team;
-        // サーブ側にはテニスボールを表示（未選択時も高さを保って行がズレないようにする）
-        const mark = `<div class="cd-serve-mark">${isServing ? '🎾' : ''}</div>`;
-        el.innerHTML = mark + names.map(n => `<div class="cd-name">${renderName(n)}</div>`).join('');
-        el.classList.toggle('serving', isServing);
+        const slot = (elId, player, isDeuce) => {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            // サーブ側チームのデュース枠の選手が最初のサーバー
+            const ball = (isServing && isDeuce) ? '<span class="cd-serve-ball">🎾</span> ' : '';
+            el.innerHTML = ball + (player ? renderName(player) : '');
+            el.classList.toggle('first-server', isDeuce);
+        };
+        slot(deuceIsBottom ? botId : topId, deuce, true);
+        slot(deuceIsBottom ? topId : botId, ad,   false);
+        const half = document.getElementById(team === leftTeam ? 'setup-half-left' : 'setup-half-right');
+        if (half) half.classList.toggle('serving', isServing);
     };
-    fill('setup-half-left',  leftNames,  leftTeam);
-    fill('setup-half-right', rightNames, rightTeam);
+    fill(leftTeam,  'sl-top', 'sl-bot', true);   // 左半面 → 下がデュース
+    fill(rightTeam, 'sr-top', 'sr-bot', false);  // 右半面 → 上がデュース
 
     const hint = document.getElementById('setup-hint');
     if (hint) {
-        hint.textContent = setupServeTeam === null
-            ? '最初にサーブするチームをタップしてください'
-            : '「' + teamNamesToText(setupServeTeam === 1 ? team1Names : team2Names) + '」がサーブします';
+        if (setupServeTeam === null) {
+            hint.textContent = '最初にサーブするチームをタップしてください（↕ でペア内の並びを入替）';
+        } else {
+            const first = teamSlots(setupServeTeam)[0];
+            hint.textContent = '「' + (first ? first.name : '') + '」のサーブで開始します';
+        }
     }
     const btn = document.getElementById('setup-start-btn');
     if (btn) btn.disabled = (setupServeTeam === null);
@@ -972,6 +1040,14 @@ function renderSetupCourt() {
 window.onSetupTeamTap = function(side) {
     const team = (side === 'left') ? leftTeam : (3 - leftTeam);
     setupServeTeam = (setupServeTeam === team) ? null : team;
+    renderSetupCourt();
+};
+
+// ↕ ボタン → ペア内の並びを入れ替える（半面タップのサーブ選択とは独立）
+window.swapSetupPair = function(side, e) {
+    if (e) e.stopPropagation();   // 親の onSetupTeamTap を発火させない
+    const team = (side === 'left') ? leftTeam : (3 - leftTeam);
+    teamSwapped[team] = !teamSwapped[team];
     renderSetupCourt();
 };
 
@@ -1081,7 +1157,6 @@ function checkGameWinner() {
 
     game_is_over = true;
     togglePointButtons(true);
-    document.getElementById('tennis-ball').style.display = 'none';
 
     const winner = game_score_t1 > game_score_t2 ? 1 : 2;
     const nextS1 = set_score_t1 + (winner === 1 ? 1 : 0);
@@ -1279,10 +1354,6 @@ function updateDisplay() {
     // 左右のチーム
     const leftNames  = leftTeam === 1 ? team1Names : team2Names;
     const rightNames = leftTeam === 1 ? team2Names : team1Names;
-    const nameLeftEl  = document.getElementById('name-left');
-    const nameRightEl = document.getElementById('name-right');
-    if (nameLeftEl)  nameLeftEl.innerHTML  = leftNames.map(renderName).join('');
-    if (nameRightEl) nameRightEl.innerHTML = rightNames.map(renderName).join('');
 
     // ポイントボタンのラベル（名前 + 大きい「ポイント」）
     document.getElementById('btn-left').innerHTML  =
@@ -1305,7 +1376,7 @@ function updateDisplay() {
 
     // サーブ/レシーブ表示
     updateRoleButtons();
-    updateTennisBall();
+    updateCourtPositions();
 }
 
 function updateRoleButtons() {
@@ -1316,24 +1387,50 @@ function updateRoleButtons() {
     document.getElementById('role-right').textContent = !leftIsServer ? 'サーブ' : 'レシーブ';
 }
 
-function updateTennisBall() {
-    const ball  = document.getElementById('tennis-ball');
-    const total = game_score_t1 + game_score_t2;
-    if (total === 0 && set_score_t1 === 0 && set_score_t2 === 0) {
-        ball.style.display = 'none'; return;
-    }
-    ball.style.display = 'block';
-    ball.style.top = ''; ball.style.bottom = '';
-    ball.style.left = ''; ball.style.right = '';
-    const leftIsServer = (current_server === leftTeam);
-    const even = total % 2 === 0;
-    if (leftIsServer) {
-        even ? (ball.style.bottom = '5px', ball.style.left = '10%')
-             : (ball.style.top    = '5px', ball.style.left = '10%');
-    } else {
-        even ? (ball.style.top    = '5px', ball.style.right = '10%')
-             : (ball.style.bottom = '5px', ball.style.right = '10%');
-    }
+// 今サーブしている選手のスロット番号（0=デュース枠の選手＝1人目）
+// ダブルスのサーブ順は A1→B1→A2→B2→A1… の固定ローテーション。
+// 「そのチームが何回目のサービスゲームか」は完了ゲーム数から求まるので、
+// 状態を持たずに導出できる（＝「戻る」で巻き戻しても自動的に正しくなる）。
+function currentServerSlot() {
+    const n = set_score_t1 + set_score_t2;   // 完了ゲーム数 ＝ 現在のゲーム番号(0始まり)
+    return Math.floor(n / 2) % 2;
+}
+
+// コート四隅の選手名を更新する。
+// ・サーブ側のペアはポイントごとに上下が入れ替わる（サーバーが立つ側に🎾）
+// ・レシーブ側は固定（デュースレシーバー／アドレシーバーは1セット通して同じ）
+function updateCourtPositions() {
+    const rightTeam = 3 - leftTeam;
+    const isDeuce   = (game_score_t1 + game_score_t2) % 2 === 0; // 偶数ポイント＝デュースコートから
+    const srvSlot   = currentServerSlot();
+
+    // そのチームの [デュース位置の選手, アド位置の選手] と、🎾 を置く位置を返す
+    const layout = (team) => {
+        const slots = teamSlots(team);
+        if (current_server !== team) {
+            return { deuce: slots[0], ad: slots[1], ball: null }; // レシーブ側は固定
+        }
+        const server  = slots[srvSlot];
+        const partner = slots[1 - srvSlot];
+        return isDeuce
+            ? { deuce: server,  ad: partner, ball: 'deuce' }
+            : { deuce: partner, ad: server,  ball: 'ad' };
+    };
+
+    const set = (elId, player, isServing) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const ball = isServing ? '<span class="cd-serve-ball">🎾</span> ' : '';
+        el.innerHTML = ball + (player ? renderName(player) : '');
+        el.classList.toggle('serving', !!isServing);
+    };
+
+    const L = layout(leftTeam), R = layout(rightTeam);
+    // 左半面は下＝デュース、右半面は上＝デュース
+    set('pos-bl', L.deuce, L.ball === 'deuce');
+    set('pos-tl', L.ad,    L.ball === 'ad');
+    set('pos-tr', R.deuce, R.ball === 'deuce');
+    set('pos-br', R.ad,    R.ball === 'ad');
 }
 
 function togglePointButtons(disabled) {
@@ -1400,6 +1497,10 @@ async function writeStatus(status, resetScores = false) {
         // 試合開始時点のサーブ権・コートサイドも Firebase に保存
         upd['scores/' + currentMid + '/server'] = current_server;
         upd['scores/' + currentMid + '/left']   = leftTeam;
+        // ペア内の並び（どちらがデュース側＝1人目か）。別端末での引き継ぎ時に
+        // 四隅の配置とサーブ順を復元するために必要
+        upd['scores/' + currentMid + '/sw1']    = !!teamSwapped[1];
+        upd['scores/' + currentMid + '/sw2']    = !!teamSwapped[2];
         // s1/s2 が Firebase に未存在の場合（generateNextRound 後など）でも
         // roundrobin.php に undefined が表示されないよう必ず書き込む
         upd['scores/' + currentMid + '/s1']     = set_score_t1;
@@ -1414,6 +1515,8 @@ async function writeStatus(status, resetScores = false) {
         upd['scores/' + currentMid + '/pt2']    = 0;
         upd['scores/' + currentMid + '/server'] = null;
         upd['scores/' + currentMid + '/left']   = null;
+        upd['scores/' + currentMid + '/sw1']    = null;
+        upd['scores/' + currentMid + '/sw2']    = null;
     }
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     await update(stateRef, upd);
