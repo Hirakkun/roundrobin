@@ -1219,7 +1219,7 @@ function renderPlayerList() {
         div.className = 'player-item';
         div.style.opacity = p.resting ? '0.5' : '1';
 
-        // 名前プルダウン：試合開始後はロック（途中参加は addPlayer → confirmLiveAdd で名前確定済み）
+        // 名前プルダウン：試合開始後はロック（途中参加は addPlayer → confirmMultiAdd で名前確定済み）
         const neverPlayed = p.lastRound === -1;
         const selectDisabled = (!isAdmin || matchStarted) ? 'disabled' : '';
 
@@ -1583,30 +1583,108 @@ function toggleRest(id) {
     saveState(true); // 即時push: 300ms以内の_fbApplyによる休憩フラグ上書きを防ぐ
 }
 
+// =====================================================================
+// 途中参加（既存名簿から複数選択して一括追加）
+// =====================================================================
+let _multiAddSel = new Set();   // 選択中の pid
+
+// まだ参加していない名簿の選手（名前で重複判定）
+function _multiAddAvailable() {
+    const usedNames = new Set(Object.values(state.playerNames));
+    return (state.roster || []).filter(r => !usedNames.has(r.name));
+}
+
 function addPlayer() {
     if (isEventLocked()) return;
-    // 既に未確定行があれば追加しない
-    if (document.querySelector('.live-pending-row')) return;
-    // 使用済み名を除外
-    const usedNames = new Set(Object.values(state.playerNames));
-    const available = (state.roster || []).filter(r => !usedNames.has(r.name));
-    if (!available.length) { showToast('名簿の全員が参加済みです'); return; }
-    const opts = `<option value="">--- 選手を選択 ---</option>` +
-        available.map(r => {
-            const label = r.clubName ? `${_esc(r.name)}（${_esc(r.clubName)}）` : _esc(r.name);
-            return `<option value="${_esc(r.pid)}">${label}</option>`;
-        }).join('');
-    const row = document.createElement('div');
-    row.className = 'live-pending-row';
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e8f5e9;border-radius:10px;margin-top:8px;';
-    row.innerHTML = `
-        <select style="flex:1;padding:9px;border:2px solid #2e7d32;border-radius:8px;font-size:0.875rem;">${opts}</select>
-        <button type="button" onclick="confirmLiveAdd(this)"
-            style="padding:9px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.8125rem;white-space:nowrap;">✓ 決定</button>
-        <button type="button" onclick="this.closest('.live-pending-row').remove()"
-            style="padding:9px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">×</button>`;
-    const addBtn = document.querySelector('#liveSetup .player-add-btn');
-    addBtn.parentNode.insertBefore(row, addBtn);
+    if (!_multiAddAvailable().length) { showToast('名簿の全員が参加済みです'); return; }
+    _multiAddSel = new Set();
+    const q = document.getElementById('ma-search');
+    if (q) q.value = '';
+    renderMultiAddList();
+    document.getElementById('multiAddModal').classList.add('show');
+}
+
+function closeMultiAddModal() {
+    document.getElementById('multiAddModal').classList.remove('show');
+}
+
+// 絞り込み後の一覧を返す（「表示中をすべて選択」と描画で同じ結果を使う）
+function _multiAddFiltered() {
+    const el = document.getElementById('ma-search');
+    const q = (el ? el.value : '').trim().toLowerCase();
+    if (!q) return _multiAddAvailable();
+    return _multiAddAvailable().filter(r =>
+        (r.name     || '').toLowerCase().includes(q) ||
+        (r.kana     || '').toLowerCase().includes(q) ||
+        (r.clubName || '').toLowerCase().includes(q));
+}
+
+function renderMultiAddList() {
+    const list = _multiAddFiltered();
+    const el = document.getElementById('ma-list');
+    if (!el) return;
+    el.innerHTML = list.length
+        ? list.map(r => `
+            <label class="pm-item">
+                <input type="checkbox" value="${_escH(r.pid)}" ${_multiAddSel.has(r.pid) ? 'checked' : ''}
+                       onchange="toggleMultiAdd(this)"
+                       style="width:1.15rem;height:1.15rem;flex-shrink:0;">
+                <span style="flex:1;">
+                    <span class="pm-name">${_escH(r.name)}</span>
+                    ${r.clubName ? `<span class="pm-club">（${_escH(r.clubName)}）</span>` : ''}
+                </span>
+            </label>`).join('')
+        : `<div style="padding:14px;color:#888;font-size:0.8125rem;text-align:center;">該当する選手がいません</div>`;
+    _updateMultiAddBtn();
+}
+
+function toggleMultiAdd(cb) {
+    if (cb.checked) _multiAddSel.add(cb.value);
+    else            _multiAddSel.delete(cb.value);
+    _updateMultiAddBtn();
+}
+
+// 絞り込み中は「表示されている選手だけ」を対象にする（意図しない一括選択を防ぐ）
+function multiAddSelectAll(on) {
+    if (on) _multiAddFiltered().forEach(r => _multiAddSel.add(r.pid));
+    else    _multiAddFiltered().forEach(r => _multiAddSel.delete(r.pid));
+    renderMultiAddList();
+}
+
+function _updateMultiAddBtn() {
+    const btn = document.getElementById('ma-confirm');
+    if (!btn) return;
+    const n = _multiAddSel.size;
+    btn.disabled = n === 0;
+    btn.textContent = n ? `✓ ${n}人を追加` : '追加';
+    btn.style.background = n ? '#1565c0' : '#9e9e9e';
+    btn.style.cursor     = n ? 'pointer' : 'not-allowed';
+}
+
+function confirmMultiAdd() {
+    if (isEventLocked()) return;
+    if (_multiAddSel.size === 0) return;
+    // 選択した順ではなく名簿順に追加して、付与されるIDの並びを安定させる
+    const targets = _multiAddAvailable().filter(r => _multiAddSel.has(r.pid));
+    // addPlayerToState は state.players を見て行列を初期化するため、1人ずつ順に追加する
+    let nextId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
+    let added = 0;
+    targets.forEach(rp => {
+        addPlayerToState(nextId, true);
+        state.playerNames[nextId] = rp.name;
+        if (!state.playerClubs) state.playerClubs = {};
+        if (rp.clubName) state.playerClubs[nextId] = rp.clubName;
+        const player = state.players.find(p => p.id === nextId);
+        if (player) player.pid = rp.pid;
+        // TrueSkill初期値をrosterから引き継ぎ
+        state.tsMap[nextId] = { mu: rp.mu ?? 25.0, sigma: rp.sigma ?? (25/3) };
+        nextId++; added++;
+    });
+    _multiAddSel = new Set();
+    closeMultiAddModal();
+    renderPlayerList();
+    saveState();
+    showToast(`✅ ${added}人を追加しました`);
 }
 
 // =====================================================================
@@ -1761,28 +1839,6 @@ async function registerGuest(playerId) {
         if (btn) { btn.disabled = false; btn.textContent = '✅ 正式登録する'; }
         showToast('登録に失敗しました');
     }
-}
-
-function confirmLiveAdd(btn) {
-    const row = btn.closest('.live-pending-row');
-    const sel = row.querySelector('select');
-    const pid = sel.value;
-    if (!pid) { showToast('選手を選択してください'); return; }
-    const rp = (state.roster || []).find(r => r.pid === pid);
-    if (!rp) return;
-    const newId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
-    addPlayerToState(newId, true);
-    state.playerNames[newId] = rp.name;
-    if (!state.playerClubs) state.playerClubs = {};
-    if (rp.clubName) state.playerClubs[newId] = rp.clubName;
-    // pid を保存
-    const player = state.players.find(p => p.id === newId);
-    if (player) player.pid = rp.pid;
-    // TrueSkill初期値をrosterから引き継ぎ
-    state.tsMap[newId] = { mu: rp.mu ?? 25.0, sigma: rp.sigma ?? (25/3) };
-    row.remove();
-    renderPlayerList();
-    saveState();
 }
 
 function changeCourts(delta) {
@@ -5353,6 +5409,26 @@ window.onload = function () {
         <h3 id="pairModalTitle">🤝 ペア相手を選択</h3>
         <div id="pairModalList"></div>
         <button class="pm-cancel" onclick="closePairModal()">キャンセル</button>
+    </div>
+</div>
+
+<!-- 途中参加（既存名簿から複数選択して一括追加） -->
+<div class="pair-modal-bg" id="multiAddModal">
+    <!-- 一覧だけをスクロールさせたいので、モーダル自体は overflow を切って縦フレックスにする -->
+    <div class="pair-modal" style="max-width:420px;width:94%;max-height:82vh;overflow:visible;display:flex;flex-direction:column;">
+        <h3 style="margin:0 0 10px;">👥 新たに参加する人を追加</h3>
+        <input type="text" class="gf-input" id="ma-search" placeholder="名前・ふりがな・クラブで絞り込み"
+               oninput="renderMultiAddList()" style="margin-bottom:8px;">
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <button type="button" onclick="multiAddSelectAll(true)"
+                style="flex:1;padding:6px;background:#e8eaf6;color:#1a237e;border:none;border-radius:6px;font-size:0.75rem;font-weight:bold;cursor:pointer;">表示中をすべて選択</button>
+            <button type="button" onclick="multiAddSelectAll(false)"
+                style="flex:1;padding:6px;background:#eee;color:#555;border:none;border-radius:6px;font-size:0.75rem;font-weight:bold;cursor:pointer;">選択を解除</button>
+        </div>
+        <div id="ma-list" style="flex:1;overflow-y:auto;min-height:4rem;"></div>
+        <button type="button" id="ma-confirm" onclick="confirmMultiAdd()"
+            style="width:100%;padding:0.7rem;margin-top:0.75rem;background:#1565c0;color:#fff;border:none;border-radius:0.5rem;font-size:0.9375rem;font-weight:bold;cursor:pointer;">追加</button>
+        <button type="button" class="pm-cancel" onclick="closeMultiAddModal()">キャンセル</button>
     </div>
 </div>
 
