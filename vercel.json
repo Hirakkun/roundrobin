@@ -1,26 +1,26 @@
 {
   "functions": {
-    "api/*.php": {
+    "api/roundrobin.php": {
       "runtime": "vercel-php@0.7.2"
     }
   },
   "routes": [
-    { "src": "/roundrobin-dbedit.php",   "dest": "/api/roundrobin-dbedit.php" },
-    { "src": "/roundrobin-event.php",   "dest": "/api/roundrobin-event.php" },
-    { "src": "/roundrobin-member.php",  "dest": "/api/roundrobin-member.php" },
-    { "src": "/score/court",            "dest": "/api/score-court.php" },
-    { "src": "/score-court-sample.php", "dest": "/api/score-court-sample.php" },
-    { "src": "/score-court-sample2.php","dest": "/api/score-court-sample2.php" },
-    { "src": "/display-sample.php",    "dest": "/api/display-sample.php" },
-    { "src": "/display",               "dest": "/api/display.php" },
-    { "src": "/guide",                 "dest": "/api/guide.php" },
-    { "src": "/guide.php",             "dest": "/api/guide.php" },
-    { "src": "/system",               "dest": "/api/system.php" },
-    { "src": "/system.php",           "dest": "/api/system.php" },
-    { "src": "/gs-select",            "dest": "/api/gs-select.php" },
-    { "src": "/gs-score",             "dest": "/api/gs-score.php" },
-    { "src": "/pickle-score",         "dest": "/api/pickle-score.php" },
-    { "src": "/images/(.*)",           "dest": "/images/$1" },
+    { "src": "/roundrobin-dbedit.php",  "dest": "/pages/roundrobin-dbedit.html" },
+    { "src": "/roundrobin-event.php",   "dest": "/pages/roundrobin-event.html" },
+    { "src": "/roundrobin-member.php",  "dest": "/pages/roundrobin-member.html" },
+    { "src": "/score/court",            "dest": "/pages/score-court.html" },
+    { "src": "/score-court-sample.php", "dest": "/pages/score-court-sample.html" },
+    { "src": "/score-court-sample2.php","dest": "/pages/score-court-sample2.html" },
+    { "src": "/display-sample.php",     "dest": "/pages/display-sample.html" },
+    { "src": "/display",                "dest": "/pages/display.html" },
+    { "src": "/guide",                  "dest": "/pages/guide.html" },
+    { "src": "/guide.php",              "dest": "/pages/guide.html" },
+    { "src": "/system",                 "dest": "/pages/system.html" },
+    { "src": "/system.php",             "dest": "/pages/system.html" },
+    { "src": "/gs-select",              "dest": "/pages/gs-select.html" },
+    { "src": "/gs-score",               "dest": "/pages/gs-score.html" },
+    { "src": "/pickle-score",           "dest": "/pages/pickle-score.html" },
+    { "src": "/images/(.*)",            "dest": "/images/$1" },
     { "src": "/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89/(.*)", "dest": "/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89/$1" },
     { "src": "/(.*)", "dest": "/api/roundrobin.php" }
   ]
