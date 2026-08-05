@@ -44,7 +44,7 @@ header('Content-Type: text/html; charset=UTF-8');
             40%          { transform: scale(1);  opacity: 1;  }
         }
 
-        /* ===== セットアップ画面（サーブ選択・コート選択） ===== */
+        /* ===== セットアップ画面（コート配置＋サーブを1画面で選択） ===== */
         .setup-screen {
             position: fixed; inset: 0; z-index: 40; background: #283593;
             display: none; flex-direction: column;
@@ -73,27 +73,62 @@ header('Content-Type: text/html; charset=UTF-8');
         .setup-btn .num-badge { background: rgba(255,255,255,0.9); color: #1565c0; }
         .setup-btn.t2 .num-badge { color: #2e7d32; }
 
-        /* ② サーバー位置選択：コート左右ボタン */
-        .court-side-select {
-            display: flex; width: 100%;
-            flex: 1;                       /* 残り縦幅を使い切る */
-            min-height: 10em;
-            max-height: 18em;
-            border-radius: 0.65em; overflow: hidden; border: 3px solid #fff;
+        /* ===== コート図（配置＋サーブ選択を統合） ===== */
+        .court-diagram {
+            position: relative; width: 100%; max-width: 24em;
+            align-self: center; padding-top: 1.1em;
         }
+        /* 左右チーム入れ替えボタン（コート上辺の中央） */
+        .swap-sides-btn {
+            position: absolute; top: -0.2em; left: 50%;
+            transform: translateX(-50%); z-index: 3;
+            font-size: 1.7em; color: #e53935;
+            background: #fff; border: none; border-radius: 1em;
+            padding: 0 0.4em; cursor: pointer; line-height: 1.3;
+            box-shadow: 0 1px 3px rgba(0,0,0,.45);
+            touch-action: manipulation;
+        }
+        .swap-sides-btn:active { transform: translateX(-50%) scale(0.9); }
+        .court-box {
+            display: flex; border: 3px solid #fff; border-radius: 0.3em;
+            min-height: 11em; background: rgba(255,255,255,0.08);
+        }
+        /* コートの左右半面＝チーム1組。タップでサーブ側に指定 */
         .court-half {
             flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            border: none; cursor: pointer; gap: 0.4em;
-            transition: opacity .15s;
+            align-items: center; justify-content: center; gap: 0.35em;
+            padding: 0.9em 0.35em; margin: 0.35em;
+            background: rgba(255,255,255,0.12);
+            border: 2px dashed rgba(255,255,255,0.45);
+            border-radius: 0.5em;
+            cursor: pointer; touch-action: manipulation;
+            transition: background .15s, border-color .15s;
         }
         .court-half:active { opacity: .75; }
-        .court-half.left-half  { background: #1565c0; color: #fff; }
-        .court-half.right-half { background: #2e7d32; color: #fff; }
-        .half-arrow { font-size: 2.5em;  font-weight: 900; line-height: 1; opacity: 0.8; }
-        .half-word  { font-size: 6em; font-weight: 900; line-height: 1; }
-        .court-net-div {
-            width: 5px; background: #fff; flex-shrink: 0;
+        /* サーブ側に選択された半面
+           半透明のアンバーだと濃紺の下地と混ざって濁った灰色に見えるため、
+           不透明のアンバー＋濃紺文字にして一目で判別できるようにする */
+        .court-half.serving {
+            background: #ffc107;
+            border: 2px solid #ffca28;
+        }
+        .cd-name {
+            color: #fff; font-weight: bold; font-size: 1.15em;
+            text-align: center; width: 100%; word-break: break-all;
+            line-height: 1.25;
+            display: flex; align-items: center; justify-content: center; gap: 0.2em;
+        }
+        .court-half.serving .cd-name { color: #1a237e; }
+        .court-half.serving .cd-name .num-badge { background: #1a237e; color: #ffc107; }
+        /* サーブ側に表示するテニスボール */
+        .cd-serve-mark {
+            font-size: 1.9em; line-height: 1; height: 1.2em;
+        }
+        .cd-net { width: 4px; background: #fff; flex-shrink: 0; }
+        /* 未選択の間は開始できない */
+        .setup-btn:disabled {
+            background: #9e9e9e; color: rgba(255,255,255,0.6);
+            cursor: not-allowed;
         }
 
         /* ===== コート情報バー ===== */
@@ -174,7 +209,7 @@ header('Content-Type: text/html; charset=UTF-8');
 
         /* ── ダブルタップ・誤操作防止 ── */
         .score-button, .score-point, .action-button,
-        .role-button.undo, .setup-btn, .court-half, .done-next-btn {
+        .role-button.undo, .setup-btn, .court-half, .swap-sides-btn, .done-next-btn {
             touch-action: manipulation;
         }
 
@@ -270,24 +305,10 @@ header('Content-Type: text/html; charset=UTF-8');
             letter-spacing: 0.04em;
         }
 
-        /* ===== サーブ選択ボタン内レイアウト ===== */
-        .setup-btn { font-size: 1.3em; padding: 0.9em 0.7em; text-align: left; }
-        .serve-btn-lines {
-            display: flex; flex-direction: column;
-            align-items: flex-start; width: 100%; gap: 0.02em;
-        }
-        /* 各行：絵文字列(固定幅) + 名前列 の2カラム */
-        .serve-line {
-            display: flex; align-items: center; gap: 0.25em;
-            line-height: 1.1; white-space: nowrap;
-        }
-        .serve-col1 {
-            width: 1.5em; flex-shrink: 0; text-align: center;
-            /* 絵文字または空白スペーサーを同じ幅に固定 */
-        }
-        .serve-col2 {
-            display: flex; align-items: center; gap: 0.2em;
-        }
+        /* ===== 試合開始ボタン ===== */
+        .setup-btn { font-size: 1.3em; padding: 0.9em 0.7em; text-align: center; }
+        /* コート図内の選手番号バッジ */
+        .cd-name .num-badge { background: rgba(255,255,255,0.9); color: #283593; }
 
         /* ===== 完了画面 ===== */
         #done-screen {
@@ -389,30 +410,20 @@ header('Content-Type: text/html; charset=UTF-8');
     <div class="ov-sub">試合が組まれると自動で表示されます</div>
 </div>
 
-<!-- ① サーブ選択画面 -->
-<div class="setup-screen" id="serve-setup">
-    <div class="setup-match-title" id="serve-match-title"></div>
-    <h2>🎾 最初にサーブするチームは？</h2>
-    <button class="setup-btn t1" id="serve-btn-t1" onclick="onServeSelect(1)"></button>
-    <button class="setup-btn t2" id="serve-btn-t2" onclick="onServeSelect(2)"></button>
-</div>
-
-<!-- ② サーバー位置選択画面 -->
-<div class="setup-screen" id="court-setup">
-    <div class="setup-match-title" id="court-match-title"></div>
-    <h2>🎾 サーバーはどちら側ですか？</h2>
-    <div class="sub" id="court-sub"></div>
-    <div class="court-side-select">
-        <button class="court-half left-half" onclick="onCourtSideSelect('left')">
-            <div class="half-arrow">←</div>
-            <div class="half-word">左</div>
-        </button>
-        <div class="court-net-div"></div>
-        <button class="court-half right-half" onclick="onCourtSideSelect('right')">
-            <div class="half-arrow">→</div>
-            <div class="half-word">右</div>
-        </button>
+<!-- 試合設定画面（コート配置＋サーブを1画面で選択） -->
+<div class="setup-screen" id="match-setup">
+    <div class="setup-match-title" id="setup-match-title"></div>
+    <h2>コートとサーブを合わせてください</h2>
+    <div class="sub" id="setup-hint">最初にサーブするチームをタップしてください</div>
+    <div class="court-diagram">
+        <button class="swap-sides-btn" onclick="swapSetupSides()" title="左右を入れ替え">&#x2194;</button>
+        <div class="court-box">
+            <div class="court-half" id="setup-half-left"  onclick="onSetupTeamTap('left')"></div>
+            <div class="cd-net"></div>
+            <div class="court-half" id="setup-half-right" onclick="onSetupTeamTap('right')"></div>
+        </div>
     </div>
+    <button class="setup-btn t1" id="setup-start-btn" onclick="startMatch()" disabled>試合開始 &#x25B6;</button>
 </div>
 
 <!-- 完了 -->
@@ -774,8 +785,11 @@ function onStateUpdate(state) {
     currentRoundLabel = '第' + found.rd.round + '試合';
     document.getElementById('hd-round').textContent = currentRoundLabel;
 
-    // サーブ設定ボタンのラベル更新
-    updateServeSetupButtons();
+    // 設定画面を表示中なら、選手名・番号表示の変更をコート図に反映
+    if (document.getElementById('match-setup').style.display === 'flex') {
+        updateSetupTitles();
+        renderSetupCourt();
+    }
 
     // 新しい試合が割り当てられた
     if (found.mid !== currentMid) {
@@ -799,7 +813,7 @@ function onStateUpdate(state) {
             // localStorageなし（別端末・キャッシュクリア等）
             // Firebase に server/left が保存されていれば途中から直接再開
             const hasServInfo = found.sc.server != null && found.sc.left != null;
-            resetMatch(); // スコアリセット + showServeSetup() が呼ばれる
+            resetMatch(); // スコアリセット + showMatchSetup() が呼ばれる
             set_score_t1   = found.sc.s1  || 0;
             set_score_t2   = found.sc.s2  || 0;
             game_score_t1  = found.sc.pt1 || 0;
@@ -832,14 +846,15 @@ function onStateUpdate(state) {
         if (matchStarted) {
             showMain();             // 通常の試合中
         } else {
-            showServeSetup();       // Firebase側がplayingだが手元でサーブ未選択
+            showMatchSetup();       // Firebase側がplayingだが手元で設定未完了
         }
     } else {
         // 'calling'
         if (matchStarted && !_statusWritePending) {
             resetMatch();           // 外部からcallingに戻された → リセット
         } else if (!matchStarted) {
-            showServeSetup();       // 通常のサーブ待ち
+            // 設定待ち。選択済みの内容は消さずに再描画のみ行う
+            showMatchSetup();
         } else {
             // _statusWritePending 中（playing 書き込み完了待ち）はリセットしない。
             // ただし冒頭の hideAll() で全画面が消えているため、
@@ -879,7 +894,7 @@ function resetMatch() {
     set_score_t1  = 0; set_score_t2  = 0;
     game_is_over  = false; matchStarted = false;
     historyStack  = [];
-    leftTeam      = 1;
+    resetSetupSelection();   // leftTeam=1 / サーブ未選択に戻す
     document.getElementById('game-history').innerHTML = '';
     document.getElementById('btn-confirm').style.display = 'none';
     document.getElementById('btn-end').style.display     = 'none';
@@ -888,77 +903,87 @@ function resetMatch() {
     document.getElementById('tennis-ball').style.display = 'none';
     togglePointButtons(false);
 
-    // サーブ設定画面へ
-    showServeSetup();
+    // 試合設定画面へ
+    showMatchSetup();
 }
 
-// ── セットアップ画面共通タイトル更新 ────────────────────────
+// ── セットアップ画面タイトル更新 ────────────────────────────
 function updateSetupTitles() {
     const line1 = currentRoundLabel ? currentRoundLabel + '　' + courtLabel : courtLabel;
-    const html  = `${line1}<span class="title-games">${MATCH_GAMES}ゲームマッチ</span>`;
-    ['serve-match-title', 'court-match-title'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = html;
-    });
+    const el = document.getElementById('setup-match-title');
+    if (el) el.innerHTML = `${line1}<span class="title-games">${MATCH_GAMES}ゲームマッチ</span>`;
 }
 
-// ── ① サーブ設定 ─────────────────────────────────────────────
-function showServeSetup() {
+// ── 試合設定（コート配置＋サーブを1画面で選択） ────────────────
+// setupServeTeam: サーブするチーム（1 or 2、未選択は null）
+// leftTeam:       画面左＝コート左側に配置するチーム（↔ ボタンで入れ替え）
+let setupServeTeam = null;
+
+// 選択内容の初期化。新しい試合に入るとき・取消で戻るときだけ呼ぶ。
+// ※ showMatchSetup() 側でリセットしてはいけない。onStateUpdate は Firebase 更新の
+//   たびに showMatchSetup() を呼ぶため、主審が選択済みのサーブ側が消えてしまう。
+function resetSetupSelection() {
+    setupServeTeam = null;
+    leftTeam = 1;               // 既定はチーム1が左
+}
+
+function showMatchSetup() {
     hideAll();
     updateSetupTitles();
-    updateServeSetupButtons();
-    document.getElementById('serve-setup').style.display = 'flex';
+    renderSetupCourt();
+    document.getElementById('match-setup').style.display = 'flex';
 }
 
 function teamNamesToHTML(names) {
     return names.map(renderName).join(' / ');
 }
 
-function updateServeSetupButtons() {
-    const b1 = document.getElementById('serve-btn-t1');
-    const b2 = document.getElementById('serve-btn-t2');
-    if (b1) b1.innerHTML = buildServeHTML(team1Names);
-    if (b2) b2.innerHTML = buildServeHTML(team2Names);
+// コート図の描画（左右のチーム名・サーブ表示・開始ボタンの活性）
+function renderSetupCourt() {
+    const leftNames  = leftTeam === 1 ? team1Names : team2Names;
+    const rightNames = leftTeam === 1 ? team2Names : team1Names;
+    const rightTeam  = 3 - leftTeam;
+
+    const fill = (elId, names, team) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const isServing = setupServeTeam === team;
+        // サーブ側にはテニスボールを表示（未選択時も高さを保って行がズレないようにする）
+        const mark = `<div class="cd-serve-mark">${isServing ? '🎾' : ''}</div>`;
+        el.innerHTML = mark + names.map(n => `<div class="cd-name">${renderName(n)}</div>`).join('');
+        el.classList.toggle('serving', isServing);
+    };
+    fill('setup-half-left',  leftNames,  leftTeam);
+    fill('setup-half-right', rightNames, rightTeam);
+
+    const hint = document.getElementById('setup-hint');
+    if (hint) {
+        hint.textContent = setupServeTeam === null
+            ? '最初にサーブするチームをタップしてください'
+            : '「' + teamNamesToText(setupServeTeam === 1 ? team1Names : team2Names) + '」がサーブします';
+    }
+    const btn = document.getElementById('setup-start-btn');
+    if (btn) btn.disabled = (setupServeTeam === null);
 }
 
-// ペアボタンHTML生成：
-//   🎾  ⑩本多 良子        ← col1=🎾  col2=badge+name
-//   (空)  ㊲古田 八重子    ← col1=空白 col2=badge+name（番号が揃う）
-function buildServeHTML(names) {
-    if (!names.length) return '';
-    const lines = names.map((n, i) => {
-        const badgeHtml = n.withNum
-            ? `<span class="num-badge">${_scEsc(n.id)}</span>`
-            : '';
-        const col1 = i === 0 ? '🎾' : ''; // 1行目のみ絵文字
-        return `<div class="serve-line">
-                    <span class="serve-col1">${col1}</span>
-                    <span class="serve-col2">${badgeHtml}${_scEsc(n.name)}</span>
-                </div>`;
-    });
-    return `<div class="serve-btn-lines">${lines.join('')}</div>`;
-}
-
-window.onServeSelect = function(team) {
-    current_server = team;
-    showCourtSetup();
+// コート半面のタップ → その側のチームをサーブ側に指定（再タップで解除）
+window.onSetupTeamTap = function(side) {
+    const team = (side === 'left') ? leftTeam : (3 - leftTeam);
+    setupServeTeam = (setupServeTeam === team) ? null : team;
+    renderSetupCourt();
 };
 
-// ── ② サーバー位置選択 ───────────────────────────────────────
-function showCourtSetup() {
-    hideAll();
-    updateSetupTitles();
-    // サーブするチーム名をサブテキストに表示
-    const serverNames = current_server === 1 ? team1Names : team2Names;
-    const sub = document.getElementById('court-sub');
-    if (sub) sub.textContent = '「' + teamNamesToText(serverNames) + '」がサーブします';
-    document.getElementById('court-setup').style.display = 'flex';
-}
+// ↔ ボタン → 左右のチームを入れ替える
+// サーブ選択は「チーム」に紐づくため、入れ替えても選択は維持される
+window.swapSetupSides = function() {
+    leftTeam = 3 - leftTeam;
+    renderSetupCourt();
+};
 
-// 左または右を選んだら即試合開始
-window.onCourtSideSelect = async function(side) {
-    // 選択したサイドにサーブチームを配置
-    leftTeam = (side === 'left') ? current_server : (current_server === 1 ? 2 : 1);
+// 「試合開始」→ サーブ側を確定して試合を開始
+window.startMatch = async function() {
+    if (setupServeTeam === null) return;   // 未選択なら開始しない
+    current_server = setupServeTeam;
     // 試合開始（ボタン状態は updateDisplay() が matchStarted で管理）
     hideAll();
     matchStarted = true;
@@ -1200,15 +1225,16 @@ window.handleMatchEnd = async function() {
 // ── 取消 ──────────────────────────────────────────────────────
 window.undoLastPoint = function() {
     // ④ 戻るボタン確認ダイアログ
-    const msg = historyStack.length === 0 ? 'サーブ選択に戻りますか？' : '1点取り消しますか？';
+    const msg = historyStack.length === 0 ? '試合設定に戻りますか？' : '1点取り消しますか？';
     if (!confirm(msg)) return;
 
     if (historyStack.length === 0) {
-        // 0-0 の状態 → サーブ選択画面に戻る
+        // 0-0 の状態 → 試合設定画面に戻る（コート配置・サーブを選び直す）
         matchStarted = false;
         game_score_t1 = 0; game_score_t2 = 0;
         current_server = 1;
-        showServeSetup();
+        resetSetupSelection();
+        showMatchSetup();
         // Firebase に「呼び出し中」とスコアリセットを書き込む
         writeStatus('calling', true);
         return;
@@ -1408,7 +1434,7 @@ function hideAll() {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
-    ['serve-setup','court-setup','main-container'].forEach(id => {
+    ['match-setup','main-container'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
@@ -1421,7 +1447,7 @@ function showTakenOver() {
     _takenOver = true;
     _clearDoneTimer();
     // 全画面を隠してから引き継ぎオーバーレイを表示
-    ['ov-loading','ov-waiting','serve-setup','court-setup','main-container'].forEach(id => {
+    ['ov-loading','ov-waiting','match-setup','main-container'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
