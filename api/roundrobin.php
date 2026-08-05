@@ -1499,11 +1499,14 @@ window.closePairModal = function() {
 
 window.confirmPair = function(partnerId) {
     if (_pairTargetId == null) return;
-    getFixedPairs().push([_pairTargetId, partnerId]);
+    // closePairModal() が _pairTargetId を null に戻すため、先に退避しておく
+    // （退避しないとトーストが「選手null と ○○ を…」になる）
+    const targetId = _pairTargetId;
+    getFixedPairs().push([targetId, partnerId]);
     closePairModal();
     renderPlayerList();
     saveState(true); // 即時push: 300ms以内の_fbApplyによる上書きを防ぐ
-    const n1 = state.playerNames[_pairTargetId] || ('選手' + _pairTargetId);
+    const n1 = state.playerNames[targetId] || ('選手' + targetId);
     const n2 = state.playerNames[partnerId] || ('選手' + partnerId);
     showToast('🤝 ' + n1 + ' と ' + n2 + ' をペア固定しました');
 };
