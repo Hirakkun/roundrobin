@@ -1392,8 +1392,13 @@ function removeUnplayedPlayer(id) {
             if (rd.playerStates) delete rd.playerStates[id];
         });
     }
+    // 未消費のプールに削除選手が残っていると、割り当て時に
+    // state.pairMatrix[削除ID] が undefined となり例外で落ちるためプールを破棄する
+    state.matchPool = [];
     renderPlayerList();
+    updatePoolStatus();
     saveState();
+    if (state.seqMatch) setTimeout(() => _refillPoolIfEmpty(), 100);
 }
 
 // =====================================================================
@@ -2049,6 +2054,7 @@ function selectRoundPlayers() {
     // ペア連動で must を超えた場合、ペアでない末尾を削除して4の倍数に調整
     let result = [...selected];
     while (result.length > must) {
+        const before = result.length;
         // 末尾からペアでない選手を除外
         for (let i = result.length - 1; i >= 0; i--) {
             if (getFixedPartnerId(result[i]) == null) {
@@ -2059,6 +2065,9 @@ function selectRoundPlayers() {
         if (result.length > must && result.length % 4 !== 0) {
             result.pop(); // 安全弁
         }
+        // 全員が固定ペアで splice も pop も起きなかった場合、
+        // ここで抜けないと無限ループでブラウザが固まる
+        if (result.length === before) { result.pop(); }
         if (result.length <= must) break;
     }
     // 4の倍数に切り捨て
@@ -2407,6 +2416,15 @@ function findBestCourtGroups(ids, courtCount) {
         if (Math.random() < 0.3) { [startOrder[i], startOrder[i+1]] = [startOrder[i+1], startOrder[i]]; }
     }
     bt(startOrder, []);
+
+    // フォールバック: 固定ペアを満たす解が探索上限内に見つからなかった場合
+    // （greedy シードは固定ペアを分断しがちで evalScore=Infinity → best が null のまま）
+    // null を返すと「コート割り当てに失敗しました」で組合せ生成が完全に止まるため、
+    // 固定ペア制約を諦めてでも有効な組合せを返す
+    if (!best) {
+        console.warn('[findBestCourtGroups] 固定ペアを満たす解が見つからずグリーディ解にフォールバック');
+        best = greedyGroups.map(g => [...g]);
+    }
     return best;
 }
 
@@ -2969,7 +2987,7 @@ function generateNextRound() {
 
     // 順次モード: 初回生成後にプールを事前生成
     if (state.seqMatch && state.matchPool.length === 0) {
-        setTimeout(() => generatePoolBatch(), 50);
+        setTimeout(() => _refillPoolIfEmpty(), 50);
     }
     // 最新ラウンドまでスクロール後に開く
     setTimeout(() => {
@@ -3435,6 +3453,17 @@ function updatePoolStatus() {
     }
 }
 
+// 非同期補充専用: プールが空のときだけ生成する
+// （setTimeout で遅延補充する間に別コート終了で同期生成が走ると、
+//   プールに積まれたままの選手を除外しない新バッチが重なり
+//   同じ選手が2コートへ同時割り当てされるため必ず空チェックする）
+function _refillPoolIfEmpty() {
+    if (!state.seqMatch) return;
+    if (state.matchPool.length > 0) { updatePoolStatus(); return; }
+    if (generatePoolBatch()) saveState();
+    updatePoolStatus();
+}
+
 // プールを強制リセット→isOnCourt再計算→再生成
 function resetPoolAndRegen() {
     _recalcIsOnCourt();
@@ -3525,8 +3554,11 @@ function markRoundDone(e, roundNum) {
     if (state.autoMatch) _tryAutoGenerate();
 }
 
-// スコアが入ったコートを検出して自動で次を投入（現在は明示ボタン方式のため予備）
-function checkAutoAdvance() {
+// 【削除済み】checkAutoAdvance()
+// 「スコアが 0-0 でない＝終了」という古い判定で isOnCourt を解放していたが、
+// 現在は done フラグで判定する（markCourtDone / _scoresRef リスナー）ため矛盾する。
+// 呼び出し元は存在しなかったため誤用を防ぐ目的で削除した。
+/* function _removed_checkAutoAdvance() {
     if (!state.autoMatch && !state.seqMatch) return;
 
     if (state.seqMatch) {
@@ -3576,7 +3608,7 @@ function checkAutoAdvance() {
             generateNextRound();
         }
     }
-}
+} */
 
 let _poolGenerating = false; // 二重生成防止フラグ
 
@@ -3606,10 +3638,16 @@ function generatePoolBatch() {
         });
     };
 
-    // isOnCourt の選手を一時的に休憩扱いにして生成対象から除外
+    // isOnCourt の選手 ＋ すでにプールに積まれている選手を一時的に休憩扱いにして生成対象から除外
+    // （プール内選手を除外しないと、既存プールが残った状態で追加バッチを積んだとき
+    //   同じ選手が2試合に入り、2コートへ同時割り当てされる）
+    const pooledIds = new Set();
+    state.matchPool.forEach(m => {
+        [...(m.team1 || []), ...(m.team2 || [])].forEach(id => pooledIds.add(id));
+    });
     const tempResting = [];
     state.players.forEach(p => {
-        if (p.isOnCourt && !p.resting) {
+        if ((p.isOnCourt || pooledIds.has(p.id)) && !p.resting) {
             p.resting = true;
             tempResting.push(p.id);
         }
@@ -3748,6 +3786,17 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     const nextMatch = state.matchPool.shift();
     const playIds = [...nextMatch.team1, ...nextMatch.team2];
 
+    // 削除された選手がプールに残っていた場合はこの試合を破棄して次を試す
+    // （state.pairMatrix[削除ID] が undefined のまま加算すると例外で停止するため）
+    if (playIds.some(id => !state.players.some(p => p.id === id)
+                        || !state.pairMatrix[id] || !state.oppMatrix[id])) {
+        console.warn('[assignNextPoolMatch] 削除済み選手を含む古いプール試合を破棄しました', playIds);
+        state.matchPool = [];
+        updatePoolStatus();
+        assignNextPoolMatch(fromPhysicalIndex);
+        return;
+    }
+
     // スケジュール確定時に pairMatrix/oppMatrix/playCount を更新
     // （generatePoolBatch ではなくここで更新することで、
     //   未消費のままプールが破棄された試合の二重カウントを防ぐ）
@@ -3811,13 +3860,9 @@ function assignNextPoolMatch(fromPhysicalIndex) {
     if (!state.scores[newMid]) state.scores[newMid] = { s1: 0, s2: 0 };
     state.scores[newMid].status = 'calling';
 
-    // プールが空になったら次バッチを非同期で補充
+    // プールが空になったら次バッチを非同期で補充（発火時に再度空チェックする）
     if (state.matchPool.length === 0) {
-        setTimeout(() => {
-            generatePoolBatch();
-            saveState();
-            updatePoolStatus();
-        }, 100);
+        setTimeout(() => _refillPoolIfEmpty(), 100);
     }
 
     updatePoolStatus();
@@ -4089,19 +4134,13 @@ function deleteRound(e, roundNum) {
     recalcAllTrueSkill();
 
     // isOnCourt を残ったスケジュールから再計算（削除ラウンドの選手を解放）
-    state.players.forEach(p => { p.isOnCourt = false; });
-    state.schedule.forEach(rd => {
-        rd.courts.forEach((ct, ci) => {
-            const sc = state.scores[`r${rd.round}c${ci}`];
-            // done=true のコートは終了済みなので isOnCourt=true にしない
-            if (!sc?.done && (!sc || (sc.s1 === 0 && sc.s2 === 0))) {
-                [...ct.team1, ...ct.team2].forEach(id => {
-                    const p = state.players.find(pp => pp.id === id);
-                    if (p) p.isOnCourt = true;
-                });
-            }
-        });
-    });
+    // ※ 順次モードでは「物理コートごとに最新ラウンドのみ」を見る必要があるため
+    //   独自ロジックを持たず _recalcIsOnCourt() に一本化する
+    _recalcIsOnCourt();
+
+    // ラウンド番号を詰め直したので done 検出済みキャッシュを破棄する
+    // （旧 r3c0 が新 r2c0 になるため、古い mid が残ると自動割当が発火しなくなる）
+    if (window._fbResetDoneTracking) window._fbResetDoneTracking();
 
     // プールをクリア（削除により状態が変わったため再生成が必要）
     state.matchPool = [];
@@ -4122,7 +4161,7 @@ function deleteRound(e, roundNum) {
         renderMatchContainer();
         // 順次モードON時: プールを再生成（案①）
         if (state.autoMatch && state.seqMatch) {
-            setTimeout(() => generatePoolBatch(), 100);
+            setTimeout(() => _refillPoolIfEmpty(), 100);
         }
     }
     updatePoolStatus();
@@ -4181,19 +4220,10 @@ function deleteCallingCourt(roundNum, courtArrayIdx) {
         });
     });
     recalcAllTrueSkill();
-    // isOnCourt 再計算
-    state.players.forEach(p => { p.isOnCourt = false; });
-    state.schedule.forEach(r => {
-        r.courts.forEach((ct, ci) => {
-            const s = state.scores?.[`r${r.round}c${ci}`];
-            if (!s?.done) {
-                [...ct.team1, ...ct.team2].forEach(id => {
-                    const p = state.players.find(pp => pp.id === id);
-                    if (p) p.isOnCourt = true;
-                });
-            }
-        });
-    });
+    // isOnCourt 再計算（順次モード対応のため _recalcIsOnCourt に一本化）
+    _recalcIsOnCourt();
+    // ラウンド番号を詰め直した可能性があるため done 検出済みキャッシュを破棄
+    if (window._fbResetDoneTracking) window._fbResetDoneTracking();
     state.matchPool = [];
     saveState();
     if (state.schedule.length === 0) {
@@ -4204,9 +4234,9 @@ function deleteCallingCourt(roundNum, courtArrayIdx) {
         showStep('step-setup', document.getElementById('btn-setup'));
     } else {
         renderMatchContainer();
-        if (state.autoMatch && state.seqMatch) setTimeout(() => generatePoolBatch(), 100);
+        if (state.autoMatch && state.seqMatch) setTimeout(() => _refillPoolIfEmpty(), 100);
     }
-    renderPlayers();
+    renderPlayerList();
     updatePoolStatus();
     showToast('組合せを削除しました');
 }
@@ -4229,7 +4259,7 @@ function toggleDoneEdit(roundNum, courtArrayIdx, btn) {
         recalcAllTrueSkill();
         saveState();
         renderMatchContainer();
-        renderPlayers();
+        renderPlayerList();
         showToast('試合結果を修正しました（勝率・μ値を再計算）');
     } else {
         // 修正開始 → 編集可能にする
@@ -5410,6 +5440,14 @@ let _scoresRef = null;   // scores 専用リアルタイムリスナー
 const _pendingAssign  = new Set(); // assignNextPoolMatch の二重実行防止ガード
 const _processedDone  = new Set(); // 終了検出済み mid（_fbApply より先に_refが発火した場合の誤スキップ防止）
 
+// ラウンド削除でラウンド番号が詰め直されると mid（r{round}c{ci}）が付け替わるため、
+// 古い mid が _processedDone に残っていると別の試合の done を「処理済み」と誤判定して
+// 自動割当が発火しなくなる。セッション切替・ラウンド削除時に必ず破棄する。
+window._fbResetDoneTracking = function() {
+    _processedDone.clear();
+    _pendingAssign.clear();
+};
+
 // セッション切替直後の初回 onValue は CLIENT_ID 一致でもスキップしないためのフラグ。
 // selectHistoryId など「ローカルをリセットして別セッションへ接続」するパスでのみ true にする。
 let _fbApplyOnce = false;
@@ -5417,6 +5455,11 @@ window._fbForceApplyNext = function() { _fbApplyOnce = true; };
 
 window._fbStart = function(sessionId) {
     if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
+
+    // 別セッションへ切り替えた場合、前セッションの mid が残っていると
+    // 同じ mid の done を「処理済み」と誤判定するため必ずクリアする
+    _processedDone.clear();
+    _pendingAssign.clear();
 
     // ── メインセッションリスナー ──────────────────────────────────
     if (_ref) off(_ref);

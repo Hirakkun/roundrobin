@@ -514,6 +514,9 @@ function _scIsFS() {
 function _scUpdateFSBtn() {
     const btn = document.getElementById('sc-fullscreen-btn');
     if (btn) btn.textContent = _scIsFS() ? '✕' : '⛶';
+    // ESC やスワイプで全画面を抜けた場合、fs_preferred は '1' のままなので
+    // フラグを戻しておかないと「次のタップで全画面」が二度と効かなくなる
+    if (!_scIsFS()) _scAutoFsTriggered = false;
 }
 document.addEventListener('fullscreenchange', _scUpdateFSBtn);
 document.addEventListener('webkitfullscreenchange', _scUpdateFSBtn);
@@ -535,7 +538,10 @@ function _scTryAutoFS(e) {
     if (_scAutoFsTriggered || _scIsFS()) return;
     if (localStorage.getItem('fs_preferred') !== '1') return;
     _scAutoFsTriggered = true;
-    _scReqFS(document.documentElement);
+    // requestFullscreen は Promise を返す。未 catch だと iOS Safari など
+    // 非対応/拒否環境で未処理 rejection が出るうえ、フラグが立ったままで再試行できない
+    Promise.resolve(_scReqFS(document.documentElement))
+        .catch(() => { _scAutoFsTriggered = false; });
 }
 document.addEventListener('touchstart', _scTryAutoFS);
 document.addEventListener('click',      _scTryAutoFS);
@@ -834,8 +840,12 @@ function onStateUpdate(state) {
             resetMatch();           // 外部からcallingに戻された → リセット
         } else if (!matchStarted) {
             showServeSetup();       // 通常のサーブ待ち
+        } else {
+            // _statusWritePending 中（playing 書き込み完了待ち）はリセットしない。
+            // ただし冒頭の hideAll() で全画面が消えているため、
+            // ここで再表示しないと一瞬まっさらな画面になってしまう
+            showMain();
         }
-        // _statusWritePending中はonValueを無視（playing書き込み完了待ち）
     }
 }
 
@@ -845,11 +855,18 @@ function buildName(id, pnames, withNum) {
     return { id, name, withNum };
 }
 
+// innerHTML に差し込むためHTMLエスケープする（選手名に < > & 等が入っても崩れない）
+function _scEsc(s) {
+    return String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function renderName(nameObj) {
     if (nameObj.withNum) {
-        return `<span class="pname"><span class="num-badge">${nameObj.id}</span>${nameObj.name}</span>`;
+        return `<span class="pname"><span class="num-badge">${_scEsc(nameObj.id)}</span>${_scEsc(nameObj.name)}</span>`;
     }
-    return `<span class="pname">${nameObj.name}</span>`;
+    return `<span class="pname">${_scEsc(nameObj.name)}</span>`;
 }
 
 function teamNamesToText(names) {
@@ -911,12 +928,12 @@ function buildServeHTML(names) {
     if (!names.length) return '';
     const lines = names.map((n, i) => {
         const badgeHtml = n.withNum
-            ? `<span class="num-badge">${n.id}</span>`
+            ? `<span class="num-badge">${_scEsc(n.id)}</span>`
             : '';
         const col1 = i === 0 ? '🎾' : ''; // 1行目のみ絵文字
         return `<div class="serve-line">
                     <span class="serve-col1">${col1}</span>
-                    <span class="serve-col2">${badgeHtml}${n.name}</span>
+                    <span class="serve-col2">${badgeHtml}${_scEsc(n.name)}</span>
                 </div>`;
     });
     return `<div class="serve-btn-lines">${lines.join('')}</div>`;
@@ -1241,10 +1258,10 @@ function updateDisplay() {
 
     // ポイントボタンのラベル（名前 + 大きい「ポイント」）
     document.getElementById('btn-left').innerHTML  =
-        '<span class="btn-team-name">' + teamNamesToText(leftNames)  + '</span>' +
+        '<span class="btn-team-name">' + _scEsc(teamNamesToText(leftNames))  + '</span>' +
         '<span class="btn-point-label">ポイント</span>';
     document.getElementById('btn-right').innerHTML =
-        '<span class="btn-team-name">' + teamNamesToText(rightNames) + '</span>' +
+        '<span class="btn-team-name">' + _scEsc(teamNamesToText(rightNames)) + '</span>' +
         '<span class="btn-point-label">ポイント</span>';
 
     // ポイント大表示（左右の表示）

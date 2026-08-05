@@ -822,23 +822,32 @@ window.toggleFullscreen = function() {
         localStorage.setItem('fs_preferred', '1');
     }
 };
+
+// fs_preferred=1 のとき、全画面ボタン以外の最初のタッチ/クリックで全画面に入る
+// ※全画面ボタン自体を除外しないと toggleFullscreen と競合して即解除されるバグが起きる
+// （updateFSBtn から参照するため let 宣言を先に置く）
+let _autoFsTriggered = false;
+
 // ボタンのアイコンを全画面状態に合わせて更新
 function updateFSBtn() {
     const btn = document.getElementById('fullscreen-btn');
     if (btn) btn.textContent = isFullscreen() ? '✕' : '⛶';
+    // ESC やスワイプで全画面を抜けた場合、fs_preferred は '1' のままなので
+    // フラグを戻しておかないと「次のタップで全画面」が二度と効かなくなる
+    if (!isFullscreen()) _autoFsTriggered = false;
 }
 document.addEventListener('fullscreenchange', updateFSBtn);
 document.addEventListener('webkitfullscreenchange', updateFSBtn);
 
-// fs_preferred=1 のとき、全画面ボタン以外の最初のタッチ/クリックで全画面に入る
-// ※全画面ボタン自体を除外しないと toggleFullscreen と競合して即解除されるバグが起きる
-let _autoFsTriggered = false;
 function _tryAutoFullscreen(e) {
     if (e && e.target && e.target.closest('#fullscreen-btn')) return; // ボタンは除外
     if (_autoFsTriggered || isFullscreen()) return;
     if (localStorage.getItem('fs_preferred') !== '1') return;
     _autoFsTriggered = true;
-    requestFS(document.documentElement);
+    // requestFullscreen は Promise を返す。未 catch だと非対応/拒否環境で
+    // 未処理 rejection が出るうえ、フラグが立ったままで再試行できない
+    Promise.resolve(requestFS(document.documentElement))
+        .catch(() => { _autoFsTriggered = false; });
 }
 document.addEventListener('touchstart', _tryAutoFullscreen);
 document.addEventListener('click',      _tryAutoFullscreen);
