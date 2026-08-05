@@ -748,51 +748,9 @@ function getUnusedRoster() {
     return (state.roster || []).filter(p => !used.has(p.pid));
 }
 
+// 準備中の参加者登録も、途中参加と同じ複数選択モーダルで行う
 function addEntryPlayer() {
-    // 既存の未確定行に選手が選択済みなら自動で確定する
-    document.querySelectorAll('.entry-pending-row').forEach(row => {
-        const sel = row.querySelector('select');
-        if (sel && sel.value) {
-            const pid = sel.value;
-            if (!entryPlayers.find(p => p.pid === pid)) {
-                const rp = (state.roster || []).find(p => p.pid === pid);
-                if (rp) entryPlayers.push(rp);
-            }
-            row.remove();
-        }
-    });
-    // 自動確定が発生した場合は保存・再描画
-    renderEntryList();
-    _saveEntryToState();
-    const unused = getUnusedRoster();
-    if (!unused.length) { showToast('名簿の全員が登録済みです'); return; }
-    const list = document.getElementById('entryList');
-    const row = document.createElement('div');
-    row.className = 'entry-pending-row';
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;';
-    const opts = `<option value="">--- 選択してください ---</option>` +
-        unused.map(p => `<option value="${_esc(p.pid)}">${_esc(p.name)}${p.kana?' ('+_esc(p.kana)+')':''}</option>`).join('');
-    row.innerHTML = `
-        <select style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-size:0.875rem;">${opts}</select>
-        <button type="button" onclick="confirmEntryRow(this)"
-            style="padding:8px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.8125rem;white-space:nowrap;">✓ 決定</button>
-        <button type="button" onclick="this.closest('.entry-pending-row').remove()"
-            style="padding:8px 10px;background:#e0e0e0;color:#444;border:none;border-radius:8px;font-weight:bold;font-size:0.875rem;">×</button>`;
-    list.appendChild(row);
-}
-
-function confirmEntryRow(btn) {
-    const row = btn.closest('.entry-pending-row');
-    const sel = row.querySelector('select');
-    const pid = sel.value;
-    if (!pid) { showToast('選手を選択してください'); return; }
-    if (entryPlayers.find(p => p.pid === pid)) { showToast('すでに追加されています'); return; }
-    const rp = (state.roster || []).find(p => p.pid === pid);
-    if (!rp) return;
-    entryPlayers.push(rp);
-    row.remove();
-    renderEntryList();
-    _saveEntryToState(); // Firebaseに即保存
+    openMultiAddModal('entry');
 }
 
 window.removeConfirmedEntry = function(key) {
@@ -1584,24 +1542,37 @@ function toggleRest(id) {
 }
 
 // =====================================================================
-// 途中参加（既存名簿から複数選択して一括追加）
+// 名簿から複数選択して一括追加（準備中の参加者登録／試合中の途中参加で共用）
 // =====================================================================
-let _multiAddSel = new Set();   // 選択中の pid
+let _multiAddSel  = new Set();   // 選択中の pid
+let _multiAddMode = 'live';      // 'entry'=準備中のentryPlayers / 'live'=試合中のstate.players
 
-// まだ参加していない名簿の選手（名前で重複判定）
+// まだ登録されていない名簿の選手
 function _multiAddAvailable() {
-    const usedNames = new Set(Object.values(state.playerNames));
+    if (_multiAddMode === 'entry') return getUnusedRoster();   // pid で重複判定
+    const usedNames = new Set(Object.values(state.playerNames)); // 途中参加は名前で判定
     return (state.roster || []).filter(r => !usedNames.has(r.name));
 }
 
-function addPlayer() {
+function openMultiAddModal(mode) {
     if (isEventLocked()) return;
-    if (!_multiAddAvailable().length) { showToast('名簿の全員が参加済みです'); return; }
+    _multiAddMode = mode || 'live';
+    if (!_multiAddAvailable().length) {
+        showToast(_multiAddMode === 'entry' ? '名簿の全員が登録済みです' : '名簿の全員が参加済みです');
+        return;
+    }
     _multiAddSel = new Set();
+    const title = document.getElementById('ma-title');
+    if (title) title.textContent = _multiAddMode === 'entry' ? '👥 参加者を追加' : '👥 新たに参加する人を追加';
     const q = document.getElementById('ma-search');
     if (q) q.value = '';
     renderMultiAddList();
     document.getElementById('multiAddModal').classList.add('show');
+}
+
+// 試合中の途中参加
+function addPlayer() {
+    openMultiAddModal('live');
 }
 
 function closeMultiAddModal() {
@@ -1664,26 +1635,38 @@ function _updateMultiAddBtn() {
 function confirmMultiAdd() {
     if (isEventLocked()) return;
     if (_multiAddSel.size === 0) return;
-    // 選択した順ではなく名簿順に追加して、付与されるIDの並びを安定させる
+    // 選択した順ではなく名簿順に追加して、並び（entryPlayers の順／付与されるID）を安定させる
     const targets = _multiAddAvailable().filter(r => _multiAddSel.has(r.pid));
-    // addPlayerToState は state.players を見て行列を初期化するため、1人ずつ順に追加する
-    let nextId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
-    let added = 0;
-    targets.forEach(rp => {
-        addPlayerToState(nextId, true);
-        state.playerNames[nextId] = rp.name;
-        if (!state.playerClubs) state.playerClubs = {};
-        if (rp.clubName) state.playerClubs[nextId] = rp.clubName;
-        const player = state.players.find(p => p.id === nextId);
-        if (player) player.pid = rp.pid;
-        // TrueSkill初期値をrosterから引き継ぎ
-        state.tsMap[nextId] = { mu: rp.mu ?? 25.0, sigma: rp.sigma ?? (25/3) };
-        nextId++; added++;
-    });
-    _multiAddSel = new Set();
-    closeMultiAddModal();
-    renderPlayerList();
-    saveState();
+    const added = targets.length;
+
+    if (_multiAddMode === 'entry') {
+        // 準備中: entryPlayers に積む（state.players への反映は _saveEntryToState が行う）
+        targets.forEach(rp => entryPlayers.push(rp));
+        _multiAddSel = new Set();
+        closeMultiAddModal();
+        renderEntryList();
+        _saveEntryToState();   // Firebaseに即保存
+    } else {
+        // 試合中の途中参加: state.players へ直接追加する。
+        // addPlayerToState は呼び出し時点の state.players を見て行列を初期化するため、
+        // 1人ずつ順に追加しないと「同じ回に追加した選手同士」の行列が張られない。
+        let nextId = state.players.length > 0 ? Math.max(...state.players.map(p => p.id)) + 1 : 1;
+        targets.forEach(rp => {
+            addPlayerToState(nextId, true);
+            state.playerNames[nextId] = rp.name;
+            if (!state.playerClubs) state.playerClubs = {};
+            if (rp.clubName) state.playerClubs[nextId] = rp.clubName;
+            const player = state.players.find(p => p.id === nextId);
+            if (player) player.pid = rp.pid;
+            // TrueSkill初期値をrosterから引き継ぎ
+            state.tsMap[nextId] = { mu: rp.mu ?? 25.0, sigma: rp.sigma ?? (25/3) };
+            nextId++;
+        });
+        _multiAddSel = new Set();
+        closeMultiAddModal();
+        renderPlayerList();
+        saveState();
+    }
     showToast(`✅ ${added}人を追加しました`);
 }
 
@@ -5412,11 +5395,11 @@ window.onload = function () {
     </div>
 </div>
 
-<!-- 途中参加（既存名簿から複数選択して一括追加） -->
+<!-- 名簿から複数選択して一括追加（準備中の参加者登録／試合中の途中参加で共用） -->
 <div class="pair-modal-bg" id="multiAddModal">
     <!-- 一覧だけをスクロールさせたいので、モーダル自体は overflow を切って縦フレックスにする -->
     <div class="pair-modal" style="max-width:420px;width:94%;max-height:82vh;overflow:visible;display:flex;flex-direction:column;">
-        <h3 style="margin:0 0 10px;">👥 新たに参加する人を追加</h3>
+        <h3 id="ma-title" style="margin:0 0 10px;">👥 参加者を追加</h3>
         <input type="text" class="gf-input" id="ma-search" placeholder="名前・ふりがな・クラブで絞り込み"
                oninput="renderMultiAddList()" style="margin-bottom:8px;">
         <div style="display:flex;gap:6px;margin-bottom:8px;">
