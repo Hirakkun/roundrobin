@@ -768,6 +768,21 @@ window.toggleEntryRest = function(pid) {
     _saveEntryToState();
 };
 
+// 準備中に設定したペア（pid）を数値IDに変換して state.fixedPairs へ反映する。
+// entryPlayers から state.players を作り直すたびに ID が振り直されるので、
+// state.players を組み立てる箇所からは必ず呼ぶこと。
+// ※ 組合せ生成・参加者リストの表示は fixedPairs（数値ID）だけを見るため、
+//   ここを呼び忘れると「準備中では設定済みに見えるのに組合せに反映されない」
+//   という状態になる。
+function _syncFixedPairsFromPids() {
+    state.fixedPairs = [];
+    for (const [pid1, pid2] of (state.fixedPairPids || [])) {
+        const p1 = (state.players || []).find(p => p.pid === pid1);
+        const p2 = (state.players || []).find(p => p.pid === pid2);
+        if (p1 && p2) state.fixedPairs.push([p1.id, p2.id]);
+    }
+}
+
 // entryPlayersをstate.playersに即反映してFirebaseに保存
 function _saveEntryToState() {
     if (entryPlayers.length === 0) {
@@ -777,6 +792,7 @@ function _saveEntryToState() {
         state.tsMap = {};
         state.pairMatrix = {};
         state.oppMatrix = {};
+        state.fixedPairs = [];
         saveState();
         return;
     }
@@ -815,6 +831,7 @@ function _saveEntryToState() {
         state.pairMatrix[i] = {}; state.oppMatrix[i] = {};
         ids.forEach(j => { state.pairMatrix[i][j] = 0; state.oppMatrix[i][j] = 0; });
     });
+    _syncFixedPairsFromPids();
     saveState();
 }
 
@@ -979,12 +996,7 @@ function applyEntryPlayers() {
         ids.forEach(j => { state.pairMatrix[i][j] = 0; state.oppMatrix[i][j] = 0; });
     });
     // 準備中に設定したペア（pid）を数値IDに変換して fixedPairs に反映
-    state.fixedPairs = [];
-    for (const [pid1, pid2] of (state.fixedPairPids || [])) {
-        const p1 = state.players.find(p => p.pid === pid1);
-        const p2 = state.players.find(p => p.pid === pid2);
-        if (p1 && p2) state.fixedPairs.push([p1.id, p2.id]);
-    }
+    _syncFixedPairsFromPids();
     return true;
 }
 
@@ -1443,6 +1455,7 @@ window.confirmEntryPair = function(partnerPid) {
     getEntryFixedPairPids().push([targetPid, partnerPid]);
     closePairModal();
     renderEntryList();
+    _syncFixedPairsFromPids(); // 数値IDのfixedPairsにも反映（組合せ生成はこちらを見る）
     saveState(true); // 即時push
     const p1 = entryPlayers.find(p => p.pid === targetPid);
     const p2 = entryPlayers.find(p => p.pid === partnerPid);
@@ -1459,6 +1472,7 @@ window.removeEntryPair = function(pid) {
         pair[0] !== pid && pair[1] !== pid
     );
     renderEntryList();
+    _syncFixedPairsFromPids(); // 数値IDのfixedPairsにも反映
     saveState(true); // 即時push
     showToast('ペア解除しました');
 };
