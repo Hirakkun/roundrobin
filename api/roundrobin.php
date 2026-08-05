@@ -4207,13 +4207,16 @@ function deleteRound(e, roundNum) {
 }
 
 // 呼び出し中の単一コートを削除する
+// 削除できたら true、拒否したら false を返す。
+// スワイプ削除はカードを先に飛ばしてから呼ぶため、false のときは呼び出し側で
+// カードを元に戻さないと「赤い削除背景だけが残る」状態になる。
 function deleteCallingCourt(roundNum, courtArrayIdx) {
-    if (isEventLocked()) { showToast('このイベントは終了しています'); return; }
+    if (isEventLocked()) { showToast('このイベントは終了しています'); return false; }
     const rd = state.schedule.find(r => r.round === roundNum);
-    if (!rd) return;
+    if (!rd) return false;
     const mid = `r${roundNum}c${courtArrayIdx}`;
     const sc = state.scores?.[mid];
-    if (sc?.done || sc?.status === 'playing') { showToast('呼び出し中の組合せのみ削除できます'); return; }
+    if (sc?.done || sc?.status === 'playing') { showToast('呼び出し中の組合せのみ削除できます'); return false; }
 
     // スコアを削除
     if (state.scores) delete state.scores[mid];
@@ -4265,6 +4268,9 @@ function deleteCallingCourt(roundNum, courtArrayIdx) {
     if (window._fbResetDoneTracking) window._fbResetDoneTracking();
     state.matchPool = [];
     saveState();
+    // スケジュールが空でも描画し直す。ここを省くと、スワイプで飛ばした
+    // 透明なカードと赤い削除背景が組合せ画面に残ったままになる
+    renderMatchContainer();
     if (state.schedule.length === 0) {
         document.getElementById('initialSetup').style.display = 'block';
         document.getElementById('liveSetup').style.display = 'none';
@@ -4272,12 +4278,12 @@ function deleteCallingCourt(roundNum, courtArrayIdx) {
         showEntryMode();
         showStep('step-setup', document.getElementById('btn-setup'));
     } else {
-        renderMatchContainer();
         if (state.autoMatch && state.seqMatch) setTimeout(() => _refillPoolIfEmpty(), 100);
     }
     renderPlayerList();
     updatePoolStatus();
     showToast('組合せを削除しました');
+    return true;
 }
 
 // 終了カードのスコア修正モード切り替え
@@ -5374,7 +5380,14 @@ window.onload = function () {
             card.style.transform = 'translateX(-110%)';
             card.style.opacity = '0';
             setTimeout(() => {
-                deleteCallingCourt(Number(wrap.dataset.round), Number(wrap.dataset.cidx));
+                const ok = deleteCallingCourt(Number(wrap.dataset.round), Number(wrap.dataset.cidx));
+                // 削除が拒否された場合（スワイプ中に試合が開始された等）は再描画されない。
+                // カードを飛ばしたままだと赤い削除背景だけが残るので元に戻す。
+                if (!ok && card.isConnected) {
+                    card.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
+                    card.style.transform = 'translateX(0)';
+                    card.style.opacity = '1';
+                }
             }, 230);
         } else {
             // スナップバック
