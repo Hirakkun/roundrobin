@@ -5446,7 +5446,13 @@ const _processedDone  = new Set(); // 終了検出済み mid（_fbApply より�
 window._fbResetDoneTracking = function() {
     _processedDone.clear();
     _pendingAssign.clear();
+    _scoresSeeded = false;
 };
+
+// 接続後の初回 scores スナップショットを「種まき済み」にしたか。
+// 初回には過去に終了した試合の done も全部含まれるため、そのまま検出処理に
+// かけると終了済みの試合数だけ自動組合せがまとめて発火してしまう。
+let _scoresSeeded = false;
 
 // セッション切替直後の初回 onValue は CLIENT_ID 一致でもスキップしないためのフラグ。
 // selectHistoryId など「ローカルをリセットして別セッションへ接続」するパスでのみ true にする。
@@ -5457,9 +5463,11 @@ window._fbStart = function(sessionId) {
     if (window.updateSyncStatus) window.updateSyncStatus('🟡 接続中...', '#e65100');
 
     // 別セッションへ切り替えた場合、前セッションの mid が残っていると
-    // 同じ mid の done を「処理済み」と誤判定するため必ずクリアする
+    // 同じ mid の done を「処理済み」と誤判定するため必ずクリアする。
+    // クリア後は初回スナップショットで現セッションの done を種まきし直す。
     _processedDone.clear();
     _pendingAssign.clear();
+    _scoresSeeded = false;
 
     // ── メインセッションリスナー ──────────────────────────────────
     if (_ref) off(_ref);
@@ -5489,6 +5497,19 @@ window._fbStart = function(sessionId) {
     onValue(_scoresRef, snap => {
         const scores = snap.val();
         if (!scores || typeof scores !== 'object') return;
+
+        // ── 接続後の初回スナップショットは種まきのみ（自動組合せをトリガーしない）──
+        // 初回には過去に終了した試合の done も全部含まれる。新規タブで管理者画面を
+        // 開くと _processedDone は空なので、これを「今 done になった」と誤検出して
+        // 終了済みの試合数だけ次の試合がまとめて作られてしまう。
+        // ここで既存の done を先に「処理済み」として記録しておけば、以降の検出は
+        // この画面を開いた後に実際に終了した試合だけに限定される。
+        if (!_scoresSeeded) {
+            _scoresSeeded = true;
+            Object.keys(scores).forEach(mid => {
+                if (scores[mid] && scores[mid].done) _processedDone.add(mid);
+            });
+        }
 
         // ── 新たに done になったコートを検出 → autoMatch/seqMatch トリガー ──────
         // alreadyDone は state.scores ではなく _processedDone セットで判定する。
