@@ -5408,12 +5408,10 @@ window.onload = function () {
         _wrap.querySelector('.match-card').style.transform = `translateX(${Math.max(-80, _dx)}px)`;
     }, { passive: false });
 
-    document.addEventListener('touchend', () => {
-        if (!_wrap) return;
-        const wrap = _wrap;
+    // スワイプ終了時の共通処理（タッチ・マウス共用）
+    function _finishSwipe(wrap, dx) {
         const card = wrap.querySelector('.match-card');
-        _wrap = null;
-        if (_dx < -THRESHOLD) {
+        if (dx < -THRESHOLD) {
             // 閾値超え → カードを左へ飛ばして削除
             card.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
             card.style.transform = 'translateX(-110%)';
@@ -5433,8 +5431,61 @@ window.onload = function () {
             card.style.transition = 'transform 0.22s ease';
             card.style.transform = 'translateX(0)';
         }
+    }
+
+    document.addEventListener('touchend', () => {
+        if (!_wrap) return;
+        const wrap = _wrap;
+        _wrap = null;
+        _finishSwipe(wrap, _dx);
         _dx = 0; _moved = false;
     });
+
+    // ── マウスドラッグでも同じ操作をできるようにする（PC対応）──
+    // タッチ処理はそのまま残し、マウス用を並行して持つ。
+    // PC には touch イベントが無いため、これが無いと単一コートを削除する手段がない。
+    let _mWrap = null, _mStartX = 0, _mDx = 0, _mDragged = false, _suppressClick = false;
+
+    document.addEventListener('mousedown', e => {
+        if (e.button !== 0) return;               // 左ボタンのみ
+        const wrap = e.target.closest('.swipe-del-wrap');
+        if (!wrap) return;
+        _mWrap = wrap; _mStartX = e.clientX; _mDx = 0; _mDragged = false;
+        wrap.querySelector('.match-card').style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (!_mWrap) return;
+        const ddx = e.clientX - _mStartX;
+        if (!_mDragged && Math.abs(ddx) < 4) return;  // 微動はクリック扱いのままにする
+        _mDragged = true;
+        e.preventDefault();                            // ドラッグ中の文字選択を防ぐ
+        _mDx = Math.min(0, ddx);                       // 右方向は無視
+        _mWrap.querySelector('.match-card').style.transform =
+            `translateX(${Math.max(-80, _mDx)}px)`;
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!_mWrap) return;
+        const wrap = _mWrap;
+        const dragged = _mDragged;
+        _mWrap = null;
+        if (!dragged) return;   // ただのクリック → スコア加減算に任せる
+        // ドラッグした場合は直後の click を握りつぶす。
+        // スコア変更は document の click で拾っているため、抑止しないと
+        // ドラッグしただけでスコアが動いてしまう。
+        _suppressClick = true;
+        _finishSwipe(wrap, _mDx);
+        _mDx = 0; _mDragged = false;
+    });
+
+    // click はバブリングで拾われるので、キャプチャ段階で先に止める
+    document.addEventListener('click', e => {
+        if (!_suppressClick) return;
+        _suppressClick = false;
+        e.stopPropagation();
+        e.preventDefault();
+    }, true);
 })();
 </script>
 
