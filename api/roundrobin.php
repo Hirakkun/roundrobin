@@ -517,6 +517,33 @@ body.viewer-mode #initialSetup { display: none !important; }
     </div>
     <div id="reportStatus"></div>
 
+    <!-- YouTubeチャプター用タイムスタンプ -->
+    <button class="report-btn" id="btn-timestamp" onclick="toggleTimestampPanel()"
+            style="background:#c62828;margin-top:10px;display:none;">⏱ タイムスタンプ</button>
+    <div id="timestampPanel" style="display:none;margin-top:10px;background:#fff3f3;border-radius:10px;padding:14px;">
+        <div style="font-size:0.75rem;color:#666;line-height:1.6;margin-bottom:10px;">
+            YouTubeの概要欄に貼るとチャプターとして機能します。<br>
+            動画で第1試合が始まる位置を「開始時間」に入れてください。
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="flex:1;min-width:120px;">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:4px;font-weight:bold;">コート</div>
+                <select id="tsCourt" onchange="renderTimestamp()"
+                    style="width:100%;padding:8px;border:1px solid #ef9a9a;border-radius:6px;font-size:0.9375rem;box-sizing:border-box;"></select>
+            </div>
+            <div style="flex:1;min-width:120px;">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:4px;font-weight:bold;">開始時間（第1試合）</div>
+                <input id="tsOffset" type="text" value="0:00" placeholder="0:00 または 秒数"
+                    oninput="renderTimestamp()"
+                    style="width:100%;padding:8px;border:1px solid #ef9a9a;border-radius:6px;font-size:0.9375rem;box-sizing:border-box;">
+            </div>
+        </div>
+        <div id="tsWarn" style="display:none;font-size:0.75rem;color:#c62828;background:#ffebee;border-radius:6px;padding:8px;margin-bottom:8px;line-height:1.6;"></div>
+        <textarea id="tsText" readonly
+            style="width:100%;height:220px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:monospace;font-size:0.75rem;line-height:1.7;box-sizing:border-box;resize:vertical;background:#fff;color:#333;"></textarea>
+        <button class="report-btn" style="margin-top:8px;background:#c62828;" onclick="copyTimestamp()">📋 コピーする</button>
+    </div>
+
     <!-- 期間集計パネル -->
     <button class="report-btn" id="btn-period-agg" onclick="togglePeriodPanel()" style="background:#6a1b9a;margin-top:10px;display:none;">📅 期間集計</button>
     <div id="periodPanel" style="display:none;margin-top:10px;background:#f3e5f5;border-radius:10px;padding:14px;">
@@ -3598,6 +3625,9 @@ function markCourtStarted(roundNum, courtIndex) {
     const mid = `r${roundNum}c${courtIndex}`;
     if (!state.scores[mid]) state.scores[mid] = { s1: 0, s2: 0 };
     state.scores[mid].status = 'playing';
+    // 開始時刻を記録（YouTubeチャプター用タイムスタンプの基準）。
+    // score-court 側でも同じキーに書くため、先に押された方を残す。
+    if (state.scores[mid].startedAt == null) state.scores[mid].startedAt = Date.now();
     saveState();
     renderMatchContainer();
 }
@@ -4511,6 +4541,8 @@ function calcRank() {
         if (b.diff !== a.diff) return b.diff - a.diff;
         return b.age - a.age;
     });
+    // タイムスタンプ出力から同じ並び・同じ集計を使えるように保持しておく
+    _lastRankArr = arr;
 
     let h = '<tr><th>順</th><th style="text-align:left;">氏名</th><th>勝率</th><th>試</th><th>勝</th><th>負</th><th>差</th></tr>';
     arr.forEach((r, i) => {
@@ -4680,6 +4712,140 @@ function previewReport() {
     const preview = document.getElementById('reportPreview');
     document.getElementById('reportPreviewText').textContent = csv;
     preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+}
+
+// =====================================================================
+// YouTubeチャプター用タイムスタンプ
+// =====================================================================
+let _lastRankArr = null; // calcRank() が最後に作った順位配列
+
+// 「1:23」「01:23」「1:02:03」「83」（秒数のみ）を秒に変換する
+function _tsParseOffset(str) {
+    const s = String(str || '').trim();
+    if (!s) return 0;
+    if (!s.includes(':')) return Math.max(0, Math.floor(Number(s) || 0));
+    const parts = s.split(':').map(v => Number(v) || 0);
+    return Math.max(0, parts.reduce((acc, v) => acc * 60 + v, 0));
+}
+
+// 秒 → YouTubeチャプター形式（1時間以上は h:mm:ss）
+function _tsFormat(sec) {
+    const t = Math.max(0, Math.round(sec));
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+// 指定した物理コートの試合を、開始時刻の昇順で返す
+function _tsMatchesOfCourt(physIdx) {
+    const list = [];
+    (state.schedule || []).forEach(rd => {
+        (rd.courts || []).forEach((ct, ci) => {
+            const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+            if (pi !== physIdx) return;
+            const sc = state.scores?.[`r${rd.round}c${ci}`];
+            if (!sc || sc.startedAt == null) return;   // 開始時刻がない試合は出せない
+            list.push({ round: rd.round, ct, sc });
+        });
+    });
+    return list.sort((a, b) => a.sc.startedAt - b.sc.startedAt);
+}
+
+function toggleTimestampPanel() {
+    const panel = document.getElementById('timestampPanel');
+    const opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'block' : 'none';
+    if (!opening) return;
+    // コート候補を作成（開始時刻を持つ試合があるコートのみ）
+    const sel = document.getElementById('tsCourt');
+    const prev = sel.value;
+    const opts = [];
+    for (let i = 0; i < (state.courts || 2); i++) {
+        if (_tsMatchesOfCourt(i).length > 0) {
+            opts.push(`<option value="${i}">${_escH(getCourtName(i))}</option>`);
+        }
+    }
+    sel.innerHTML = opts.join('');
+    if (prev && opts.some(o => o.includes(`value="${prev}"`))) sel.value = prev;
+    renderTimestamp();
+}
+
+function renderTimestamp() {
+    const out  = document.getElementById('tsText');
+    const warn = document.getElementById('tsWarn');
+    const sel  = document.getElementById('tsCourt');
+    warn.style.display = 'none';
+
+    if (!sel.options.length) {
+        out.value = '開始時刻が記録された試合がありません。\n\n'
+                  + '※ タイムスタンプは「試合開始」を押した時刻から作ります。\n'
+                  + '　 この機能の追加より前に行われたイベントには時刻が記録されていないため出力できません。';
+        return;
+    }
+    const physIdx = Number(sel.value);
+    const matches = _tsMatchesOfCourt(physIdx);
+    const offset  = _tsParseOffset(document.getElementById('tsOffset').value);
+    const t0 = matches[0].sc.startedAt;
+
+    // 1行目: イベント名（月日）＋コート名
+    // イベント名・開催日は eventInfoBar の dataset に保持されている
+    const bar = document.getElementById('eventInfoBar');
+    const ev  = (bar?.dataset.evName || '').trim();
+    const raw = bar?.dataset.evDate || '';
+    let md;
+    if (raw.length === 8) {
+        md = `${Number(raw.slice(4, 6))}/${Number(raw.slice(6, 8))}`;
+    } else {
+        const d = new Date(state.createdAt || Date.now());
+        md = `${d.getMonth() + 1}/${d.getDate()}`;
+    }
+    const lines = [`00:00 ${ev ? ev + '（' + md + '）' : md} ${getCourtName(physIdx)}`];
+
+    const nm = id => state.playerNames[id] || ('選手' + id);
+    const times = [0];
+    matches.forEach((m, i) => {
+        const sec = Math.round((m.sc.startedAt - t0) / 1000) + offset;
+        times.push(sec);
+        const t1 = m.ct.team1.map(nm).join('・');
+        const t2 = m.ct.team2.map(nm).join('・');
+        lines.push(`${_tsFormat(sec)} 第${i + 1}試合　${t1}　${m.sc.s1 ?? 0}-${m.sc.s2 ?? 0}　${t2}`);
+    });
+
+    // 順位表（③順位 と同じ並び。calcRank 未実行なら先に計算する）
+    if (!_lastRankArr) calcRank();
+    if (_lastRankArr && _lastRankArr.length) {
+        lines.push('');
+        lines.push('順位 選手名 勝率 試 勝 負 差');
+        lines.push('');
+        _lastRankArr.forEach((r, i) => {
+            const wr = r.played ? (r.wins / r.played * 100).toFixed(0) + '%' : '-';
+            const df = r.diff > 0 ? '+' + r.diff : String(r.diff);
+            lines.push(`${i + 1} ${r.name} ${wr} ${r.played} ${r.wins} ${r.losses} ${df}`);
+        });
+    }
+    out.value = lines.join('\n');
+
+    // YouTubeのチャプター条件を満たさない場合は注意を出す
+    const msgs = [];
+    if (times.length < 3) msgs.push('チャプターは3つ以上必要です（現在' + times.length + '個）。');
+    const tooClose = times.some((t, i) => i > 0 && t - times[i - 1] < 10);
+    if (tooClose) msgs.push('各チャプターの間隔は10秒以上必要です。開始時間を10秒以降にしてください。');
+    if (msgs.length) {
+        warn.innerHTML = '⚠️ ' + msgs.join('<br>⚠️ ');
+        warn.style.display = 'block';
+    }
+}
+
+function copyTimestamp() {
+    const txt = document.getElementById('tsText').value;
+    if (!txt) return;
+    if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(txt)
+            .then(() => showToast('📋 コピーしました'))
+            .catch(() => prompt('コピーしてください', txt));
+    } else {
+        prompt('コピーしてください', txt);
+    }
 }
 
 function downloadReport() {
@@ -5056,8 +5222,11 @@ function updateEventInfo(ev) {
     // 「期間集計」は終了時のみ表示
     const btnPreview = document.getElementById('btn-preview-report');
     const btnPeriod  = document.getElementById('btn-period-agg');
+    const btnTs      = document.getElementById('btn-timestamp');
     if (btnPreview) btnPreview.style.display = (status === '終了' || isAdmin) ? '' : 'none';
     if (btnPeriod)  btnPeriod.style.display  = status === '終了' ? '' : 'none';
+    // タイムスタンプは「結果を確認する」の直下。表示条件も揃える
+    if (btnTs)      btnTs.style.display      = (status === '終了' || isAdmin) ? '' : 'none';
 }
 window.updateEventInfo = updateEventInfo;
 

@@ -688,6 +688,10 @@ let historyStack   = [];
 // Firebase上のマッチ情報
 let currentMid = null;
 let currentRoundLabel = '';
+// 現在の試合の開始時刻（Firebase の scores/<mid>/startedAt）。
+// ②組合せ側で先に「試合開始」が押されていれば値が入っているので、
+// その場合は上書きせず最初の時刻を残す。
+let _curStartedAt = null;
 // playing書き込み中フラグ（書き込み完了前のonValue誤リセット防止）
 let _statusWritePending = false;
 
@@ -830,6 +834,10 @@ function onStateUpdate(state) {
         showWaiting('このコートの試合は\nまだ組まれていません\n\nしばらくお待ちください');
         return;
     }
+
+    // この試合の開始時刻（未開始なら null）。writeStatus('playing') で二重に
+    // 上書きしないための判定に使う
+    _curStartedAt = found.sc.startedAt ?? null;
 
     // チーム名（選手番号付き）
     team1Names = found.ct.team1.map(id => buildName(id, pnames, showPlayerNum));
@@ -1521,6 +1529,9 @@ async function writeStatus(status, resetScores = false) {
         upd['scores/' + currentMid + '/s2']     = set_score_t2;
         // この審判のIDを書き込む（古い審判画面の引き継ぎ検知に使用）
         upd['scores/' + currentMid + '/refId']  = MY_REF_ID;
+        // 開始時刻を記録（YouTubeチャプター用タイムスタンプの基準）。
+        // ②組合せ側でも同じキーに書くため、まだ無いときだけ入れて先に押された方を残す。
+        if (_curStartedAt == null) upd['scores/' + currentMid + '/startedAt'] = Date.now();
     }
     if (resetScores) {
         upd['scores/' + currentMid + '/s1']     = 0;
@@ -1531,6 +1542,9 @@ async function writeStatus(status, resetScores = false) {
         upd['scores/' + currentMid + '/left']   = null;
         upd['scores/' + currentMid + '/sw1']    = null;
         upd['scores/' + currentMid + '/sw2']    = null;
+        // 設定画面まで戻したので開始時刻も破棄し、次に開始した時刻を記録し直す
+        upd['scores/' + currentMid + '/startedAt'] = null;
+        _curStartedAt = null;
     }
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     await update(stateRef, upd);
