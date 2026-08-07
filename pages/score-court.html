@@ -51,8 +51,10 @@
             gap: 0.8em; padding: 1.2em 1em;
         }
         .setup-screen h2 {
-            color: #fff; font-size: 1.35em; text-align: center;
-            font-weight: bold; line-height: 1.3;
+            /* 説明文が長いため、スマホ幅で3行に割れて「サー／ブ」のような
+               不自然な改行にならないよう控えめのサイズにする */
+            color: #fff; font-size: 1.08em; text-align: center;
+            font-weight: bold; line-height: 1.35;
         }
         .setup-screen .sub {
             color: #c5cae9; font-size: 0.82em;
@@ -92,40 +94,48 @@
             display: flex; border: 3px solid #fff; border-radius: 0.3em;
             min-height: 11em; background: rgba(255,255,255,0.08);
         }
-        /* コートの左右半面＝チーム1組。タップでサーブ側に指定 */
+        /* コートの左右半面＝チーム1組（半面自体はタップ対象ではない） */
         .court-half {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; gap: 0.35em;
-            padding: 0.9em 0.35em; margin: 0.35em;
-            background: rgba(255,255,255,0.12);
-            border: 2px dashed rgba(255,255,255,0.45);
+            flex: 1; min-width: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.3em;
+            padding: 0.7em 0.2em; margin: 0.3em;
             border-radius: 0.5em;
-            cursor: pointer; touch-action: manipulation;
-            transition: background .15s, border-color .15s;
-        }
-        .court-half:active { opacity: .75; }
-        /* サーブ側に選択された半面
-           半透明のアンバーだと濃紺の下地と混ざって濁った灰色に見えるため、
-           不透明のアンバー＋濃紺文字にして一目で判別できるようにする */
-        .court-half.serving {
-            background: #ffc107;
-            border: 2px solid #ffca28;
         }
         .cd-name {
-            color: #fff; font-weight: bold; font-size: 1.05em;
+            color: #fff; font-weight: bold; font-size: 0.95em;
             text-align: center; width: 100%;
             line-height: 1.25;
             display: flex; align-items: center; justify-content: center;
             flex-wrap: wrap; gap: 0.2em;
         }
-        .court-half.serving .cd-name { color: #1a237e; }
-        .court-half.serving .cd-name .num-badge { background: #1a237e; color: #ffc107; }
-        /* サーブ側に表示するテニスボール */
-        .cd-serve-mark {
-            font-size: 1.9em; line-height: 1; height: 1.2em;
+        /* デュース枠＝第1ゲームのサーバーが立つ位置。
+           名前ごと「サーブ」ボタンにして、当たり判定を広く保ちつつ
+           「ここに居る人が最初に打つ」という意味を明確にする */
+        .cd-serve-slot {
+            padding: 0.45em 0.15em;
+            background: rgba(255,255,255,0.12);
+            border: 2px dashed rgba(255,255,255,0.55);
+            border-radius: 0.5em;
+            cursor: pointer; touch-action: manipulation;
+            transition: background .15s, border-color .15s;
+        }
+        .cd-serve-slot:active { opacity: .75; }
+        /* 選択済み。半透明のアンバーは濃紺の下地と混ざって濁るので不透明にする */
+        .cd-serve-slot.selected {
+            background: #ffc107;
+            border: 2px solid #ffca28;
+            color: #1a237e;
+        }
+        .cd-serve-slot.selected .num-badge { background: #1a237e; color: #ffc107; }
+        /* 枠内の「🎾 サーブ」ラベル（これがボタンであることを示す） */
+        .cd-serve-label {
+            flex-basis: 100%;
+            font-size: 0.72em; font-weight: bold;
+            letter-spacing: 0.08em; opacity: 0.9;
+            margin-top: 0.15em;
         }
         .cd-net { width: 4px; background: #fff; flex-shrink: 0; }
-        /* ペア内の並び替えボタン（半面タップと競合しないよう stopPropagation する） */
+        /* ペア内の並び替えボタン（サーブ枠のタップと競合しないよう stopPropagation する） */
         .swap-pair-btn {
             font-size: 1.4em; color: #43a047;
             background: #fff; border: none; border-radius: 1em;
@@ -441,22 +451,23 @@
 <!-- 試合設定画面（コート配置＋サーブを1画面で選択） -->
 <div class="setup-screen" id="match-setup">
     <div class="setup-match-title" id="setup-match-title"></div>
-    <h2>コート・サーブ位置を合わせてください</h2>
-    <div class="sub" id="setup-hint">最初にサーブするチームをタップしてください</div>
-    <!-- コートを上から見た配置。左半面は下、右半面は上がデュース側＝そのチームの
-         1人目（最初にサーブを打つ位置）。↕ でペア内の並びを入れ替える -->
+    <h2>選手の配置を整え、サーブボタンを押してください</h2>
+    <div class="sub" id="setup-hint">↔ で左右、↕ でペア内の並びを入れ替えられます</div>
+    <!-- コートを上から見た配置。左半面は下、右半面は上がデュース側＝第1ゲームの
+         サーバーが立つ位置。その枠だけを「サーブ」ボタンにしてある（名前ごとタップ可）。
+         ↕ でペア内の並びを入れ替えると、そこに立つ選手が入れ替わる -->
     <div class="court-diagram">
         <button class="swap-sides-btn" onclick="swapSetupSides()" title="左右を入れ替え">&#x2194;</button>
         <div class="court-box">
-            <div class="court-half" id="setup-half-left" onclick="onSetupTeamTap('left')">
+            <div class="court-half" id="setup-half-left">
                 <div class="cd-name" id="sl-top"></div>
                 <button class="swap-pair-btn" onclick="swapSetupPair('left', event)"
                         title="ペア内の並びを入れ替え">&#x2195;</button>
-                <div class="cd-name" id="sl-bot"></div>
+                <div class="cd-name cd-serve-slot" id="sl-bot" onclick="onSetupTeamTap('left')"></div>
             </div>
             <div class="cd-net"></div>
-            <div class="court-half" id="setup-half-right" onclick="onSetupTeamTap('right')">
-                <div class="cd-name" id="sr-top"></div>
+            <div class="court-half" id="setup-half-right">
+                <div class="cd-name cd-serve-slot" id="sr-top" onclick="onSetupTeamTap('right')"></div>
                 <button class="swap-pair-btn" onclick="swapSetupPair('right', event)"
                         title="ペア内の並びを入れ替え">&#x2195;</button>
                 <div class="cd-name" id="sr-bot"></div>
@@ -997,29 +1008,27 @@ function teamNamesToHTML(names) {
 function renderSetupCourt() {
     const rightTeam = 3 - leftTeam;
 
-    // 左半面は下、右半面は上がデュース側（＝1人目・最初にサーブする位置）
-    const fill = (team, topId, botId, deuceIsBottom) => {
+    // 左半面は下、右半面は上がデュース側（＝第1ゲームのサーバーが立つ位置）。
+    // デュース枠だけが「サーブ」ボタンで、そこに立つ選手が最初のサーバーになる。
+    const fill = (team, deuceId, adId) => {
         const [deuce, ad] = teamSlots(team);
         const isServing = setupServeTeam === team;
-        const slot = (elId, player, isDeuce) => {
-            const el = document.getElementById(elId);
-            if (!el) return;
-            // サーブ側チームのデュース枠の選手が最初のサーバー
-            const ball = (isServing && isDeuce) ? '<span class="cd-serve-ball">🎾</span> ' : '';
-            el.innerHTML = ball + (player ? renderName(player) : '');
-        };
-        slot(deuceIsBottom ? botId : topId, deuce, true);
-        slot(deuceIsBottom ? topId : botId, ad,   false);
-        const half = document.getElementById(team === leftTeam ? 'setup-half-left' : 'setup-half-right');
-        if (half) half.classList.toggle('serving', isServing);
+        const dEl = document.getElementById(deuceId);
+        if (dEl) {
+            dEl.innerHTML = (deuce ? renderName(deuce) : '')
+                + '<div class="cd-serve-label">🎾 サーブ</div>';
+            dEl.classList.toggle('selected', isServing);
+        }
+        const aEl = document.getElementById(adId);
+        if (aEl) aEl.innerHTML = ad ? renderName(ad) : '';
     };
-    fill(leftTeam,  'sl-top', 'sl-bot', true);   // 左半面 → 下がデュース
-    fill(rightTeam, 'sr-top', 'sr-bot', false);  // 右半面 → 上がデュース
+    fill(leftTeam,  'sl-bot', 'sl-top');   // 左半面 → 下がデュース
+    fill(rightTeam, 'sr-top', 'sr-bot');   // 右半面 → 上がデュース
 
     const hint = document.getElementById('setup-hint');
     if (hint) {
         if (setupServeTeam === null) {
-            hint.textContent = '最初にサーブするチームをタップしてください（↕ でペア内の並びを入替）';
+            hint.textContent = '↔ で左右、↕ でペア内の並びを入れ替えられます';
         } else {
             const first = teamSlots(setupServeTeam)[0];
             hint.textContent = '「' + (first ? first.name : '') + '」のサーブで開始します';
