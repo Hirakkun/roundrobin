@@ -411,11 +411,6 @@ body.viewer-mode #initialSetup { display: none !important; }
         <div class="setup-card">
             <div class="setup-label">🎯 マッチングルール</div>
             <div class="match-rule-row">
-                <button type="button" class="rule-btn" id="rule-balance" onclick="selectRule('balance')">
-                    <span class="rule-icon">⚖️</span>
-                    バランスマッチ
-                    <div style="font-size:0.6875rem;font-weight:normal;color:#888;margin-top:4px;">総合最適化・固定グループ解消・連休防止</div>
-                </button>
                 <button type="button" class="rule-btn" id="rule-rating" onclick="selectRule('rating')">
                     <span class="rule-icon">📊</span>
                     レーティングマッチ
@@ -636,13 +631,16 @@ let setupPlayers = <?=$default_players?>;
 let setupCourts  = <?=$default_courts?>;
 let matchingRule = 'random'; // 'random' or 'rating'
 
+// 廃止した 'balance' が保存されている既存イベントは 'random' として扱う
+function normalizeMatchingRule(rule) {
+    return (rule === 'rating') ? 'rating' : 'random';
+}
+
 function selectRule(rule) {
-    matchingRule = rule;
-    state.matchingRule = rule; // stateにも即反映
-    document.getElementById('rule-random').classList.toggle('selected', rule === 'random');
-    document.getElementById('rule-rating').classList.toggle('selected', rule === 'rating');
-    const rb = document.getElementById('rule-balance');
-    if (rb) rb.classList.toggle('selected', rule === 'balance');
+    matchingRule = normalizeMatchingRule(rule);
+    state.matchingRule = matchingRule; // stateにも即反映
+    document.getElementById('rule-random').classList.toggle('selected', matchingRule === 'random');
+    document.getElementById('rule-rating').classList.toggle('selected', matchingRule === 'rating');
     updateMatchRuleDesc();
     saveState(); // _fbApply中はisApplyingRemote=trueなのでpushされない（echo防止）
 }
@@ -1067,16 +1065,6 @@ const RULE_DESCS = {
             { num:'④', text:'同じ対戦相手を避ける', mark:'×', note:'③のグループ内でのみ調整。①〜③の制約が強いため保証できないことがあります。' },
         ],
         summary: 'レーティングに差がついてくるほど③の精度が上がります。',
-    },
-    balance: {
-        label: '⚖️ バランスマッチ',
-        rows: [
-            { num:'①', text:'出場回数を均等に',     mark:'◎', note:'コストとして全候補を同時評価。必ず考慮されます。' },
-            { num:'②', text:'同じペアを避ける',      mark:'◎', note:'最も重いペナルティ（×100）で強力に排除します。' },
-            { num:'③', text:'未対戦相手を優先する',  mark:'◎', note:'未対戦ペアにボーナスを付与し、交流を広げます。' },
-            { num:'④', text:'連休・連投を防止する',  mark:'◎', note:'連続休み・連続出場をコスト化して自動調整します。' },
-        ],
-        summary: '①〜④をすべて同時に最適化するため、全項目で高い効果を発揮します。',
     },
 };
 
@@ -2092,7 +2080,7 @@ function getAdjustedPlayRatio(p) {
     return effectivePlays / totalRounds;
 }
 
-// 次ラウンド後の実効出場率（scoreRound / evaluateBalanceScore 内での選出案評価用）
+// 次ラウンド後の実効出場率（scoreRound 内での選出案評価用）
 function getAdjustedPlayRatioNext(p, willPlay) {
     let effectivePlays = p.playCount + (willPlay ? 1 : 0);
     for (const rd of state.schedule) {
@@ -2703,23 +2691,6 @@ function assignCourtsRandom(pairs, attempts = 20) {
     return best;
 }
 
-// =====================================================================
-// バランスマッチ用ロジック（スコア評価型）
-// 選出・ペア・対戦を単一タスクで総合最適化（山登り法）
-// =====================================================================
-const BALANCE_WEIGHTS = {
-    CPLAY:        50,   // 出場回数分散（(count-avg)²）
-    CPAIR:        100,  // ペア重複（過去ペア回数）
-    COPP:         30,   // 対戦重複（過去対戦回数）
-    REST2:        100,  // 2連続休み
-    REST3:        200,  // 3連続以上休み
-    PLAY3:        20,   // 3連続以上出場
-    CPAIR_DIFF:   5,    // ペア内μ差のチーム間差ペナルティ
-    COSAME_QUAD:  50,   // 同コート共演回数の2乗ペナルティ（1回:50, 2回:200, 3回:450）
-    COSAME_NEW:  -50,   // 同コート初対面ボーナス（コート内6ペア対象）
-};
-const BALANCE_ITERATIONS = 1500;
-
 // 連続休み数（直近ラウンドから遡って rest が続く数）
 function getRestStreak(id) {
     let streak = 0;
@@ -2734,244 +2705,6 @@ function getRestStreak(id) {
 }
 
 // 連続出場数
-function getPlayStreak(id) {
-    let streak = 0;
-    for (let i = state.schedule.length - 1; i >= 0; i--) {
-        const rd = state.schedule[i];
-        if (!rd.playerStates) break;
-        if (rd.playerStates[id] === 'play') streak++;
-        else break;
-    }
-    return streak;
-}
-
-// 配置案のスコア評価（低いほど良い）
-// assignment = { courts: [[id,id,id,id], ...], bench: [id,...] }
-function evaluateBalanceScore(assignment, active, courtCount) {
-    const W = BALANCE_WEIGHTS;
-    const playingIds = assignment.courts.flat();
-
-    // ① 出場回数均等化（次ラウンド後の実効出場率分散）
-    const nextCounts = active.map(p => {
-        const willPlay = playingIds.includes(p.id);
-        return getAdjustedPlayRatioNext(p, willPlay);
-    });
-    const avg = nextCounts.reduce((s, v) => s + v, 0) / nextCounts.length;
-    // 参加人数/コート数 が 2未満（bench枠が1以下）の場合は CPLAY を 20倍
-    const ratio = courtCount > 0 ? active.length / courtCount : Infinity;
-    const cplayMul = ratio < 2 ? 20 : 1;
-    const Cplay = nextCounts.reduce((s, v) => s + (v - avg) * (v - avg), 0) * W.CPLAY * cplayMul * nextCounts.length;
-
-    // ② ペア重複 / ③ 対戦重複 / 未対戦ボーナス（コート単位）
-    // ⑤ ペア内μ差ペナルティ
-    let Cpair = 0, Copp = 0, CpairDiff = 0;
-    assignment.courts.forEach(group => {
-        const [a, b, c, d] = group;
-        // 固定ペアを含む組み合わせのみ許可
-        const fixedInGroup = getFixedPairs().filter(fp => group.includes(fp[0]) && group.includes(fp[1]));
-        let allOpts = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
-        if (fixedInGroup.length > 0) {
-            const filtered = allOpts.filter(([t1, t2]) =>
-                fixedInGroup.every(fp =>
-                    (t1.includes(fp[0]) && t1.includes(fp[1])) || (t2.includes(fp[0]) && t2.includes(fp[1]))
-                )
-            );
-            if (filtered.length > 0) allOpts = filtered;
-        }
-        let bestPairDup = Infinity;
-        let bestT1 = null, bestT2 = null;
-        for (const [t1, t2] of allOpts) {
-            const pd = (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0);
-            if (pd < bestPairDup) { bestPairDup = pd; bestT1 = t1; bestT2 = t2; }
-        }
-        Cpair += bestPairDup * W.CPAIR;
-        // 対戦重複（team1 × team2 の4組）
-        bestT1.forEach(x => bestT2.forEach(y => {
-            const c = state.oppMatrix[x]?.[y] || 0;
-            Copp += c * W.COPP;
-        }));
-        // ⑤ ペア内μ差 → 対戦チーム間のペア内差が近い方が良い
-        const diff1 = Math.abs((state.tsMap[bestT1[0]]?.mu||25) - (state.tsMap[bestT1[1]]?.mu||25));
-        const diff2 = Math.abs((state.tsMap[bestT2[0]]?.mu||25) - (state.tsMap[bestT2[1]]?.mu||25));
-        CpairDiff += Math.abs(diff1 - diff2) * (W.CPAIR_DIFF || 5);
-    });
-
-    // ④' 同コート2乗ペナルティ＋初対面ボーナス（コート内全6ペア対象）
-    let CoSame = 0;
-    assignment.courts.forEach(group => {
-        for (let i = 0; i < group.length; i++) {
-            for (let j = i + 1; j < group.length; j++) {
-                const co = (state.pairMatrix[group[i]]?.[group[j]] || 0)
-                         + (state.oppMatrix[group[i]]?.[group[j]] || 0);
-                CoSame += co * co * W.COSAME_QUAD;
-                if (co === 0) CoSame += W.COSAME_NEW;
-            }
-        }
-    });
-
-    // ⑥ 固定ペアが同じコートに入っていない場合の大きなペナルティ
-    let CfixedViolation = 0;
-    for (const fp of getFixedPairs()) {
-        if (!playingIds.includes(fp[0]) || !playingIds.includes(fp[1])) continue;
-        const sameGroup = assignment.courts.some(g => g.includes(fp[0]) && g.includes(fp[1]));
-        if (!sameGroup) CfixedViolation += 100000; // 違反ペナルティ
-    }
-
-    // ④ 休み・連投ペナルティ（benchに入ると休み扱い）
-    let Crest = 0;
-    assignment.bench.forEach(id => {
-        const rs = getRestStreak(id);
-        if (rs >= 2) Crest += W.REST3;
-        else if (rs === 1) Crest += W.REST2;
-    });
-    playingIds.forEach(id => {
-        const ps = getPlayStreak(id);
-        if (ps >= 2) Crest += W.PLAY3;
-    });
-
-    return Cplay + Cpair + Copp + CoSame + Crest + CpairDiff + CfixedViolation;
-}
-
-// 初期配置を生成
-function makeInitialBalanceAssignment(active, courtCount) {
-    const ids = shuffle(active.map(p => p.id));
-    const need = courtCount * 4;
-
-    // 固定ペアを先にコートに配置
-    const used = new Set();
-    const courts = Array.from({ length: courtCount }, () => []);
-    let ci = 0;
-    for (const fp of getFixedPairs()) {
-        if (!ids.includes(fp[0]) || !ids.includes(fp[1])) continue;
-        if (used.has(fp[0]) || used.has(fp[1])) continue;
-        if (ci >= courtCount) break;
-        courts[ci].push(fp[0], fp[1]);
-        used.add(fp[0]); used.add(fp[1]);
-        if (courts[ci].length >= 4) ci++;
-    }
-    // 残りの選手を埋める
-    const remaining = ids.filter(id => !used.has(id));
-    let ri = 0;
-    for (let c = 0; c < courtCount && ri < remaining.length; c++) {
-        while (courts[c].length < 4 && ri < remaining.length) {
-            courts[c].push(remaining[ri++]);
-        }
-    }
-    const playing = courts.flat();
-    const bench = remaining.slice(ri);
-    return { courts, bench };
-}
-
-// 配置の深いコピー
-function cloneAssignment(a) {
-    return { courts: a.courts.map(c => [...c]), bench: [...a.bench] };
-}
-
-// ランダムに2人をswap（コート間・コート↔bench）
-// 固定ペアは一緒に移動する
-function swapInAssignment(a) {
-    const allSlots = [];
-    a.courts.forEach((c, ci) => c.forEach((_, i) => allSlots.push({ type: 'court', ci, i })));
-    a.bench.forEach((_, i) => allSlots.push({ type: 'bench', i }));
-    if (allSlots.length < 2) return a;
-
-    const getId = s => s.type === 'court' ? a.courts[s.ci][s.i] : a.bench[s.i];
-    const setId = (s, id) => {
-        if (s.type === 'court') a.courts[s.ci][s.i] = id;
-        else a.bench[s.i] = id;
-    };
-    const findSlot = (id) => allSlots.find(s => getId(s) === id);
-
-    const s1 = allSlots[Math.floor(Math.random() * allSlots.length)];
-    const id1 = getId(s1);
-    const partner1 = getFixedPartnerId(id1);
-
-    // s2: 別のコート or ベンチからランダム選択
-    let s2;
-    let attempts = 0;
-    do {
-        s2 = allSlots[Math.floor(Math.random() * allSlots.length)];
-        attempts++;
-    } while (attempts < 50 && (s1 === s2 || (s1.type === 'court' && s2.type === 'court' && s1.ci === s2.ci)));
-    if (s1 === s2) return a;
-
-    const id2 = getId(s2);
-    const partner2 = getFixedPartnerId(id2);
-
-    // 固定ペア同士のswapが複雑になる場合はスキップ
-    if (partner1 != null && partner2 != null) return a;
-
-    if (partner1 != null) {
-        // id1は固定ペア → partner1も一緒に移動
-        const sp1 = findSlot(partner1);
-        if (!sp1) { setId(s1, id2); setId(s2, id1); return a; }
-        // s2側にもう1人のswap先が必要（s2と同じコート/ベンチから）
-        const s2group = s2.type === 'court' ? allSlots.filter(s => s.type === 'court' && s.ci === s2.ci && s !== s2) : allSlots.filter(s => s.type === 'bench' && s !== s2);
-        const s3cands = s2group.filter(s => s !== s1 && s !== sp1 && getFixedPartnerId(getId(s)) == null);
-        if (s3cands.length === 0) { setId(s1, id2); setId(s2, id1); return a; } // fallback: 単純swap
-        const s3 = s3cands[Math.floor(Math.random() * s3cands.length)];
-        const id3 = getId(s3);
-        // id1↔id2, partner1↔id3
-        setId(s1, id2); setId(s2, id1);
-        setId(sp1, id3); setId(s3, partner1);
-    } else if (partner2 != null) {
-        const sp2 = findSlot(partner2);
-        if (!sp2) { setId(s1, id2); setId(s2, id1); return a; }
-        const s1group = s1.type === 'court' ? allSlots.filter(s => s.type === 'court' && s.ci === s1.ci && s !== s1) : allSlots.filter(s => s.type === 'bench' && s !== s1);
-        const s3cands = s1group.filter(s => s !== s2 && s !== sp2 && getFixedPartnerId(getId(s)) == null);
-        if (s3cands.length === 0) { setId(s1, id2); setId(s2, id1); return a; }
-        const s3 = s3cands[Math.floor(Math.random() * s3cands.length)];
-        const id3 = getId(s3);
-        setId(s1, id2); setId(s2, id1);
-        setId(sp2, id3); setId(s3, partner2);
-    } else {
-        // どちらもペアなし → 通常swap
-        setId(s1, id2); setId(s2, id1);
-    }
-    return a;
-}
-
-function generateCourtsBalance(active, courtCount) {
-    // 必要人数が足りない場合
-    if (active.length < 4) return null;
-    const maxCourts = Math.min(courtCount, Math.floor(active.length / 4));
-    if (maxCourts < 1) return null;
-
-    // 初期解
-    let current = makeInitialBalanceAssignment(active, maxCourts);
-    let currentScore = evaluateBalanceScore(current, active, maxCourts);
-    let best = cloneAssignment(current);
-    let bestScore = currentScore;
-
-    // 山登り + 簡易SA（悪化を一定確率で受容）
-    // bench空 かつ 1コートの場合はSAをスキップ（コート内スワップはスコア不変のため無意味）
-    const needSA = best.bench.length > 0 || maxCourts > 1;
-    const _balanceDeadline = performance.now() + 80; // 80ms タイムボックス
-    for (let iter = 0; needSA && iter < BALANCE_ITERATIONS; iter++) {
-        if (iter % 100 === 0 && performance.now() > _balanceDeadline) break; // 時間超過で打ち切り
-        const trial = cloneAssignment(current);
-        swapInAssignment(trial);
-        const trialScore = evaluateBalanceScore(trial, active, maxCourts);
-
-        const temperature = 1 - iter / BALANCE_ITERATIONS;
-        const accept = trialScore < currentScore
-            || (Math.random() < 0.05 * temperature);
-
-        if (accept) {
-            current = trial;
-            currentScore = trialScore;
-            if (currentScore < bestScore) {
-                best = cloneAssignment(current);
-                bestScore = currentScore;
-            }
-        }
-    }
-
-    // 最良解から各コートのペア分けを確定
-    const selectedIds = best.courts.flat();
-    const courts = best.courts.map(group => makeBestPairInGroup(group));
-    return { courts, selectedIds };
-}
 
 // =====================================================================
 // 自動組合せ重複防止: 最後に自動生成をトリガーしたラウンド番号を記録
@@ -3038,14 +2771,9 @@ function generateNextRound() {
         if (!ids || ids.length < 4) { alert('出場選手の選出に失敗しました（4人未満）。\n固定ペアの設定や休憩状態を確認してください。'); return false; }
         courts = generateCourtsRating(ids);
         if (!courts) { alert('コート割り当てに失敗しました'); return false; }
-    } else if (state.matchingRule === 'balance') {
-        // バランスマッチ: 選出・ペア・対戦を総合最適化
-        const result = generateCourtsBalance(active, state.courts);
-        if (!result) { alert('バランスマッチの組合せ生成に失敗しました'); return false; }
-        ids = result.selectedIds;
-        courts = result.courts;
     } else {
         // ランダムマッチ: 選出・ペア・対戦を統合最適化
+        // （廃止した 'balance' が保存されている既存イベントもここに落ちる）
         const result = generateRoundRandom();
         if (!result) { alert('ランダムマッチの組合せ生成に失敗しました'); return false; }
         ids = result.selectedIds;
@@ -3819,10 +3547,6 @@ function generatePoolBatch() {
             }
             courts = generateCourtsRating(ids);
             if (!courts) { restore(); return false; }
-        } else if (state.matchingRule === 'balance') {
-            const result = generateCourtsBalance(active, state.courts);
-            if (!result) { restore(); return false; }
-            courts = result.courts;
         } else {
             const result = generateRoundRandom();
             if (!result) { restore(); return false; }
@@ -5347,8 +5071,8 @@ window._fbApply = function(remoteState) {
 
         // QRカード・案内パネルカードをセッション接続後に表示
         _showQrCards();
-        // マッチングルールを同期
-        matchingRule = state.matchingRule || 'random';
+        // マッチングルールを同期（廃止した 'balance' は 'random' に読み替える）
+        matchingRule = normalizeMatchingRule(state.matchingRule);
         selectRule(matchingRule);
         // コート名トグルを同期
         const toggle = document.getElementById('courtNameToggle');
@@ -5488,6 +5212,8 @@ function loadState() {
             // v2形式の確認: players配列とpairMatrixが存在すること
             if (Array.isArray(parsed.players) && parsed.players.length > 0 && parsed.pairMatrix) {
                 Object.assign(state, parsed);
+                // 廃止した 'balance' が保存されている場合は 'random' に読み替える
+                state.matchingRule = normalizeMatchingRule(state.matchingRule);
                 return true;
             }
         } catch(e) {}
