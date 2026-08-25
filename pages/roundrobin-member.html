@@ -172,11 +172,11 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
                 </select>
             </div>
             <div class="class-guide">
-                <div style="color:#2e7d32;font-weight:bold;">そこそこいける 6割以上 &nbsp;μ=32.0 σ=8.3</div>
+                <div style="color:#2e7d32;font-weight:bold;">そこそこいける 6割以上 &nbsp;μ=27.0 σ=8.3</div>
                 <div style="font-size:11px;color:#666;margin-bottom:6px;">練習で勝ち越すことが多い。攻めの展開ができる。</div>
-                <div style="color:#1565c0;font-weight:bold;">まぁふつうかも 4〜6割 &nbsp;μ=25.0 σ=7.0</div>
+                <div style="color:#1565c0;font-weight:bold;">まぁふつうかも 4〜6割 &nbsp;μ=23.0 σ=7.0</div>
                 <div style="font-size:11px;color:#666;margin-bottom:6px;">勝ったり負けたり。ラリーが安定して続く。</div>
-                <div style="color:#e65100;font-weight:bold;">ちょっと自信ない 4割以下 &nbsp;μ=18.0 σ=7.0</div>
+                <div style="color:#e65100;font-weight:bold;">ちょっと自信ない 4割以下 &nbsp;μ=20.0 σ=7.0</div>
                 <div style="font-size:11px;color:#666;">負けることが多い。初心者、またはブランクがある。</div>
             </div>
         </div>
@@ -556,9 +556,9 @@ window.savePlayer=async function(){
     let mu,sigma;
     if(currentPlayerIsNew){
         const cls=document.getElementById('pf-class').value;
-        if(cls==='high'){mu=32.0;sigma=8.3;}
-        else if(cls==='mid'){mu=25.0;sigma=7.0;}
-        else if(cls==='low'){mu=18.0;sigma=7.0;}
+        if(cls==='high'){mu=27.0;sigma=8.3;}
+        else if(cls==='mid'){mu=23.0;sigma=7.0;}
+        else if(cls==='low'){mu=20.0;sigma=7.0;}
         else{mu=25.0;sigma=25/3;}
     } else {
         mu=parseFloat(document.getElementById('pf-mu').value)||25.0;

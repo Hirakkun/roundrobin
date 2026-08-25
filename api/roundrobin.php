@@ -1761,7 +1761,7 @@ function confirmGuestAdd() {
     if (!birthdate) { showToast('生年月日を入力してください');   return; }
     if (!cls)       { showToast('初期クラスを選択してください'); return; }
 
-    const muMap    = { high: 32.0, mid: 25.0, low: 18.0 };
+    const muMap    = { high: 27.0, mid: 23.0, low: 20.0 };
     const sigmaMap = { high: 8.3,  mid: 7.0,  low: 7.0  };
 
     closeGuestModal();
@@ -2363,6 +2363,10 @@ function adjustForPairsRandom(ids, active, must) {
 // 優先順位: ①出場回数均等 ②μ近い4人を1コートに ③その中でチーム均衡ペア ④対戦履歴回避
 // =====================================================================
 
+// レーティングマッチのダブルスで許容するペア内μ差の上限（この値未満に収める）。
+// 4人の組み合わせ上どうしても収まらない場合は、差が最小になる分け方にフォールバックする。
+const MAX_PAIR_MU_DIFF = 8;
+
 function generateCourtsRating(ids) {
     const courtCount = ids.length / 4;
 
@@ -2421,6 +2425,12 @@ function findBestCourtGroups(ids, courtCount) {
             const mus = g.map(i => state.tsMap[i]?.mu || 25);
             return s + (Math.max(...mus) - Math.min(...mus)) / totalMuRange;
         }, 0);
+        // ※ ここで「ペア内μ差の制約を満たせない4人組」にペナルティを与える案を試したが、
+        //   逆効果だったため入れていない。その判定（隣接分割の最大差）は
+        //   [20,21,30,31] のような二極グループを「満たせる」と見なすため、
+        //   「外れ値1人＋近い3人」より二極グループを選びやすくなり、
+        //   コート4人のμ幅もペア間の差も悪化した。
+        //   4人を近いμで揃えること（下の muScore）が両方の指標に効く。
         const pairWeight = 1.0 + maxPair * 0.5;
         const pairScore = groups.reduce((s, g) => {
             let ps = 0;
@@ -2551,8 +2561,26 @@ function makeBestPairInGroup(group) {
         options = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
     }
 
+    // ① まずペア内μ差の制約（MAX_PAIR_MU_DIFF 未満）で候補を絞る。
+    //    tsTeamMu はペアの「合計」μなので、チーム間の釣り合いだけを見ると
+    //    「最強＋最弱 vs 中位＋中位」が選ばれやすく、ペア内の差が開いてしまう。
+    //    そのためペア内の差を先に効かせる。
+    const muOf     = id => state.tsMap[id]?.mu ?? 25;
+    const pairDiff = t  => Math.abs(muOf(t[0]) - muOf(t[1]));
+    const withDiff = options.map(([t1, t2]) => ({
+        t1, t2, maxDiff: Math.max(pairDiff(t1), pairDiff(t2))
+    }));
+    let cand = withDiff.filter(o => o.maxDiff < MAX_PAIR_MU_DIFF);
+    if (cand.length === 0) {
+        // 4人の組み合わせ上どう分けても制約を満たせない場合は、
+        // 差が最小になる分け方を採用する（固定ペアで差が大きい場合もここに来る）
+        const minDiff = Math.min(...withDiff.map(o => o.maxDiff));
+        cand = withDiff.filter(o => o.maxDiff === minDiff);
+    }
+
+    // ② 残った候補の中で、ペア間（チーム間）のμ差が小さいものを選ぶ
     let best = null, bestScore = Infinity;
-    for (const [t1, t2] of options) {
+    for (const { t1, t2 } of cand) {
         const muDiff = Math.abs(tsTeamMu(t1) - tsTeamMu(t2));
         const pairDup = (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0);
         const oppDup  = t1.reduce((s,a) => s + t2.reduce((ss,b) => ss + (state.oppMatrix[a]?.[b]||0), 0), 0);
@@ -5720,7 +5748,7 @@ window.onload = function () {
                     <option value="mid">まぁふつうかも（4〜6割）</option>
                     <option value="low">ちょっと自信ない（4割以下）</option>
                 </select>
-                <div style="font-size:0.6875rem;color:#888;margin-top:2px;">high:μ=32/σ=8.3　mid:μ=25/σ=7.0　low:μ=18/σ=7.0</div>
+                <div style="font-size:0.6875rem;color:#888;margin-top:2px;">high:μ=27/σ=8.3　mid:μ=23/σ=7.0　low:μ=20/σ=7.0</div>
             </div>
             <div class="gf-field">
                 <div class="gf-label">クラブ <span style="font-weight:normal;color:#aaa;">（任意）</span></div>
