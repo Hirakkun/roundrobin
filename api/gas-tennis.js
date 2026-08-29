@@ -1,18 +1,39 @@
 // ============================================================
 // Google Apps Script - テニス大会スコア記録 API
 //
-// 【設定手順】
-// 1. スプレッドシートを開く
-// 2. [拡張機能] → [Apps Script] を選択
-// 3. このファイルの内容をすべて貼り付けて保存（Ctrl+S）
-// 4. [デプロイ] → [新しいデプロイ] をクリック
+// 【対象スプレッドシートの変更方法】
+// 下の SPREADSHEET_ID を新しいIDに書き換えて保存し、
+// [デプロイ] → [デプロイを管理] → 鉛筆アイコン →
+// バージョン「新バージョン」→ [デプロイ] で反映されます。
+// （URLは変わらないので pages/ 側の修正は不要）
+//   URLの /d/ と /edit の間がIDです:
+//   https://docs.google.com/spreadsheets/d/【ID】/edit
+//
+// 【初回セットアップ手順】
+// 1. [拡張機能] → [Apps Script] を選択
+// 2. このファイルの内容をすべて貼り付けて保存（Ctrl+S）
+// 3. [デプロイ] → [新しいデプロイ] をクリック
 //    ・種類         : ウェブアプリ
 //    ・次のユーザーとして実行 : 自分
 //    ・アクセスできるユーザー : 全員
-// 5. [デプロイ] ボタンを押してURLをコピー
-// 6. gs-select.php と gs-score.php の先頭にある
+// 4. [デプロイ] ボタンを押してURLをコピー
+// 5. pages/gs-select.html と pages/gs-score.html の先頭にある
 //    GAS_URL = '...' の部分にそのURLを貼り付ける
 // ============================================================
+
+// ── 対象スプレッドシートID ────────────────────────────────
+const SPREADSHEET_ID = '1IeOYqL0i3LoolmLnltbIj_iyDKD5Vgq2-D9Fz55P2OI';
+
+// 対象スプレッドシートを開く（IDが未設定なら現在のシートを使う）
+function _ss() {
+  if (!SPREADSHEET_ID) return SpreadsheetApp.getActiveSpreadsheet();
+  try {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  } catch (err) {
+    throw new Error('スプレッドシートを開けません（ID: ' + SPREADSHEET_ID +
+                    '）。IDとアクセス権を確認してください: ' + err.message);
+  }
+}
 
 function doGet(e) {
   const p = e.parameter || {};
@@ -53,7 +74,7 @@ function _ok(obj) {
 // ── リーグ一覧取得 ────────────────────────────────────────
 // 基本設定シート: A列=リーグ名, B列=ゲーム数, H6=大会名
 function getLeagues() {
-  const ss   = SpreadsheetApp.getActiveSpreadsheet();
+  const ss   = _ss();
   const sh   = ss.getSheetByName('基本設定');
   if (!sh) throw new Error('「基本設定」シートが見つかりません');
 
@@ -77,7 +98,7 @@ function getLeagues() {
 //   N=13 対戦者2a, O=14 終了フラグ, P=15 終了時間
 // 各試合は2行（1行目=1人目, 2行目=2人目）
 function getMatches(leagueName) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = _ss();
   const sh = ss.getSheetByName('試合表(' + leagueName + ')');
   if (!sh) throw new Error('シートが見つかりません: 試合表(' + leagueName + ')');
 
@@ -129,7 +150,7 @@ function getMatches(leagueName) {
 //               Y=25 ポイントA, Z=26 ポイントB,
 //               AA=27 勝ゲームB, AB=28 勝セットB, AC=29 勝数B
 function saveScore(data) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = _ss();
   const sh = ss.getSheetByName('試合表(' + data.league + ')');
   if (!sh) throw new Error('シートが見つかりません: 試合表(' + data.league + ')');
 
