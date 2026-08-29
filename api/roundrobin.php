@@ -2355,6 +2355,11 @@ function adjustForPairsRandom(ids, active, must) {
 // 4人の組み合わせ上どうしても収まらない場合は、差が最小になる分け方にフォールバックする。
 const MAX_PAIR_MU_DIFF = 8;
 
+// ペア間（チーム間）μ差の上限。ペア内の制約を守るとこれを超えてしまう場合は、
+// ペア内の制約を緩めてチーム均衡を優先する。
+// 同じコートに実力差の大きい4人が入ると両立しないため、どちらを取るかの分岐点。
+const MAX_TEAM_MU_DIFF = 12;
+
 function generateCourtsRating(ids) {
     const courtCount = ids.length / 4;
 
@@ -2549,33 +2554,43 @@ function makeBestPairInGroup(group) {
         options = [ [[a,b],[c,d]], [[a,c],[b,d]], [[a,d],[b,c]] ];
     }
 
-    // ① まずペア内μ差の制約（MAX_PAIR_MU_DIFF 未満）で候補を絞る。
-    //    tsTeamMu はペアの「合計」μなので、チーム間の釣り合いだけを見ると
-    //    「最強＋最弱 vs 中位＋中位」が選ばれやすく、ペア内の差が開いてしまう。
-    //    そのためペア内の差を先に効かせる。
+    // 3通りの分け方それぞれについて、判断材料をまとめる
     const muOf     = id => state.tsMap[id]?.mu ?? 25;
     const pairDiff = t  => Math.abs(muOf(t[0]) - muOf(t[1]));
-    const withDiff = options.map(([t1, t2]) => ({
-        t1, t2, maxDiff: Math.max(pairDiff(t1), pairDiff(t2))
+    const info = options.map(([t1, t2]) => ({
+        t1, t2,
+        maxDiff:  Math.max(pairDiff(t1), pairDiff(t2)),          // ペア内μ差（大きい方）
+        teamDiff: Math.abs(tsTeamMu(t1) - tsTeamMu(t2)),         // ペア間（チーム間）μ差
+        pairDup:  (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0),
+        oppDup:   t1.reduce((s,a) => s + t2.reduce((ss,b) => ss + (state.oppMatrix[a]?.[b]||0), 0), 0),
     }));
-    let cand = withDiff.filter(o => o.maxDiff < MAX_PAIR_MU_DIFF);
+
+    // ① ペア内μ差が MAX_PAIR_MU_DIFF 未満の分け方に絞る。
+    //    tsTeamMu はペアの「合計」μなので、チーム間の釣り合いだけを見ると
+    //    「最強＋最弱 vs 中位＋中位」が選ばれやすく、ペア内の差が開いてしまう。
+    let cand = info.filter(o => o.maxDiff < MAX_PAIR_MU_DIFF);
     if (cand.length === 0) {
-        // 4人の組み合わせ上どう分けても制約を満たせない場合は、
-        // 差が最小になる分け方を採用する（固定ペアで差が大きい場合もここに来る）
-        const minDiff = Math.min(...withDiff.map(o => o.maxDiff));
-        cand = withDiff.filter(o => o.maxDiff === minDiff);
+        // どう分けても満たせない場合は差が最小の分け方（固定ペアで差が大きい場合もここ）
+        const minDiff = Math.min(...info.map(o => o.maxDiff));
+        cand = info.filter(o => o.maxDiff === minDiff);
     }
 
-    // ② 残った候補の中で、ペア間（チーム間）のμ差が小さいものを選ぶ
-    let best = null, bestScore = Infinity;
-    for (const { t1, t2 } of cand) {
-        const muDiff = Math.abs(tsTeamMu(t1) - tsTeamMu(t2));
-        const pairDup = (state.pairMatrix[t1[0]]?.[t1[1]]||0) + (state.pairMatrix[t2[0]]?.[t2[1]]||0);
-        const oppDup  = t1.reduce((s,a) => s + t2.reduce((ss,b) => ss + (state.oppMatrix[a]?.[b]||0), 0), 0);
-        const score = muDiff * 10000 + pairDup * 100 + oppDup;
-        if (score < bestScore) { bestScore = score; best = [t1, t2]; }
+    // ② 候補の中から選ぶ。ペア重複の回避を最優先にする。
+    //    旧実装は teamDiff * 10000 + pairDup * 100 で、μ差が 0.1 違うだけで
+    //    過去10回分のペア重複を上回っていたため、重複回避が事実上効いていなかった。
+    let best = cand.reduce((x, y) => {
+        const sc = o => o.pairDup * 10000 + o.oppDup * 100 + o.teamDiff * 10;
+        return sc(y) < sc(x) ? y : x;
+    });
+
+    // ③ ペア内の制約を守った結果チームが偏りすぎる場合は、チーム均衡を優先して緩める。
+    //    同じコートに μ18 と μ33 が入ると「ペアを揃える」と「チームを揃える」は
+    //    両立しない。実測では、この逃げ道が無いとチーム差が最大21程度まで開いた。
+    if (best.teamDiff > MAX_TEAM_MU_DIFF) {
+        const balanced = info.reduce((x, y) => (y.teamDiff < x.teamDiff ? y : x));
+        if (balanced.teamDiff < best.teamDiff) best = balanced;
     }
-    return best;
+    return [best.t1, best.t2];
 }
 
 // =====================================================================
