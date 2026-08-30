@@ -413,9 +413,30 @@ function backToLeague() {
     showView('league');
 }
 
-function reload() {
-    if (currentLeague) selectLeague(currentLeague);
-    else init();
+// 更新ボタン：リーグ情報（ゲーム数・大会名）も取り直してから試合一覧を再取得する
+async function reload() {
+    if (!currentLeague) { init(); return; }
+
+    const name = currentLeague.name;
+    showView('loading');
+    try {
+        const res  = await fetch(GAS_URL + '?action=getLeagues');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        if (data.eventName) {
+            document.getElementById('site-title').textContent =
+                '\u{1F3BE}' + data.eventName + '　スコア入力';
+        }
+
+        leagues = data.leagues || [];
+        const fresh = leagues.find(function(l) { return l.name === name; });
+        if (!fresh) { init(); return; }   // リーグが消えていた場合は一覧へ戻る
+
+        await selectLeague(fresh);
+    } catch (e) {
+        showError('リーグ情報の取得に失敗しました<br>' + e.message);
+    }
 }
 
 function showView(name) {
