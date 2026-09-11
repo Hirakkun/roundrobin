@@ -3835,7 +3835,8 @@ function renderMatchContainer() {
         // ラウンド全コートの終了状態
         const isRoundDone = rd.courts.every((ct, ci) => state.scores[`r${rd.round}c${ci}`]?.done);
         const autoOrSeq = state.autoMatch || state.seqMatch;
-        const roundDoneBadge = (isRoundDone && autoOrSeq)
+        // 「試合終了」は全モードで押せるので、全終了バッジも全モードで出す
+        const roundDoneBadge = isRoundDone
             ? `<span class="round-done-badge">✓ 全終了</span>` : '';
 
         // 自動展開の判定
@@ -3879,8 +3880,9 @@ function renderMatchContainer() {
                     const n1 = ct.team1.map(id => getPlayerDisplayName(id)).join('');
                     const n2 = ct.team2.map(id => getPlayerDisplayName(id)).join('');
 
-                    // 自動/順次ON かつ終了済みコート → カード型（グレーアウト）
-                    if (autoOrSeq && courtDone) {
+                    // 終了済みコート → カード型（グレーアウト）。
+                    // 「試合終了」を全モードで押せるようにしたので、ここも全モード共通にする
+                    if (courtDone) {
                         const editBtn = isAdmin && !isEventLocked()
                             ? `<button class="done-edit-btn" onclick="event.stopPropagation();toggleDoneEdit(${rd.round},${arrayIdx},this)">修正</button>`
                             : '';
@@ -3912,7 +3914,11 @@ function renderMatchContainer() {
                         || ((sc.s1 > 0 || sc.s2 > 0) ? 'playing' : 'calling');
                     const isCalling = courtStatus === 'calling';
 
-                    const showCourtDoneBtn = isAdmin && !isEventLocked() && autoOrSeq && !courtDone;
+                    // 手動＋一括でも表示する。ここを autoOrSeq で塞いでいたため、
+                    // そのモードでは done を立てる手段が組合せ画面に無く、
+                    // score-court（審判用）が同じ対戦を表示し続ける状態になっていた。
+                    // ボタンがあっても自動生成は走らない（markCourtDone 側で autoMatch を見ている）。
+                    const showCourtDoneBtn = isAdmin && !isEventLocked() && !courtDone;
                     const courtDoneBtn = showCourtDoneBtn
                         ? isCalling
                             ? `<button class="court-done-btn court-start-btn" onclick="markCourtStarted(${rd.round},${arrayIdx})">▶ 試合開始</button>`
