@@ -3594,8 +3594,27 @@ function generatePoolBatch() {
 }
 
 // プールから次の1試合を取り出してスケジュールに追加
-function assignNextPoolMatch(fromPhysicalIndex) {
+// 指定した物理コートに未終了（呼び出し中・試合中）の試合があるか
+function _isPhysicalCourtActive(physIdx) {
+    return (state.schedule || []).some(rd =>
+        (rd.courts || []).some((ct, ci) => {
+            const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
+            if (pi !== physIdx) return false;
+            return !state.scores?.[`r${rd.round}c${ci}`]?.done;
+        })
+    );
+}
+
+// _retry: プールを作り直して1回だけやり直す。作り直しても解消しない場合に
+//         無限再帰しないためのフラグ。
+function assignNextPoolMatch(fromPhysicalIndex, _retry) {
     if (isEventLocked()) return;
+
+    // 別インスタンス（別端末・別タブ）が既にこの物理コートへ次の試合を入れていたら何もしない。
+    // 順次モードには一括モードの _tryAutoGenerate のようなインスタンス間ガードが無く、
+    // 管理画面を2台で開いていると同じ「試合終了」で両方が試合を作ってしまっていた。
+    // 結果、余分な試合・1コートだけのラウンド・同一ラウンド内での選手の重複が発生する。
+    if (fromPhysicalIndex !== undefined && _isPhysicalCourtActive(fromPhysicalIndex)) return;
 
     // physicalIndex が未指定の場合 → 直近ラウンドで未割り当ての物理コートを順番に選ぶ
     if (fromPhysicalIndex === undefined) {
@@ -3667,7 +3686,27 @@ function assignNextPoolMatch(fromPhysicalIndex) {
         console.warn('[assignNextPoolMatch] 削除済み選手を含む古いプール試合を破棄しました', playIds);
         state.matchPool = [];
         updatePoolStatus();
-        assignNextPoolMatch(fromPhysicalIndex);
+        if (!_retry) assignNextPoolMatch(fromPhysicalIndex, true);
+        return;
+    }
+
+    // すでに別のコートで試合中の選手が混じっていないか最終確認する。
+    // 別端末が先に試合を組んでいた場合、こちらのプールはそれを知らずに作られているため、
+    // ここで弾かないと同じ選手が同じラウンドの2コートに入ってしまう。
+    const busy = new Set();
+    (state.schedule || []).forEach(rd => {
+        (rd.courts || []).forEach((ct, ci) => {
+            if (state.scores?.[`r${rd.round}c${ci}`]?.done) return;
+            [...(ct.team1 || []), ...(ct.team2 || [])].forEach(id => busy.add(id));
+        });
+    });
+    if (playIds.some(id => busy.has(id))) {
+        console.warn('[assignNextPoolMatch] 出場中の選手を含むプール試合を破棄して再生成します', playIds);
+        state.matchPool = [];
+        _recalcIsOnCourt();
+        updatePoolStatus();
+        if (!_retry) { assignNextPoolMatch(fromPhysicalIndex, true); return; }
+        showToast('⚠️ 出場中の選手と重複するため次の試合を作れませんでした');
         return;
     }
 
