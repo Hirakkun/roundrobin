@@ -5085,6 +5085,11 @@ window._fbApply = function(remoteState) {
         if (!remoteState.playerKana      || typeof remoteState.playerKana      !== 'object') remoteState.playerKana      = {};
         if (!remoteState.announcedCourts || typeof remoteState.announcedCourts !== 'object') remoteState.announcedCourts = {};
 
+        // 確定した試合結果を記録し、他クライアントの set() で消えていたら復元する。
+        // Object.assign より前に直すこと（後だと state.scores が消えた側で上書きされる）。
+        window._fbRememberFinished(remoteState.scores, remoteState.schedule);
+        const _restored = window._fbRestoreFinished(remoteState.scores, remoteState.schedule);
+
         // スコア数値のみ変更か判定（全再描画の要否を決める）
         const _prevSchedJson  = JSON.stringify(state.schedule);
         const _prevPlayJson   = JSON.stringify(state.players);
@@ -5092,6 +5097,9 @@ window._fbApply = function(remoteState) {
         const _newScores      = remoteState.scores || {};
         // state を更新（newlyDone の自動組み込みは scoresサブパスリスナーが一元管理）
         Object.assign(state, remoteState);
+        // 復元した分は Firebase 側がまだ欠けたままなので、直した状態を押し戻す。
+        // isApplyingRemote 中は saveState() が push しないため次のタスクで実行する。
+        if (_restored > 0) setTimeout(() => saveState(true), 0);
         localStorage.setItem('rr_state_v2', JSON.stringify(state));
         // スケジュール・選手に変化がなく、スコアのstatus/doneも変わっていなければ軽量更新
         let _onlyScoreNums = JSON.stringify(state.schedule) === _prevSchedJson &&
@@ -5592,6 +5600,9 @@ window._fbResetDoneTracking = function() {
     _processedDone.clear();
     _pendingAssign.clear();
     _scoresSeeded = false;
+    // mid はリセット・ラウンド削除（キー振り直し）で再利用されるため、
+    // 確定結果キャッシュも一緒に破棄しないと別試合の結果が復活してしまう
+    window._finishedScores = {};
 };
 
 // この画面が自分で done を処理した mid を「処理済み」として登録する。
@@ -5621,6 +5632,7 @@ window._fbStart = function(sessionId) {
     _processedDone.clear();
     _pendingAssign.clear();
     _scoresSeeded = false;
+    window._finishedScores = {};
 
     // ── メインセッションリスナー ──────────────────────────────────
     if (_ref) off(_ref);
@@ -5715,6 +5727,13 @@ window._fbStart = function(sessionId) {
             }
             if (s.done) delete window._livePtScores[mid];
         });
+        // 確定結果を記録し、他クライアントの set() で消えていたら復元して押し戻す
+        window._fbRememberFinished(scores, state.schedule);
+        if (window._fbRestoreFinished(scores, state.schedule) > 0) {
+            // isApplyingRemote 中は saveState() が push しないため、
+            // 適用完了後に確実に送られるよう次のタスクで実行する
+            setTimeout(() => saveState(true), 0);
+        }
         // ── ステータス変化検出（マージ前に比較する必要がある）──
         // state.scores は参照なので Object.assign 後だと _prevScores と同一になり
         // _fbApply 側の判定が「変化なし」になる。ここで先に検出して renderMatchContainer を呼ぶ。
@@ -5754,21 +5773,73 @@ window._fbStart = function(sessionId) {
 // モジュールスコープの let では _fbApply からアクセスできず ReferenceError になるため。
 window._livePtScores = {};
 
+// ── 確定した試合結果（done）のキャッシュ ────────────────────────────
+// _fbPush は set() でセッションノードを丸ごと上書きするため、審判が
+// update() で書いた scores/<mid>/{s1,s2,done} が次の条件で消えることがある：
+//   ① 審判の書き込みが管理者画面に届く前に管理者側が saveState() した
+//   ② 管理者画面を2つ開いていて、片方が done を受け取る前に push した
+// （実際「試合終了を押しても結果が反映されない時がある」として報告された）
+// done は一度 true になったら false に戻る操作が存在しない（削除のみ）ので、
+// 一度でも見た確定結果を覚えておき、送信前・受信後に復元して自己修復する。
+// mid はセッションリセットやラウンド削除で再利用されるため、
+// _fbResetDoneTracking() で必ず破棄すること。
+window._finishedScores = {};
+
+// mid が指す対戦カードの署名。ラウンド削除でキーが振り直されたとき
+// （r3c0 → r2c0 など）、別の試合に古い結果を書き戻さないための照合に使う。
+function _midTeamKey(mid, schedule) {
+    const m = /^r(\d+)c(\d+)$/.exec(mid || '');
+    if (!m || !Array.isArray(schedule)) return null;
+    const rd = schedule.find(r => r.round === +m[1]);
+    const ct = rd && rd.courts && rd.courts[+m[2]];
+    if (!ct) return null;
+    const k = a => [...(a || [])].sort((x, y) => x - y).join(',');
+    return k(ct.team1) + '|' + k(ct.team2);
+}
+
+// 受信した scores から確定結果を記録する
+window._fbRememberFinished = function(scores, schedule) {
+    if (!scores) return;
+    Object.keys(scores).forEach(mid => {
+        const s = scores[mid];
+        if (!s || !s.done) return;
+        const key = _midTeamKey(mid, schedule);
+        if (!key) return; // 予定表に無い mid は照合できないので覚えない
+        const rec = { s1: s.s1 ?? 0, s2: s.s2 ?? 0, done: true, _key: key };
+        if (s.startedAt != null) rec.startedAt = s.startedAt;
+        window._finishedScores[mid] = rec;
+    });
+};
+
+// scores オブジェクトから消えた確定結果を書き戻す。戻した件数を返す。
+// ・ローカルで削除済みの mid（scores に存在しない）は復活させない
+// ・対戦カードが変わっている mid（キー振り直し後）も復活させず、キャッシュを捨てる
+window._fbRestoreFinished = function(scores, schedule) {
+    if (!scores) return 0;
+    let n = 0;
+    Object.keys(window._finishedScores).forEach(mid => {
+        const rec = window._finishedScores[mid];
+        if (_midTeamKey(mid, schedule) !== rec._key) { delete window._finishedScores[mid]; return; }
+        if (!scores[mid] || scores[mid].done) return;
+        const { _key, ...vals } = rec;
+        scores[mid] = { ...scores[mid], ...vals };
+        n++;
+    });
+    return n;
+};
+
 window._fbPush = function(data) {
     if (!_ref) return;
-    // pt1/pt2 キャッシュをマージして送信（score-court の書き込みを保護）
-    let mergedData = data;
-    if (Object.keys(window._livePtScores).length > 0) {
-        const mergedScores = { ...(data.scores || {}) };
-        Object.keys(window._livePtScores).forEach(mid => {
-            if (mergedScores[mid]) {
-                if (window._livePtScores[mid].pt1 !== undefined) mergedScores[mid].pt1 = window._livePtScores[mid].pt1;
-                if (window._livePtScores[mid].pt2 !== undefined) mergedScores[mid].pt2 = window._livePtScores[mid].pt2;
-            }
-        });
-        mergedData = { ...data, scores: mergedScores };
-    }
-    set(_ref, { ...mergedData, _cid: CLIENT_ID });
+    // pt1/pt2 と確定結果をマージして送信（score-court の書き込みを保護）
+    const mergedScores = { ...(data.scores || {}) };
+    Object.keys(window._livePtScores).forEach(mid => {
+        if (mergedScores[mid]) {
+            if (window._livePtScores[mid].pt1 !== undefined) mergedScores[mid].pt1 = window._livePtScores[mid].pt1;
+            if (window._livePtScores[mid].pt2 !== undefined) mergedScores[mid].pt2 = window._livePtScores[mid].pt2;
+        }
+    });
+    window._fbRestoreFinished(mergedScores, data.schedule);
+    set(_ref, { ...data, scores: mergedScores, _cid: CLIENT_ID });
 };
 
 window._fbSetEventStatus = async function(sessionId, status) {

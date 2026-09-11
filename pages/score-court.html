@@ -694,6 +694,15 @@ let currentRoundLabel = '';
 let _curStartedAt = null;
 // playing書き込み中フラグ（書き込み完了前のonValue誤リセット防止）
 let _statusWritePending = false;
+// 現在の試合の選手ID（試合終了の再送判定でチームの同一性を確認するため）
+let currentTeamIds = null;
+// ── 試合終了の書き戻しガード ──────────────────────────────────────
+// 管理者画面は set() でセッションノードを丸ごと上書きするため、審判の
+// update() で書いた done が、届く前に押し戻されたデータで消えることがある。
+// 「試合終了を押したのに結果が反映されない」の原因。ここで自分が書いた
+// 確定結果が消えていないか監視し、消えていたら数回だけ書き直す。
+let _finishedGuard = null;
+const FINISH_GUARD_TRIES = 5;
 
 // ── ローカル状態の保存/復元（リロード対応） ──────────────────────
 const SC_LS_KEY = 'sc_v1_' + sessionId + '_c' + courtIndex;
@@ -787,6 +796,11 @@ function onStateUpdate(state) {
     const pnames = state.playerNames || {};
     const players = Array.isArray(state.players) ? state.players : [];
 
+    // ── 試合終了が消えていないか確認し、消えていたら書き直す ──────────
+    // ここで直しておかないと、下の検索で「未終了の試合」として拾われ、
+    // 終わったはずの対戦がもう一度スコア入力画面に出てしまう。
+    checkFinishedGuard(scores, state.schedule);
+
     // このコートのアクティブな試合を探す
     let found = null;
     for (const rd of state.schedule) {
@@ -823,6 +837,7 @@ function onStateUpdate(state) {
             document.getElementById('hd-games').textContent = MATCH_GAMES + 'ゲームマッチ';
             team1Names = found.ct.team1.map(id => buildName(id, pnames, showPlayerNum));
             team2Names = found.ct.team2.map(id => buildName(id, pnames, showPlayerNum));
+            currentTeamIds = { t1: [...found.ct.team1], t2: [...found.ct.team2] };
             document.getElementById('hd-round').textContent = '第' + found.rd.round + '試合';
             resetMatch();
         }
@@ -842,6 +857,7 @@ function onStateUpdate(state) {
     // チーム名（選手番号付き）
     team1Names = found.ct.team1.map(id => buildName(id, pnames, showPlayerNum));
     team2Names = found.ct.team2.map(id => buildName(id, pnames, showPlayerNum));
+    currentTeamIds = { t1: [...found.ct.team1], t2: [...found.ct.team2] };
 
     currentRoundLabel = '第' + found.rd.round + '試合';
     document.getElementById('hd-round').textContent = currentRoundLabel;
@@ -1292,8 +1308,18 @@ window.handleMatchEnd = async function() {
 
     document.getElementById('done-screen').style.display = 'flex';
 
+    const endedMid = currentMid;
     try {
         await writeScore(true);
+        // 書き込んだ結果を覚えておき、管理者画面の上書きで消えたら書き直す
+        _finishedGuard = {
+            mid: endedMid,
+            s1:  set_score_t1,
+            s2:  set_score_t2,
+            ids: currentTeamIds,
+            at:  Date.now(),
+            tries: 0,
+        };
         // Firebase 書き込み成功後にカウントダウン開始
         _startDoneCountdown();
     } catch(e) {
@@ -1559,6 +1585,48 @@ async function writeScore(done) {
     if (done) upd['scores/' + currentMid + '/done'] = true;
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     await update(stateRef, upd);
+}
+
+// ── 試合終了の書き戻しガード ──────────────────────────────────────
+function midParts(mid) {
+    const m = /^r(\d+)c(\d+)$/.exec(mid || '');
+    return m ? { round: +m[1], ci: +m[2] } : null;
+}
+
+function sameTeams(ct, ids) {
+    if (!ct || !ids) return false;
+    const key = a => [...(a || [])].sort((x, y) => x - y).join(',');
+    return key(ct.team1) === key(ids.t1) && key(ct.team2) === key(ids.t2);
+}
+
+// 自分が書いた確定結果が Firebase から消えていないか確認し、消えていたら書き直す。
+// 管理者画面の set() による丸ごと上書きと競合したときの保険。
+function checkFinishedGuard(scores, schedule) {
+    const g = _finishedGuard;
+    if (!g) return;
+    // 一定時間で監視を打ち切る（無限に書き戻し続けない）
+    if (Date.now() - g.at > 5 * 60 * 1000) { _finishedGuard = null; return; }
+
+    const p  = midParts(g.mid);
+    const rd = p && (schedule || []).find(r => r.round === p.round);
+    const ct = rd && rd.courts && rd.courts[p.ci];
+    // 予定表から消えた／別の対戦に振り直された → 管理者の操作なので書き戻さない
+    if (!ct || !sameTeams(ct, g.ids)) { _finishedGuard = null; return; }
+    // 正常に残っている
+    if (scores[g.mid] && scores[g.mid].done) return;
+
+    if (g.tries >= FINISH_GUARD_TRIES) { _finishedGuard = null; return; }
+    g.tries++;
+    console.warn('試合終了が消えていたため書き直します:', g.mid, '(' + g.tries + '回目)');
+    const upd = {};
+    upd['scores/' + g.mid + '/s1']   = g.s1;
+    upd['scores/' + g.mid + '/s2']   = g.s2;
+    upd['scores/' + g.mid + '/done'] = true;
+    upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
+    update(stateRef, upd).catch(e => console.warn('試合終了の再送に失敗:', e));
+    // 受信データも直しておく。こうしないと、このまま下の検索で
+    // 「未終了」と判定され、終わった対戦が一瞬また表示されてしまう
+    scores[g.mid] = { ...(scores[g.mid] || {}), s1: g.s1, s2: g.s2, done: true };
 }
 
 // ── 画面制御 ─────────────────────────────────────────────────
