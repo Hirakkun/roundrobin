@@ -426,7 +426,12 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 /* ── スコア ── */
 .score-row {
     display: grid;
-    grid-template-columns: 1fr auto auto auto 1fr;
+    /* 1fr は最小幅がコンテンツ幅になるため、カード幅が足りないとボール列が
+       はみ出して court-card の overflow:hidden で切れる。
+       （3列レイアウト＝3/5/6コートかつ全画面で発生。ルートフォントが
+         min(2.8vw,5vh) なので、幅の広い全画面ほど字が大きくなり起きやすい）
+       minmax(0,1fr) にして、足りないときはボール側が縮むようにする */
+    grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
     align-items: center;
     gap: 0.15em;
     flex-shrink: 0;
@@ -447,13 +452,17 @@ body.light .status-calling .pc-head   { animation: pulse-head-calling-light 1.2s
 /* 横長カード：スコア横のボール（2列グリッドで折り返し） */
 .score-balls {
     display: grid;
-    grid-template-columns: repeat(2, 1em);
+    /* 幅が足りないときは 1em より小さくなって収まる（切れるより縮む方がよい） */
+    grid-template-columns: repeat(2, minmax(0, 1em));
     gap: 0.07em;
     align-items: center;
+    max-width: 100%;
 }
 .score-balls:first-child { justify-self: end; }   /* 左側：グリッド全体を右詰め */
 .score-balls:last-child  { justify-self: start; } /* 右側：グリッド全体を左詰め */
-.score-balls .game-ball { width: 1em; height: 1em; }
+.score-balls .game-ball {
+    width: 100%; max-width: 1em; height: auto; aspect-ratio: 1 / 1;
+}
 /* 縦長カード：スコア行のボール */
 .pc-balls { display: inline-flex; align-items: center; gap: 0.06em; }
 .pc-balls .game-ball { width: 0.67em; height: 0.67em; }
