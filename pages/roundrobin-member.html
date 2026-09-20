@@ -37,6 +37,15 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .field label { font-size: 13px; font-weight: bold; color: #555; }
 .field input, .field select { padding: 10px 12px; border: 2px solid #ccc; border-radius: 8px; font-size: 15px; outline: none; background: #fff; width: 100%; }
 .field input:focus, .field select:focus { border-color: #4527a0; }
+/* ラジオは .field input の width:100%/padding/border を打ち消す（統合画面で使用） */
+.field input[type="radio"] { width: auto; flex: 0 0 auto; padding: 0; border: none; margin: 0; }
+.mg-opt { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; background: #fff; font-size: 14px; }
+.mg-opt input[type="radio"] { flex-shrink: 0; }
+.mg-keep { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 6px; cursor: pointer; background: #fff; }
+.mg-keep input[type="radio"] { margin-top: 3px; }
+.mg-keep > span { flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.6; }
+.mg-keep:has(input:checked) { border-color: #4527a0; background: #f3f0fa; }
+.mg-opt:has(input:checked)  { border-color: #4527a0; background: #f3f0fa; }
 .req { color: #c62828; }
 .search-bar { padding: 10px 14px; background: #fff; border-bottom: 1px solid #eee; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .search-bar input, .search-bar select { padding: 8px 12px; border: 2px solid #d1c4e9; border-radius: 8px; font-size: 14px; outline: none; flex: 1; min-width: 120px; }
@@ -125,6 +134,9 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
             <select id="p-filter-club" onchange="renderPlayers()">
                 <option value="">全クラブ（チーム）</option>
             </select>
+        </div>
+        <div id="dup-bar" style="display:none;padding:8px 14px;background:#fff8e1;border-bottom:1px solid #ffe082;">
+            <button class="btn btn-orange" style="width:100%;" onclick="openMergeList()" id="dup-btn"></button>
         </div>
         <div id="players-container"><div class="loading-msg">⏳ 読込中...</div></div>
     </div>
@@ -251,6 +263,37 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
     <div id="club-picker-container"></div>
 </div>
 
+<!-- ■ Screen 6: 同名選手の統合（一覧） -->
+<div id="screen-merge-list" class="screen">
+    <div class="hdr">
+        <button class="back-btn" onclick="showScreen('screen-main')">← 戻る</button>
+        <h1>🔗 同名の選手を統合</h1>
+    </div>
+    <div style="padding:12px 14px;font-size:13px;color:#555;background:#fff8e1;border-bottom:1px solid #ffe082;line-height:1.6;">
+        氏名が同じ選手（空白の違いは無視）をまとめます。<br>
+        まとめると、所属クラブは合算され、過去の大会データも統合先の選手に付け替わります。
+    </div>
+    <div id="merge-list-container"></div>
+</div>
+
+<!-- ■ Screen 7: 同名選手の統合（項目選択） -->
+<div id="screen-merge" class="screen">
+    <div class="hdr">
+        <button class="back-btn" onclick="openMergeList()">← 戻る</button>
+        <h1 id="mg-title">統合する内容を選ぶ</h1>
+    </div>
+    <div id="merge-container" class="form-body"></div>
+</div>
+
+<!-- ■ Screen 8: 選手の大会参加履歴 -->
+<div id="screen-history" class="screen">
+    <div class="hdr">
+        <button class="back-btn" onclick="showScreen('screen-main')">← 戻る</button>
+        <h1 id="hs-title">大会参加履歴</h1>
+    </div>
+    <div id="history-container"></div>
+</div>
+
 <!-- Password Modal -->
 <div class="modal-overlay" id="modal-pw">
     <div class="modal">
@@ -375,6 +418,14 @@ window.closeConfirm=function(){ document.getElementById('modal-confirm').classLi
 // ═══════════════════════════════════════════════════════════════
 // 選手一覧
 // ═══════════════════════════════════════════════════════════════
+// 「クラブ未所属」を表す擬似クラブID（実在のクラブIDと衝突しない値）
+const NO_CLUB='__noclub__';
+
+// 所属クラブが1つも無い選手か（存在しないクラブIDだけが残っている場合も未所属とみなす）
+function isUnaffiliated(p){
+    return !Object.keys(p.clubs||{}).some(cid=>allClubs[cid]);
+}
+
 function buildClubFilter(){
     const sel=document.getElementById('p-filter-club');
     const cur=sel.value;
@@ -385,6 +436,10 @@ function buildClubFilter(){
     clubs.forEach(([cid,c])=>{
         sel.innerHTML+=`<option value="${escH(cid)}" ${cur===cid?'selected':''}>${escH(c.name)}</option>`;
     });
+    // 「クラブ未所属」は必ず最後（イベント指定モードでは対象外なので出さない）
+    if(!(_paramClubIds.size>0||PARAM_EID)){
+        sel.innerHTML+=`<option value="${NO_CLUB}" ${cur===NO_CLUB?'selected':''}>クラブ未所属</option>`;
+    }
 }
 
 window.renderPlayers=function(){
@@ -394,18 +449,21 @@ window.renderPlayers=function(){
     let entries=Object.entries(allPlayers);
     // パラメータフィルタ：指定クラブの選手のみ（EID指定時は空でもフィルタ適用）
     if(_paramClubIds.size>0||PARAM_EID) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).some(cid=>_paramClubIds.has(cid)));
-    if(filterCid) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).includes(filterCid));
+    if(filterCid===NO_CLUB) entries=entries.filter(([,p])=>isUnaffiliated(p));
+    else if(filterCid) entries=entries.filter(([,p])=>Object.keys(p.clubs||{}).includes(filterCid));
     if(q) entries=entries.filter(([,p])=>(p.name||'').toLowerCase().includes(q)||(p.kana||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].kana||a[1].name||'').localeCompare(b[1].kana||b[1].name||'','ja'));
+    updateDupBar();
     if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 選手が見つかりません</div>'; return; }
     let h='<div class="player-list">';
     for(const [pid,p] of entries){
         const clubs=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid));
         const genderIcon = p.gender==='男性' ? '♂' : p.gender==='女性' ? '♀' : '';
-        h+=`<div class="player-card">
+        h+=`<div class="player-card" style="cursor:pointer;" onclick="openHistory('${esc(pid)}')">
             <div class="pc-top">
                 <div class="pc-name">${escH(p.name||'')}</div>
-                <button class="btn-sm btn-sm-edit pc-edit" onclick="openPlayerForm('${esc(pid)}')">編集</button>
+                <span style="font-size:11px;color:#bbb;white-space:nowrap;">履歴 ›</span>
+                <button class="btn-sm btn-sm-edit pc-edit" onclick="event.stopPropagation();openPlayerForm('${esc(pid)}')">編集</button>
             </div>
             <div class="pc-meta">
                 <span style="color:#888;">${escH(p.kana||'')}</span>
@@ -430,7 +488,11 @@ window.renderClubs=function(){
     if(_paramClubIds.size>0||PARAM_EID) entries=entries.filter(([cid])=>_paramClubIds.has(cid));
     if(q) entries=entries.filter(([,cl])=>(cl.name||'').toLowerCase().includes(q));
     entries.sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'','ja'));
-    if(!entries.length){ c.innerHTML='<div class="empty-msg">📭 クラブ（チーム）が登録されていません</div>'; return; }
+    // 「クラブ未所属」の擬似カードを最後に出す（イベント指定モードでは対象外）
+    const showNoClub = !(_paramClubIds.size>0||PARAM_EID)
+        && (!q || 'クラブ未所属'.includes(q) || '未所属'.includes(q));
+    const noClubCnt = showNoClub ? Object.values(allPlayers).filter(isUnaffiliated).length : 0;
+    if(!entries.length && !showNoClub){ c.innerHTML='<div class="empty-msg">📭 クラブ（チーム）が登録されていません</div>'; return; }
     // イベント指定モードではパスワード確認してからフォームを開く
     const clubEditFn = PARAM_NAME ? 'openClubFormWithPw' : 'openClubForm';
     let h='<div class="club-list">';
@@ -446,8 +508,23 @@ window.renderClubs=function(){
             ${repInfo ? `<div style="font-size:12px;color:#888;">${escH(repInfo)}</div>` : ''}
         </div>`;
     }
+    if(showNoClub){
+        h+=`<div class="club-card" style="cursor:pointer;background:#fafafa;border:1px dashed #ccc;box-shadow:none;" onclick="showUnaffiliated()">
+            <span class="cc-name" style="flex:1;color:#666;">クラブ未所属</span>
+            <span class="cc-count">${noClubCnt}人</span>
+            <span style="font-size:12px;color:#bbb;">›</span>
+        </div>`;
+    }
     h+='</div>';
     c.innerHTML=h;
+};
+
+// 「クラブ未所属」カード → 選手一覧を未所属で絞り込んで表示
+window.showUnaffiliated=function(){
+    switchTab('players');
+    document.getElementById('p-search').value='';
+    document.getElementById('p-filter-club').value=NO_CLUB;
+    renderPlayers();
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -822,6 +899,335 @@ async function doDeleteClub(){
         switchTab('clubs');
     }catch(e){showToast('❌ '+e.message);}
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 同名選手の統合
+// ═══════════════════════════════════════════════════════════════
+// 空白（半角・全角）を除いた氏名で同一人物かどうかを判定する
+function normName(s){ return String(s??'').replace(/[\s　]+/g,''); }
+
+// Firebase は連番キーを配列で返すこともオブジェクトで返すこともあるため、
+// どちらでも [インデックス, 値] の並びとして扱えるようにする
+function idxEntries(v){
+    if(Array.isArray(v)) return v.map((x,i)=>[String(i),x]);
+    return Object.entries(v||{});
+}
+
+function findDuplicateGroups(){
+    const map=new Map();
+    for(const [pid,p] of Object.entries(allPlayers)){
+        const k=normName(p.name);
+        if(!k) continue;
+        if(!map.has(k)) map.set(k,[]);
+        map.get(k).push(pid);
+    }
+    return [...map.entries()]
+        .filter(([,pids])=>pids.length>1)
+        .map(([key,pids])=>({key,pids}))
+        .sort((a,b)=>a.key.localeCompare(b.key,'ja'));
+}
+
+function updateDupBar(){
+    const bar=document.getElementById('dup-bar');
+    if(!bar) return;
+    // イベント・クラブ指定モードでは全体の統合はさせない
+    if(PARAM_NAME||PARAM_CLUB||PARAM_EID){ bar.style.display='none'; return; }
+    const groups=findDuplicateGroups();
+    if(!groups.length){ bar.style.display='none'; return; }
+    bar.style.display='block';
+    document.getElementById('dup-btn').textContent=`🔗 同名の選手を統合（${groups.length}組）`;
+}
+
+window.openMergeList=function(){
+    const groups=findDuplicateGroups();
+    const c=document.getElementById('merge-list-container');
+    if(!groups.length){
+        c.innerHTML='<div class="empty-msg">✅ 同じ氏名の選手はいません</div>';
+    } else {
+        c.innerHTML='<div class="player-list">'+groups.map(g=>{
+            const rows=g.pids.map(pid=>{
+                const p=allPlayers[pid];
+                const clubs=Object.keys(p.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid)).join('・')||'所属なし';
+                return `<div style="font-size:12px;color:#777;">・${escH(p.name||'')}　${escH(p.kana||'')}　μ${(p.mu??25).toFixed(1)}　${escH(clubs)}</div>`;
+            }).join('');
+            return `<div class="player-card" style="cursor:pointer;" onclick="openMerge('${esc(g.key)}')">
+                <div class="pc-top">
+                    <div class="pc-name">${escH(g.pids.map(pid=>allPlayers[pid].name).find(Boolean)||g.key)}</div>
+                    <span class="chip" style="background:#fff3e0;color:#e65100;">${g.pids.length}件</span>
+                    <span style="font-size:11px;color:#bbb;">›</span>
+                </div>
+                ${rows}
+            </div>`;
+        }).join('')+'</div>';
+    }
+    showScreen('screen-merge-list');
+};
+
+let _mergeGroup=null;
+
+window.openMerge=function(key){
+    const g=findDuplicateGroups().find(x=>x.key===key);
+    if(!g){ showToast('⚠️ 対象が見つかりません'); openMergeList(); return; }
+    _mergeGroup=g;
+    const recs=g.pids.map(pid=>({pid,...allPlayers[pid]}));
+    // 既定の統合先：σが最も小さい＝試合数が多く履歴が長いと考えられる方
+    const defKeep=recs.slice().sort((a,b)=>(a.sigma??8.33)-(b.sigma??8.33))[0].pid;
+
+    // 統合後の所属クラブ（全員分の和）
+    const clubIds=[...new Set(recs.flatMap(r=>Object.keys(r.clubs||{})))];
+    const clubNames=clubIds.map(cid=>allClubs[cid]?.name||decodeURIComponent(cid));
+
+    const fields=[
+        {k:'name',      label:'氏名',     fmt:v=>v||'（未設定）'},
+        {k:'kana',      label:'ふりがな', fmt:v=>v||'（未設定）'},
+        {k:'gender',    label:'性別',     fmt:v=>v||'（未設定）'},
+        {k:'birthdate', label:'生年月日', fmt:v=>v||'（未設定）'},
+        {k:'mu',        label:'μ（レーティング）', fmt:v=>(v??25).toFixed(1)},
+        {k:'sigma',     label:'σ（不確実性）',     fmt:v=>(v??8.33).toFixed(1)},
+    ];
+
+    let h=`<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 12px;font-size:13px;color:#555;line-height:1.6;">
+        ${escH(recs[0].name||key)} さんの ${recs.length} 件を1つにまとめます。<br>
+        値が違う項目はどちらを残すか選んでください。
+    </div>`;
+
+    // 統合先（残すデータ）の選択
+    h+=`<div class="field"><label>統合先（このデータに一本化します）</label><div>`;
+    recs.forEach((r,i)=>{
+        const clubs=Object.keys(r.clubs||{}).map(cid=>allClubs[cid]?.name||decodeURIComponent(cid)).join('・')||'所属なし';
+        h+=`<label class="mg-keep">
+            <input type="radio" name="mg-keep" value="${escH(r.pid)}" ${r.pid===defKeep?'checked':''}>
+            <span>
+                <b>${escH(r.name||'')}</b> ${escH(r.kana||'')}<br>
+                <span style="color:#888;">μ${(r.mu??25).toFixed(1)}　σ${(r.sigma??8.33).toFixed(1)}　${escH(r.birthdate||'生年月日なし')}</span><br>
+                <span style="color:#4527a0;">${escH(clubs)}</span>
+            </span>
+        </label>`;
+    });
+    h+=`</div></div>`;
+
+    // 項目ごとの選択（値が割れているものだけラジオにする）
+    for(const f of fields){
+        const vals=[...new Set(recs.map(r=>JSON.stringify(r[f.k]??null)))].map(s=>JSON.parse(s));
+        if(vals.length<=1){
+            h+=`<div class="field"><label>${escH(f.label)}</label>
+                <div style="padding:8px 12px;background:#f5f5f5;border-radius:8px;font-size:14px;color:#555;">${escH(f.fmt(vals[0]))}</div>
+                <input type="hidden" name="mg-f-${f.k}" value="${escH(JSON.stringify(vals[0]??null))}"></div>`;
+            continue;
+        }
+        h+=`<div class="field"><label>${escH(f.label)} <span style="color:#e65100;">（値が違います）</span></label><div style="display:flex;gap:6px;flex-wrap:wrap;">`;
+        vals.forEach((v,i)=>{
+            h+=`<label class="mg-opt">
+                <input type="radio" name="mg-f-${f.k}" value="${escH(JSON.stringify(v??null))}" ${i===0?'checked':''}>
+                <span>${escH(f.fmt(v))}</span>
+            </label>`;
+        });
+        h+=`</div></div>`;
+    }
+
+    h+=`<div class="field"><label>所属クラブ（チーム）（すべてまとめます）</label>
+        <div style="padding:8px 12px;background:#f5f5f5;border-radius:8px;">
+            ${clubNames.map(n=>`<span class="chip">${escH(n)}</span>`).join('')||'<span style="color:#aaa;font-size:13px;">所属なし</span>'}
+        </div></div>`;
+
+    h+=`<div id="mg-progress" style="display:none;font-size:13px;color:#555;background:#e8eaf6;border-radius:8px;padding:10px 12px;"></div>`;
+    h+=`<button class="btn btn-purple" style="width:100%;padding:14px;" id="mg-run" onclick="confirmMerge()">🔗 この内容で統合する</button>`;
+
+    document.getElementById('merge-container').innerHTML=h;
+    document.getElementById('mg-title').textContent='統合：'+(recs[0].name||key);
+    showScreen('screen-merge');
+};
+
+window.confirmMerge=function(){
+    const keep=document.querySelector('input[name="mg-keep"]:checked')?.value;
+    if(!keep||!_mergeGroup) return;
+    const others=_mergeGroup.pids.filter(p=>p!==keep);
+    showConfirm('⚠️ 統合の確認',
+        `${allPlayers[keep]?.name||''} の ${_mergeGroup.pids.length} 件を1つにまとめます。\n`
+        +`・まとめられる ${others.length} 件は削除されます\n`
+        +`・所属クラブ（チーム）は合算されます\n`
+        +`・過去の大会データも統合先に付け替えます\n\nこの操作は元に戻せません。`,
+        '統合する', execMerge);
+};
+
+async function execMerge(){
+    const keep=document.querySelector('input[name="mg-keep"]:checked')?.value;
+    if(!keep||!_mergeGroup) return;
+    const group=_mergeGroup;
+    const others=group.pids.filter(p=>p!==keep);
+    const btn=document.getElementById('mg-run');
+    const prog=document.getElementById('mg-progress');
+    btn.disabled=true; btn.style.opacity='.5';
+    prog.style.display='block'; prog.textContent='統合中...';
+
+    // 選択された値を集める
+    const pick=k=>{
+        const el=document.querySelector(`input[name="mg-f-${k}"]:checked`)||document.querySelector(`input[name="mg-f-${k}"]`);
+        try{ return JSON.parse(el.value); }catch(e){ return null; }
+    };
+    const merged={
+        name:      pick('name')||'',
+        kana:      pick('kana')||'',
+        gender:    pick('gender')||'',
+        birthdate: pick('birthdate')||'',
+        mu:        pick('mu')??25,
+        sigma:     pick('sigma')??8.33,
+        clubs:     {},
+    };
+    for(const pid of group.pids) Object.assign(merged.clubs, allPlayers[pid]?.clubs||{});
+    // 実在しないクラブIDは落とす
+    for(const cid of Object.keys(merged.clubs)) if(!allClubs[cid]) delete merged.clubs[cid];
+
+    try{
+        // ① 統合先の選手データを書き換え
+        await fbSet('players/'+keep, merged);
+        allPlayers[keep]=merged;
+
+        // ② クラブの所属リストを付け替え
+        for(const cid of Object.keys(merged.clubs)){
+            await fbUpdate('clubs/'+cid+'/playerIds',{[keep]:true});
+            if(!allClubs[cid].playerIds) allClubs[cid].playerIds={};
+            allClubs[cid].playerIds[keep]=true;
+        }
+        for(const pid of others){
+            for(const cid of Object.keys(allPlayers[pid]?.clubs||{})){
+                if(!allClubs[cid]) continue;
+                await fbRemove('clubs/'+cid+'/playerIds/'+pid);
+                if(allClubs[cid].playerIds) delete allClubs[cid].playerIds[pid];
+            }
+        }
+
+        // ③ 過去の大会データのpidを統合先へ付け替え
+        prog.textContent='過去の大会データを更新中...';
+        const n=await repointSessions(new Set(others), keep, (d,t)=>{ prog.textContent=`過去の大会データを更新中... (${d}/${t})`; });
+
+        // ④ まとめられた側を削除
+        for(const pid of others){
+            await fbRemove('players/'+pid);
+            delete allPlayers[pid];
+        }
+
+        _histIndex=null;   // pidが変わったので履歴の索引を作り直す
+        buildClubFilter(); renderPlayers(); renderClubs();
+        showToast(`✅ ${others.length+1}件を統合しました（大会データ ${n}件を更新）`,4000);
+        openMergeList();
+    }catch(e){
+        showToast('❌ 統合に失敗しました: '+e.message,5000);
+        btn.disabled=false; btn.style.opacity='';
+        prog.textContent='失敗しました: '+e.message;
+    }
+}
+
+// 過去の大会（sessions）に残っている旧pidを統合先のpidに書き換える
+async function repointSessions(oldSet, keepPid, onProg){
+    const evs=await fbGet('events')||{};
+    const keys=Object.keys(evs);
+    let changed=0, done=0;
+    const CH=6;   // 同時に処理する大会数
+    for(let i=0;i<keys.length;i+=CH){
+        await Promise.all(keys.slice(i,i+CH).map(async k=>{
+            const [sp,rs,fp]=await Promise.all([
+                fbGet(`sessions/${k}/players`),
+                fbGet(`sessions/${k}/roster`),
+                fbGet(`sessions/${k}/fixedPairPids`),
+            ]);
+            const upd={};
+            for(const [idx,pl] of idxEntries(sp))  if(pl&&oldSet.has(pl.pid)) upd[`players/${idx}/pid`]=keepPid;
+            for(const [idx,rp] of idxEntries(rs))  if(rp&&oldSet.has(rp.pid)) upd[`roster/${idx}/pid`]=keepPid;
+            for(const [idx,pair] of idxEntries(fp)){
+                for(const [j,v] of idxEntries(pair)) if(oldSet.has(v)) upd[`fixedPairPids/${idx}/${j}`]=keepPid;
+            }
+            if(Object.keys(upd).length){ await fbUpdate('sessions/'+k,upd); changed++; }
+            done++;
+        }));
+        onProg&&onProg(done,keys.length);
+    }
+    return changed;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 大会参加履歴
+// ═══════════════════════════════════════════════════════════════
+// { byPid: {pid:[rec]}, byName: {正規化氏名:[rec]} }
+// rec = {eid, date, name, mu}
+let _histIndex=null;
+
+async function buildHistoryIndex(onProg){
+    const evs=await fbGet('events')||{};
+    const keys=Object.keys(evs);
+    const byPid={}, byName={};
+    const CH=6;   // 同時に読む大会数
+    for(let i=0;i<keys.length;i+=CH){
+        await Promise.all(keys.slice(i,i+CH).map(async k=>{
+            const [sp,tm,nm]=await Promise.all([
+                fbGet(`sessions/${k}/players`),
+                fbGet(`sessions/${k}/tsMap`),
+                fbGet(`sessions/${k}/playerNames`),
+            ]);
+            const ev=evs[k]||{};
+            for(const [,pl] of idxEntries(sp)){
+                if(!pl) continue;
+                const ts=tm&&tm[pl.id];
+                const rec={eid:k, date:ev.date||'', evName:ev.name||'', mu:(ts&&typeof ts.mu==='number')?ts.mu:null};
+                if(pl.pid){ (byPid[pl.pid]=byPid[pl.pid]||[]).push(rec); }
+                else{
+                    // pidが無い回（ゲスト参加や古いデータ）は氏名で拾う
+                    const n=normName(nm&&nm[pl.id]);
+                    if(n) (byName[n]=byName[n]||[]).push(rec);
+                }
+            }
+        }));
+        onProg&&onProg(Math.min(i+CH,keys.length),keys.length);
+    }
+    _histIndex={byPid,byName};
+}
+
+function fmtEventDate(d){
+    const s=String(d||'');
+    if(/^\d{8}$/.test(s)) return `${s.slice(0,4)}/${s.slice(4,6)}/${s.slice(6,8)}`;
+    return s||'—';
+}
+
+window.openHistory=async function(pid){
+    const p=allPlayers[pid];
+    if(!p) return;
+    document.getElementById('hs-title').textContent=(p.name||'')+' の履歴';
+    const c=document.getElementById('history-container');
+    c.innerHTML='<div class="loading-msg">⏳ 過去の大会を調べています...</div>';
+    showScreen('screen-history');
+    try{
+        if(!_histIndex) await buildHistoryIndex((d,t)=>{
+            c.innerHTML=`<div class="loading-msg">⏳ 過去の大会を調べています... (${d}/${t})</div>`;
+        });
+    }catch(e){
+        c.innerHTML='<div class="empty-msg">❌ 読込に失敗しました<br>'+escH(e.message)+'</div>';
+        return;
+    }
+    // pid一致＋（pidが無い回の）氏名一致をまとめ、同じ大会は1件にする
+    const seen=new Set();
+    const recs=[...(_histIndex.byPid[pid]||[]), ...(_histIndex.byName[normName(p.name)]||[])]
+        .filter(r=>{ if(seen.has(r.eid)) return false; seen.add(r.eid); return true; })
+        .sort((a,b)=>String(b.date).localeCompare(String(a.date)))
+        .slice(0,10);
+
+    if(!recs.length){
+        c.innerHTML='<div class="empty-msg">📭 参加した大会が見つかりません</div>';
+        return;
+    }
+    let h=`<div style="padding:10px 14px;font-size:12px;color:#888;background:#fff;border-bottom:1px solid #eee;">
+        直近 ${recs.length} 回（最終レートはその大会が終わった時点の値）
+    </div>`;
+    h+='<table class="data-table"><thead><tr><th style="white-space:nowrap;">日付</th><th>大会名</th><th style="white-space:nowrap;">最終レート</th></tr></thead><tbody>';
+    for(const r of recs){
+        h+=`<tr>
+            <td style="white-space:nowrap;font-size:12px;color:#666;">${escH(fmtEventDate(r.date))}</td>
+            <td style="font-weight:bold;">${escH(r.evName||'（名称なし）')}</td>
+            <td><span class="mu-badge">${r.mu==null?'—':r.mu.toFixed(1)}</span></td>
+        </tr>`;
+    }
+    h+='</tbody></table>';
+    c.innerHTML=h;
+};
 
 // ═══════════════════════════════════════════════════════════════
 // CSV 書出 / 読込
