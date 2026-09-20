@@ -516,8 +516,19 @@ body.viewer-mode #initialSetup { display: none !important; }
     <button class="report-btn" id="btn-timestamp" onclick="toggleTimestampPanel()"
             style="background:#c62828;margin-top:10px;display:none;">⏱ タイムスタンプ</button>
     <div id="timestampPanel" style="display:none;margin-top:10px;background:#fff3f3;border-radius:10px;padding:14px;">
-        <div style="font-size:0.75rem;color:#666;line-height:1.6;margin-bottom:10px;">
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button type="button" id="tsModeChapter" onclick="setTsMode('chapter')"
+                style="flex:1;padding:8px;border:1px solid #ef9a9a;border-radius:6px;font-size:0.8125rem;cursor:pointer;">⏱ チャプター</button>
+            <button type="button" id="tsModeSubtitle" onclick="setTsMode('subtitle')"
+                style="flex:1;padding:8px;border:1px solid #ef9a9a;border-radius:6px;font-size:0.8125rem;cursor:pointer;">💬 字幕</button>
+        </div>
+        <div id="tsHelpChapter" style="font-size:0.75rem;color:#666;line-height:1.6;margin-bottom:10px;">
             YouTubeの概要欄に貼るとチャプターとして機能します。<br>
+            動画で第1試合が始まる位置を「開始時間」に入れてください。
+        </div>
+        <div id="tsHelpSubtitle" style="display:none;font-size:0.75rem;color:#666;line-height:1.6;margin-bottom:10px;">
+            SRT形式の字幕ファイルです。YouTube Studio の「字幕」→「ファイルをアップロード」→<br>
+            「タイミング情報あり」を選んで読み込んでください。<br>
             動画で第1試合が始まる位置を「開始時間」に入れてください。
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
@@ -537,6 +548,7 @@ body.viewer-mode #initialSetup { display: none !important; }
         <textarea id="tsText" readonly
             style="width:100%;height:220px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:monospace;font-size:0.75rem;line-height:1.7;box-sizing:border-box;resize:vertical;background:#fff;color:#333;"></textarea>
         <button class="report-btn" style="margin-top:8px;background:#c62828;" onclick="copyTimestamp()">📋 コピーする</button>
+        <button class="report-btn" id="tsDownload" style="display:none;margin-top:8px;background:#2e7d32;" onclick="downloadSubtitle()">📥 字幕ファイル（.srt）をダウンロード</button>
     </div>
 
     <!-- 期間集計パネル -->
@@ -4579,6 +4591,25 @@ function toggleTimestampPanel() {
     }
     sel.innerHTML = opts.join('');
     if (prev && opts.some(o => o.includes(`value="${prev}"`))) sel.value = prev;
+    setTsMode(_tsMode);   // ボタンの見た目も初期化してから描画する
+}
+
+// 出力モード: 'chapter'（概要欄チャプター）/ 'subtitle'（SRT字幕）
+let _tsMode = 'chapter';
+
+function setTsMode(mode) {
+    _tsMode = mode;
+    const isSub = mode === 'subtitle';
+    const paint = (el, active) => {
+        el.style.background = active ? '#c62828' : '#fff';
+        el.style.color      = active ? '#fff'    : '#c62828';
+        el.style.fontWeight = active ? 'bold'    : 'normal';
+    };
+    paint(document.getElementById('tsModeChapter'),  !isSub);
+    paint(document.getElementById('tsModeSubtitle'),  isSub);
+    document.getElementById('tsHelpChapter').style.display  = isSub ? 'none' : 'block';
+    document.getElementById('tsHelpSubtitle').style.display = isSub ? 'block' : 'none';
+    document.getElementById('tsDownload').style.display     = isSub ? 'block' : 'none';
     renderTimestamp();
 }
 
@@ -4594,6 +4625,7 @@ function renderTimestamp() {
                   + '　 この機能の追加より前に行われたイベントには時刻が記録されていないため出力できません。';
         return;
     }
+    if (_tsMode === 'subtitle') { renderSubtitle(); return; }
     const physIdx = Number(sel.value);
     const matches = _tsMatchesOfCourt(physIdx);
     const offset  = _tsParseOffset(document.getElementById('tsOffset').value);
@@ -4646,6 +4678,103 @@ function renderTimestamp() {
         warn.innerHTML = '⚠️ ' + msgs.join('<br>⚠️ ');
         warn.style.display = 'block';
     }
+}
+
+// =====================================================================
+// YouTube字幕（SRT）
+// =====================================================================
+const SUB_BALL   = '🥎';          // ポイント1点分のマーク
+const SUB_TAIL   = 5;             // 試合最後の字幕を何秒残すか
+const _SUB_FW    = '０１２３４５６７８９';
+
+// 半角数字 → 全角（字幕は等幅の方が読みやすいため）
+function _subFw(n) {
+    return String(n).split('').map(c => (c >= '0' && c <= '9') ? _SUB_FW[+c] : c).join('');
+}
+
+// 「dt:pt1:pt2:s1:s2」のカンマ区切りを配列に戻す
+function _subParseLog(str) {
+    if (!str) return [];
+    return String(str).split(',').map(e => {
+        const v = e.split(':').map(Number);
+        if (v.length !== 5 || v.some(n => !Number.isFinite(n) || n < 0)) return null;
+        return { dt: v[0], p1: v[1], p2: v[2], g1: v[3], g2: v[4] };
+    }).filter(Boolean);
+}
+
+// 秒 → SRTの時刻表記（00:01:23,000）
+function _subSrtTime(sec) {
+    const t  = Math.max(0, sec);
+    const w  = Math.floor(t);
+    const ms = Math.round((t - w) * 1000);
+    const h  = Math.floor(w / 3600), m = Math.floor((w % 3600) / 60), s = w % 60;
+    const p2 = v => String(v).padStart(2, '0');
+    return `${p2(h)}:${p2(m)}:${p2(s)},${String(ms).padStart(3, '0')}`;
+}
+
+// 「チーム1　🥎🥎　０－１　🥎🥎🥎　チーム2」
+function _subLine(t1, t2, e) {
+    return `${t1}　${SUB_BALL.repeat(e.p1)}　${_subFw(e.g1)}－${_subFw(e.g2)}　${SUB_BALL.repeat(e.p2)}　${t2}`;
+}
+
+function renderSubtitle() {
+    const out  = document.getElementById('tsText');
+    const warn = document.getElementById('tsWarn');
+    const physIdx = Number(document.getElementById('tsCourt').value);
+    const matches = _tsMatchesOfCourt(physIdx);
+    const offset  = _tsParseOffset(document.getElementById('tsOffset').value);
+    const t0 = matches[0].sc.startedAt;
+    const nm = id => state.playerNames[id] || ('選手' + id);
+
+    const cues = [];
+    const noLog = [];
+    matches.forEach((m, i) => {
+        const log = _subParseLog(m.sc.log);
+        if (!log.length) { noLog.push(i + 1); return; }
+        const base = (m.sc.startedAt - t0) / 1000 + offset;
+        const t1 = m.ct.team1.map(nm).join('・');
+        const t2 = m.ct.team2.map(nm).join('・');
+        log.forEach((e, j) => {
+            const start = base + e.dt;
+            const end   = (j + 1 < log.length) ? base + log[j + 1].dt : start + SUB_TAIL;
+            if (end <= start) return;   // 同秒の重複は捨てる
+            cues.push({ start, end, text: _subLine(t1, t2, e) });
+        });
+    });
+
+    if (!cues.length) {
+        out.value = 'ポイントの記録がありません。\n\n'
+                  + '※ 字幕は審判用スコア入力画面（コートのQRコード）で\n'
+                  + '　 入力した1点ごとの記録から作ります。\n'
+                  + '　 この機能の追加より前のイベントや、②組合せ画面だけで\n'
+                  + '　 試合終了にした試合には記録がないため出力できません。';
+        return;
+    }
+
+    out.value = cues.map((c, i) =>
+        `${i + 1}\n${_subSrtTime(c.start)} --> ${_subSrtTime(c.end)}\n${c.text}\n`
+    ).join('\n');
+
+    if (noLog.length) {
+        warn.innerHTML = '⚠️ 第' + noLog.join('・') + '試合はポイントの記録がないため字幕に入っていません。';
+        warn.style.display = 'block';
+    }
+}
+
+function downloadSubtitle() {
+    const txt = document.getElementById('tsText').value;
+    if (!txt || !txt.includes('-->')) { showToast('❌ 字幕データがありません'); return; }
+    const sel  = document.getElementById('tsCourt');
+    const name = getCourtName(Number(sel.value)).replace(/[\\/:*?"<>|]/g, '');
+    const blob = new Blob(['﻿' + txt], { type: 'text/plain;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `字幕_${name}.srt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function copyTimestamp() {
@@ -5807,6 +5936,7 @@ window._fbRememberFinished = function(scores, schedule) {
         if (!key) return; // 予定表に無い mid は照合できないので覚えない
         const rec = { s1: s.s1 ?? 0, s2: s.s2 ?? 0, done: true, _key: key };
         if (s.startedAt != null) rec.startedAt = s.startedAt;
+        if (s.log) rec.log = s.log;   // 字幕用のポイント記録
         window._finishedScores[mid] = rec;
     });
 };

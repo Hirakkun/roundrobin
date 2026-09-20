@@ -704,6 +704,14 @@ let currentTeamIds = null;
 let _finishedGuard = null;
 const FINISH_GUARD_TRIES = 5;
 
+// ── YouTube字幕用のポイント記録 ───────────────────────────────────
+// 「dt:pt1:pt2:s1:s2」（dt は試合開始からの秒数）をカンマ区切りで持つ。
+// 試合中は端末内だけに貯め、試合終了時に scores/<mid>/log へ1回だけ書く。
+// 常時書き込まないのは、セッションノードが管理者画面の set() で丸ごと
+// 上書きされるうえ、案内パネル・審判画面が全員ダウンロードするため。
+let _ptLog     = [];
+let _logBaseMs = null;   // 記録の基準時刻（scores/<mid>/startedAt と同じ値）
+
 // ── ローカル状態の保存/復元（リロード対応） ──────────────────────
 const SC_LS_KEY = 'sc_v1_' + sessionId + '_c' + courtIndex;
 
@@ -717,6 +725,7 @@ function saveLocalState() {
             game_score_t1, game_score_t2,
             game_is_over, matchStarted,
             historyStack,
+            ptLog: _ptLog, logBaseMs: _logBaseMs,
             historyHTML: document.getElementById('game-history')?.innerHTML || '',
             umpireMsg:   document.getElementById('umpire-msg')?.dataset.msg  || ''
         }));
@@ -744,6 +753,9 @@ function restoreLocalState(mid) {
         game_is_over   = d.game_is_over   ?? false;
         matchStarted   = d.matchStarted   ?? true;
         historyStack   = Array.isArray(d.historyStack) ? d.historyStack : [];
+        _ptLog         = Array.isArray(d.ptLog) ? d.ptLog : [];
+        // 呼び出し元が Firebase の startedAt を入れている場合はそれを優先して残す
+        if (d.logBaseMs != null) _logBaseMs = d.logBaseMs;
         const histEl = document.getElementById('game-history');
         if (histEl) histEl.innerHTML = d.historyHTML || '';
         const msgEl = document.getElementById('umpire-msg');
@@ -875,6 +887,9 @@ function onStateUpdate(state) {
         WIN_GAMES   = Math.ceil(MATCH_GAMES / 2);
         // リロード時: 試合中かつローカル保存があれば完全復元
         const fStatus = found.sc.status || ((found.sc.s1 > 0 || found.sc.s2 > 0) ? 'playing' : 'calling');
+        // 字幕用ログの基準時刻は常に Firebase の startedAt に合わせる。
+        // 引き継ぎ・リロードでここから記録を再開しても位置がずれないようにする。
+        if (fStatus === 'playing' && found.sc.startedAt != null) _logBaseMs = found.sc.startedAt;
         if (fStatus === 'playing' && restoreLocalState(found.mid)) {
             // Firebase の値で上書き（サーバー側が正）
             set_score_t1  = found.sc.s1  ?? set_score_t1;
@@ -1316,6 +1331,7 @@ window.handleMatchEnd = async function() {
             mid: endedMid,
             s1:  set_score_t1,
             s2:  set_score_t2,
+            log: _ptLog.length ? _ptLog.join(',') : null,
             ids: currentTeamIds,
             at:  Date.now(),
             tries: 0,
@@ -1516,8 +1532,24 @@ function swapHistoryRows() {
 // ── 現在ゲームのポイント＋サーブ情報をFirebaseに書き込み（fire-and-forget）──
 // server(1 or 2) と left(1 or 2) も保存することで、別端末が途中参加しても
 // サーブ選択画面をスキップしてメイン画面から再開できるようにする。
+// 今のスコアを字幕用ログに1件追加する。
+// 同じ秒に複数回動いた場合（連打・取消の往復）は最後の状態だけ残す。
+// final=true（試合終了時）はゲーム内ポイントを 0 にする。案内パネルも
+// 試合が終わるとボールを消すので、字幕の最後のカットも同じ見え方に揃える。
+function logPoint(final) {
+    if (_logBaseMs == null) return;
+    const dt  = Math.max(0, Math.round((Date.now() - _logBaseMs) / 1000));
+    const p1  = final ? 0 : game_score_t1;
+    const p2  = final ? 0 : game_score_t2;
+    const rec = `${dt}:${p1}:${p2}:${set_score_t1}:${set_score_t2}`;
+    const last = _ptLog[_ptLog.length - 1];
+    if (last !== undefined && last.slice(0, last.indexOf(':')) === String(dt)) _ptLog[_ptLog.length - 1] = rec;
+    else _ptLog.push(rec);
+}
+
 function writeCurrentPoints() {
     if (!currentMid) return;
+    logPoint();
     const upd = {};
     upd['scores/' + currentMid + '/pt1']    = game_score_t1;
     upd['scores/' + currentMid + '/pt2']    = game_score_t2;
@@ -1557,9 +1589,18 @@ async function writeStatus(status, resetScores = false) {
         upd['scores/' + currentMid + '/refId']  = MY_REF_ID;
         // 開始時刻を記録（YouTubeチャプター用タイムスタンプの基準）。
         // ②組合せ側でも同じキーに書くため、まだ無いときだけ入れて先に押された方を残す。
-        if (_curStartedAt == null) upd['scores/' + currentMid + '/startedAt'] = Date.now();
+        const startedAt = _curStartedAt != null ? _curStartedAt : Date.now();
+        if (_curStartedAt == null) upd['scores/' + currentMid + '/startedAt'] = startedAt;
+        // 字幕用ログを開始。基準は startedAt に合わせる（字幕の位置合わせに必要）
+        _logBaseMs = startedAt;
+        _ptLog = [];
+        logPoint();   // 0-0 の開始エントリ
     }
     if (resetScores) {
+        // 設定画面まで戻したので字幕用ログも破棄する
+        _ptLog = [];
+        _logBaseMs = null;
+        upd['scores/' + currentMid + '/log']    = null;
         upd['scores/' + currentMid + '/s1']     = 0;
         upd['scores/' + currentMid + '/s2']     = 0;
         upd['scores/' + currentMid + '/pt1']    = 0;
@@ -1582,7 +1623,12 @@ async function writeScore(done) {
     const upd = {};
     upd['scores/' + currentMid + '/s1'] = set_score_t1;
     upd['scores/' + currentMid + '/s2'] = set_score_t2;
-    if (done) upd['scores/' + currentMid + '/done'] = true;
+    if (done) {
+        upd['scores/' + currentMid + '/done'] = true;
+        // 字幕用ログは試合終了時に1回だけ書く
+        logPoint(true);
+        if (_ptLog.length) upd['scores/' + currentMid + '/log'] = _ptLog.join(',');
+    }
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     await update(stateRef, upd);
 }
@@ -1622,6 +1668,7 @@ function checkFinishedGuard(scores, schedule) {
     upd['scores/' + g.mid + '/s1']   = g.s1;
     upd['scores/' + g.mid + '/s2']   = g.s2;
     upd['scores/' + g.mid + '/done'] = true;
+    if (g.log) upd['scores/' + g.mid + '/log'] = g.log;
     upd['_cid'] = 'court-' + courtIndex + '-' + Date.now();
     update(stateRef, upd).catch(e => console.warn('試合終了の再送に失敗:', e));
     // 受信データも直しておく。こうしないと、このまま下の検索で
