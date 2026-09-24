@@ -308,14 +308,22 @@ function renderEvents(){
         const st=getStatus(ev);
         const ended=st==='終了';
         const hasClubs=Object.keys(ev.usedClubs||{}).length>0;
-        const grpBtn=ended
-            ? `<button class="btn-sm btn-sm-gray" disabled title="終了済みのため変更できません">参加グループ登録</button>`
-            : `<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">${hasClubs?'参加グループ変更':'⚠️ 参加グループ登録'}</button>`;
+        // ── カード上のボタン ──────────────────────────────────────
+        // 参加グループ未設定 → [参加グループ登録][削除]
+        // 設定済み・開催前後 → [管理画面を開く][削除]
+        // 終了後            → [管理画面を開く] のみ（削除は折りたたみの中）
+        const grpBtn=`<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">⚠️ 参加グループ登録</button>`;
+        const adminBtn=`<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openAdminUrl('${esc(eid)}')">🚀 管理画面を開く</button>`;
         const delBtn = st==='開催中'
             ? `<button class="btn-sm btn-sm-del" disabled title="開催中は削除できません" style="opacity:0.4;cursor:not-allowed;" onclick="event.stopPropagation()">削除</button>`
             : `<button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button>`;
+        const cardBtns = !hasClubs ? grpBtn+delBtn : (ended ? adminBtn : adminBtn+delBtn);
+        // 折りたたみの中の「参加グループ変更」（終了後は変更できないので無効にして理由を出す）
+        const grpChangeBtn = ended
+            ? `<button class="btn btn-gray" disabled style="opacity:.6;cursor:not-allowed;" title="終了済みのため変更できません">⚙ 参加グループ変更（終了後は不可）</button>`
+            : `<button class="btn btn-dark" onclick="openClubs('${esc(eid)}')">⚙ 参加グループ変更</button>`;
         // イベント指定URL（このページ自体をイベント名＋参加クラブで絞り込み）
-        const clubNames=Object.keys(ev.usedClubs||{}).map(cid=>decodeURIComponent(cid)).join(',');
+        const clubNames=Object.keys(ev.usedClubs||{}).filter(cid=>cid!==NO_CLUB).map(cid=>decodeURIComponent(cid)).join(',');
         const eventUrl='/roundrobin-event.php?name='+encodeURIComponent(ev.name)+(clubNames?'&club='+encodeURIComponent(clubNames):'');
         // 選手・クラブ管理ページのURL（イベント名＋イベントID指定）
         const memberUrl='/roundrobin-member.php?name='+encodeURIComponent(ev.name)+'&eid='+encodeURIComponent(eid);
@@ -326,7 +334,7 @@ function renderEvents(){
                 <div>${statusBadge(st)}</div>
             </div>
             <div class="evt-date">📅 ${fmtDate(ev.date)}</div>
-            <div class="evt-actions">${grpBtn}${delBtn}</div>
+            <div class="evt-actions">${cardBtns}</div>
         </div>
         <div id="erow-${CSS.escape(eid)}" class="evt-expand">
             <span class="event-id-badge">ID: ${escH(sid)}</span>
@@ -336,18 +344,21 @@ function renderEvents(){
                 <span>参加グループが設定されていません。<br>先に「参加グループ登録」ボタンから参加グループを設定してください。</span>
             </div>
             <a class="btn btn-teal" href="${memberUrl}" target="_blank">👤 選手・クラブ登録を開く</a>
-            ` : `
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                ${st==='準備中' ? `<button class="btn btn-green"  style="flex:1;" onclick="changeStatus('${esc(eid)}','開催中')">▶ 開催中にする</button>` : ''}
-                ${st==='開催中' ? `<button class="btn btn-navy"   style="flex:1;" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
-                ${st==='終了'   ? `<button class="btn btn-gray"   style="flex:1;" onclick="changeStatus('${esc(eid)}','準備中')">↩ 準備中に戻す</button>` : ''}
-            </div>
+            ` : ended ? `
             <div class="evt-expand-actions">
-                <button class="btn btn-purple" onclick="openAdminUrl('${esc(eid)}')">🚀 管理者画面を開く</button>
-                <button class="btn btn-orange" onclick="copyAdminUrl('${esc(eid)}')">🔑 管理者URLをコピー</button>
-                <button class="btn btn-green"  onclick="copyViewerUrl('${esc(eid)}')">👥 参加者URLをコピー（LINE送信）</button>
-                <a class="btn btn-teal" href="${memberUrl}" target="_blank">👤 選手・クラブ登録を開く</a>
-            </div>`}
+                <button class="btn btn-green" onclick="copyViewerUrl('${esc(eid)}')">📋 結果通知URLコピー</button>
+                <button class="btn btn-navy"  onclick="changeStatus('${esc(eid)}','開催中')">↩ 開催中にもどす</button>
+                ${grpChangeBtn}
+                <button class="btn btn-danger" onclick="confirmDelEvent('${esc(eid)}')">🗑 このイベントを削除</button>
+            </div>
+            ` : `
+            <div class="evt-expand-actions">
+                ${st==='開催中' ? `<button class="btn btn-navy" onclick="changeStatus('${esc(eid)}','終了')">⏹ 終了にする</button>` : ''}
+                ${grpChangeBtn}
+            </div>
+            ${st==='準備中' ? `<div style="font-size:12px;color:#777;line-height:1.6;">
+                管理画面で最初の組合せを作ると、自動で「開催中」になります。
+            </div>` : ''}`}
         </div>`;
     }
     h+='</div>';
@@ -356,7 +367,12 @@ function renderEvents(){
 window.changeStatus=async function(eid,newStatus){
     const ev=allEvents[eid]||{};
     const old=getStatus(ev);
-    const msgs={'開催中':'開催中にします。開催中は参加グループを削減できなくなります。','終了':'終了にします。以降は参加グループ登録を変更できなくなります。','準備中':'準備中に戻します。'};
+    const msgs={
+        '開催中': old==='終了' ? '開催中にもどします。結果の修正や試合の追加ができるようになります。'
+                              : '開催中にします。開催中は参加グループを削減できなくなります。',
+        '終了':   '終了にします。以降は参加グループ登録を変更できなくなります。',
+        '準備中': '準備中に戻します。',
+    };
     if(!confirm(`「${ev.name}」を${newStatus}にします。\n${msgs[newStatus]||''}\nよろしいですか？`)) return;
     try{
         await fbUpdate('events/'+eid,{status:newStatus});
@@ -368,7 +384,7 @@ window.changeStatus=async function(eid,newStatus){
 window.toggleERow=function(eid){ const r=document.getElementById('erow-'+CSS.escape(eid)); if(r) r.classList.toggle('show'); };
 window.copyAdminUrl=function(eid){ const ev=allEvents[eid]||{}; const sid=decodeURIComponent(eid); const token=ev.adminToken||localStorage.getItem('rr_admin:'+sid)||''; if(!token){showToast('⚠️ トークンが見つかりません');return;} copyText(`${location.origin}/#${eid}:${token}`,'🔑 管理者URLをコピーしました。大切に保存してください。'); };
 window.openAdminUrl=function(eid){ const ev=allEvents[eid]||{}; const sid=decodeURIComponent(eid); const token=ev.adminToken||localStorage.getItem('rr_admin:'+sid)||''; if(!token){showToast('⚠️ トークンが見つかりません');return;} window.open(`${location.origin}/#${eid}:${token}`,'_blank'); };
-window.copyViewerUrl=function(eid){ copyText(`${location.origin}/#${eid}`,'👥 参加者URLをコピーしました。LINEで送信してください。'); };
+window.copyViewerUrl=function(eid){ copyText(`${location.origin}/#${eid}`,'📋 結果通知URLをコピーしました。LINEで送信してください。'); };
 window.confirmDelEvent=function(eid){ const ev=allEvents[eid]||{}; showConfirm('⚠️ イベント削除',`「${ev.name} ${fmtDate(ev.date)}」を削除しますか？\n試合データも削除されます。`,()=>deleteEvent(eid)); };
 async function deleteEvent(eid){ try{ await fbRemove('events/'+eid); await fbRemove('sessions/'+eid); delete allEvents[eid]; renderEvents(); showToast('🗑 削除しました'); }catch(e){ showToast('❌ '+e.message); } }
 
@@ -466,34 +482,58 @@ function renderClubsScreen(){
         const paramIds=new Set(_resolveClubIds(PARAM_CLUB));
         entries=entries.filter(([cid])=>paramIds.has(cid));
     }
-    if(!entries.length){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 クラブ管理</a> から登録してください。</div>';return;}
+    const noClubCount=PARAM_CLUB?0:unaffiliatedPids().length;
+    if(!entries.length && !noClubCount){c.innerHTML='<div class="empty-msg">📭 グループが登録されていません。<br><a href="/roundrobin-member.php" style="color:#1565c0;">👤 クラブ管理</a> から登録してください。</div>';return;}
     const st=getStatus(allEvents[currentEventId]||{});
     const isActive=st==='開催中';
     const ev=allEvents[currentEventId]||{};
     const origSelected=new Set(Object.keys(ev.usedClubs||{})); // 元々選択済み
-    let h='<div style="padding-bottom:80px;">';
-    for(const [cid,club] of entries){
-        const count=Object.keys(club.playerIds||{}).length;
+    const row=(cid,name,count,extraStyle='')=>{
         const checked=selectedClubs.has(cid);
         // 開催中：既存選択済みはロック（外せない）
         const locked=isActive&&origSelected.has(cid);
         const cbAttr=`type="checkbox" class="${locked?'cb-locked':'club-cb'}" ${checked?'checked':''} ${locked?'disabled':'onchange="toggleClub(\''+esc(cid)+'\',this.checked)"'}`;
         const lockIcon=locked?'<span title="開催中のため外せません" style="font-size:11px;color:#90caf9;margin-left:4px;">🔒</span>':'';
-        h+=`<label class="club-row" style="cursor:${locked?'not-allowed':'pointer'};">
+        return `<label class="club-row" style="cursor:${locked?'not-allowed':'pointer'};${extraStyle}">
             <span class="cb-cell"><input ${cbAttr}></span>
-            <span class="name-cell">${escH(club.name)}${lockIcon}</span>
+            <span class="name-cell">${escH(name)}${lockIcon}</span>
             <span class="count-cell">${count}人</span>
         </label>`;
+    };
+    let h='<div style="padding-bottom:80px;">';
+    for(const [cid,club] of entries){
+        h+=row(cid, club.name, Object.keys(club.playerIds||{}).length);
     }
+    // どのクラブにも入っていない選手を1グループとして最後に出す
+    if(noClubCount) h+=row(NO_CLUB, NO_CLUB_NAME, noClubCount, 'background:#fafafa;color:#666;');
     h+='</div>';
     c.innerHTML=h;
 }
 window.toggleClub=function(cid,checked){ if(checked) selectedClubs.add(cid); else selectedClubs.delete(cid); };
 
+// どのクラブにも入っていない選手を1つのグループとして扱うための擬似クラブID
+const NO_CLUB='__noclub__';
+const NO_CLUB_NAME='クラブ未所属';
+
+// 所属クラブが1つも無い選手か（存在しないクラブIDだけが残っている場合も未所属）
+function isUnaffiliated(p){
+    return !!p?.name && !Object.keys(p.clubs||{}).some(cid=>allClubs[cid]);
+}
+function unaffiliatedPids(){
+    return Object.entries(allPlayers).filter(([,p])=>isUnaffiliated(p)).map(([pid])=>pid);
+}
+
 // pid -> [cid,...] map を作成（選択中クラブ内のみ）
 function computePidToClubs(clubIds){
     const m={};
     for(const cid of clubIds){
+        if(cid===NO_CLUB){
+            for(const pid of unaffiliatedPids()){
+                if(!m[pid]) m[pid]=[];
+                m[pid].push(NO_CLUB);
+            }
+            continue;
+        }
         const club=allClubs[cid]; if(!club||!club.playerIds) continue;
         for(const pid of Object.keys(club.playerIds)){
             if(!allPlayers[pid]?.name) continue;
@@ -624,7 +664,7 @@ function buildRoster(clubIds, eventDate, playerClubChoice={}){
             const chosenCid = clubs.length===1
                 ? clubs[0]
                 : (playerClubChoice[pid] && clubs.includes(playerClubChoice[pid]) ? playerClubChoice[pid] : clubs[0]);
-            const clubName=allClubs[chosenCid]?.name||'';
+            const clubName = chosenCid===NO_CLUB ? NO_CLUB_NAME : (allClubs[chosenCid]?.name||'');
             return {
                 pid,
                 name:     p.name,
