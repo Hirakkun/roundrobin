@@ -5224,6 +5224,25 @@ function _showQrCards() {
     if (qrCard) qrCard.style.display = '';
     const dpCard = document.getElementById('displayPanelCard');
     if (dpCard) dpCard.style.display = '';
+    _autoOpenSetupCards();
+}
+
+// 開始前（まだ組合せを作っていない）は「⚙️ ゲーム設定」「📺 試合案内パネル」を
+// 開いた状態で見せる。準備中に必ず触る項目なので、毎回たたんだ所から開かせない。
+// 自動で開くのはセッションごとに1回だけ（閉じたのにまた開く、を防ぐ）。
+let _setupCardsOpenedFor = null;
+function _autoOpenSetupCards() {
+    if (!isAdmin || !_sessionId) return;
+    if (_setupCardsOpenedFor === _sessionId) return;
+    _setupCardsOpenedFor = _sessionId;
+    // 既に始まっている大会では勝手に開かない
+    if ((state.schedule || []).length > 0) return;
+    const open = (bodyId, fn) => {
+        const body = document.getElementById(bodyId);
+        if (body && body.style.display === 'none') fn();
+    };
+    open('qrPanelBody',        toggleQrPanel);
+    open('displayPanelBody',   toggleDisplayPanel);
 }
 
 window._fbApply = function(remoteState) {
