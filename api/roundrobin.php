@@ -4561,6 +4561,12 @@ function _tsFormat(sec) {
 }
 
 // 指定した物理コートの試合を、開始時刻の昇順で返す
+// 指定した物理コートで「実際に行われた」試合を、そのコートでの実施順に返す。
+// 開始時刻が無い試合も no（通し番号）付きで含める。開始時刻が無いと動画の
+// どこなのか決められないので出力からは外すが、黙って消すと以降の試合番号が
+// 繰り上がってしまうため、番号だけは確保して呼び出し側で警告に出す。
+// 並びはラウンド番号順。1コートの試合は必ずラウンド番号順に実施されるので、
+// 開始時刻が欠けていても正しい順序が決まる。
 function _tsMatchesOfCourt(physIdx) {
     const list = [];
     (state.schedule || []).forEach(rd => {
@@ -4568,11 +4574,29 @@ function _tsMatchesOfCourt(physIdx) {
             const pi = ct.physicalIndex !== undefined ? ct.physicalIndex : ci;
             if (pi !== physIdx) return;
             const sc = state.scores?.[`r${rd.round}c${ci}`];
-            if (!sc || sc.startedAt == null) return;   // 開始時刻がない試合は出せない
-            list.push({ round: rd.round, ct, sc });
+            // 組んだだけで一度も始めていない試合は動画に写っていないので数えない
+            if (!sc || !(sc.done || sc.startedAt != null || sc.s1 > 0 || sc.s2 > 0)) return;
+            list.push({ round: rd.round, ci, ct, sc });
         });
     });
-    return list.sort((a, b) => a.sc.startedAt - b.sc.startedAt);
+    list.sort((a, b) => a.round - b.round || a.ci - b.ci);
+    list.forEach((m, i) => { m.no = i + 1; });
+    return list;
+}
+
+// 出力に使える試合（開始時刻があるもの）だけ
+function _tsUsableOfCourt(physIdx) {
+    return _tsMatchesOfCourt(physIdx).filter(m => m.sc.startedAt != null);
+}
+
+// 開始時刻が無くて出力から外れた試合の番号
+function _tsSkippedNos(physIdx) {
+    return _tsMatchesOfCourt(physIdx).filter(m => m.sc.startedAt == null).map(m => m.no);
+}
+
+function _tsSkipMsg(nos) {
+    return '第' + nos.join('・') + '試合は開始時刻が記録されていないため入っていません'
+         + '（動画のどこかを決められないため）。番号は飛ばしてあります。';
 }
 
 function toggleTimestampPanel() {
@@ -4585,7 +4609,7 @@ function toggleTimestampPanel() {
     const prev = sel.value;
     const opts = [];
     for (let i = 0; i < (state.courts || 2); i++) {
-        if (_tsMatchesOfCourt(i).length > 0) {
+        if (_tsUsableOfCourt(i).length > 0) {
             opts.push(`<option value="${i}">${_escH(getCourtName(i))}</option>`);
         }
     }
@@ -4627,7 +4651,8 @@ function renderTimestamp() {
     }
     if (_tsMode === 'subtitle') { renderSubtitle(); return; }
     const physIdx = Number(sel.value);
-    const matches = _tsMatchesOfCourt(physIdx);
+    const matches = _tsUsableOfCourt(physIdx);
+    const skipped = _tsSkippedNos(physIdx);
     const offset  = _tsParseOffset(document.getElementById('tsOffset').value);
     const t0 = matches[0].sc.startedAt;
 
@@ -4647,12 +4672,14 @@ function renderTimestamp() {
 
     const nm = id => state.playerNames[id] || ('選手' + id);
     const times = [0];
-    matches.forEach((m, i) => {
+    matches.forEach(m => {
         const sec = Math.round((m.sc.startedAt - t0) / 1000) + offset;
         times.push(sec);
         const t1 = m.ct.team1.map(nm).join('・');
         const t2 = m.ct.team2.map(nm).join('・');
-        lines.push(`${_tsFormat(sec)} 第${i + 1}試合　${t1}　${m.sc.s1 ?? 0}-${m.sc.s2 ?? 0}　${t2}`);
+        // 番号は _tsMatchesOfCourt が振った通し番号。開始時刻が無くて
+        // 出力から外れた試合の分は飛ばして、実際の試合順とずれないようにする
+        lines.push(`${_tsFormat(sec)} 第${m.no}試合　${t1}　${m.sc.s1 ?? 0}-${m.sc.s2 ?? 0}　${t2}`);
     });
 
     // 順位表（③順位 と同じ並び。calcRank 未実行なら先に計算する）
@@ -4671,6 +4698,7 @@ function renderTimestamp() {
 
     // YouTubeのチャプター条件を満たさない場合は注意を出す
     const msgs = [];
+    if (skipped.length) msgs.push(_tsSkipMsg(skipped));
     if (times.length < 3) msgs.push('チャプターは3つ以上必要です（現在' + times.length + '個）。');
     const tooClose = times.some((t, i) => i > 0 && t - times[i - 1] < 10);
     if (tooClose) msgs.push('各チャプターの間隔は10秒以上必要です。開始時間を10秒以降にしてください。');
@@ -4721,16 +4749,17 @@ function renderSubtitle() {
     const out  = document.getElementById('tsText');
     const warn = document.getElementById('tsWarn');
     const physIdx = Number(document.getElementById('tsCourt').value);
-    const matches = _tsMatchesOfCourt(physIdx);
+    const matches = _tsUsableOfCourt(physIdx);
+    const skipped = _tsSkippedNos(physIdx);
     const offset  = _tsParseOffset(document.getElementById('tsOffset').value);
     const t0 = matches[0].sc.startedAt;
     const nm = id => state.playerNames[id] || ('選手' + id);
 
     const cues = [];
     const noLog = [];
-    matches.forEach((m, i) => {
+    matches.forEach(m => {
         const log = _subParseLog(m.sc.log);
-        if (!log.length) { noLog.push(i + 1); return; }
+        if (!log.length) { noLog.push(m.no); return; }
         const base = (m.sc.startedAt - t0) / 1000 + offset;
         const t1 = m.ct.team1.map(nm).join('・');
         const t2 = m.ct.team2.map(nm).join('・');
@@ -4742,21 +4771,24 @@ function renderSubtitle() {
         });
     });
 
+    const msgs = [];
+    if (skipped.length) msgs.push(_tsSkipMsg(skipped));
+    if (noLog.length)   msgs.push('第' + noLog.join('・') + '試合はポイントの記録がないため入っていません。');
+
     if (!cues.length) {
         out.value = 'ポイントの記録がありません。\n\n'
                   + '※ 字幕は審判用スコア入力画面（コートのQRコード）で\n'
                   + '　 入力した1点ごとの記録から作ります。\n'
                   + '　 この機能の追加より前のイベントや、②組合せ画面だけで\n'
                   + '　 試合終了にした試合には記録がないため出力できません。';
-        return;
+    } else {
+        out.value = cues.map((c, i) =>
+            `${i + 1}\n${_subSrtTime(c.start)} --> ${_subSrtTime(c.end)}\n${c.text}\n`
+        ).join('\n');
     }
 
-    out.value = cues.map((c, i) =>
-        `${i + 1}\n${_subSrtTime(c.start)} --> ${_subSrtTime(c.end)}\n${c.text}\n`
-    ).join('\n');
-
-    if (noLog.length) {
-        warn.innerHTML = '⚠️ 第' + noLog.join('・') + '試合はポイントの記録がないため字幕に入っていません。';
+    if (msgs.length) {
+        warn.innerHTML = '⚠️ ' + msgs.join('<br>⚠️ ');
         warn.style.display = 'block';
     }
 }
@@ -5721,6 +5753,10 @@ let _evRef     = null;
 let _scoresRef = null;   // scores 専用リアルタイムリスナー
 const _pendingAssign  = new Set(); // assignNextPoolMatch の二重実行防止ガード
 const _processedDone  = new Set(); // 終了検出済み mid（_fbApply より先に_refが発火した場合の誤スキップ防止）
+// Firebase 上に存在する scores の mid 一覧。_fbPush は update() で書くため
+// 「書いた場所」しか変わらない。ラウンド削除などで消えた試合を明示的に
+// 削除するのにこの一覧が要る（_fbStart と scores リスナーで更新する）。
+let _remoteScoreMids = new Set();
 
 // ラウンド削除でラウンド番号が詰め直されると mid（r{round}c{ci}）が付け替わるため、
 // 古い mid が _processedDone に残っていると別の試合の done を「処理済み」と誤判定して
@@ -5732,6 +5768,7 @@ window._fbResetDoneTracking = function() {
     // mid はリセット・ラウンド削除（キー振り直し）で再利用されるため、
     // 確定結果キャッシュも一緒に破棄しないと別試合の結果が復活してしまう
     window._finishedScores = {};
+    window._livePtScores   = {};
 };
 
 // この画面が自分で done を処理した mid を「処理済み」として登録する。
@@ -5762,6 +5799,10 @@ window._fbStart = function(sessionId) {
     _pendingAssign.clear();
     _scoresSeeded = false;
     window._finishedScores = {};
+    _remoteScoreMids = new Set();   // 別セッションの mid を消しにいかないよう破棄する
+    // mid は別セッションでも r1c0 から振り直されるため、前イベントのポイントが
+    // 残っていると次イベントの同じ mid に混ざる。ここで捨てる。
+    window._livePtScores = {};
 
     // ── メインセッションリスナー ──────────────────────────────────
     if (_ref) off(_ref);
@@ -5856,6 +5897,8 @@ window._fbStart = function(sessionId) {
             }
             if (s.done) delete window._livePtScores[mid];
         });
+        // Firebase 上の試合一覧を控える（次の push で消えた試合を削除するため）
+        _remoteScoreMids = new Set(Object.keys(scores));
         // 確定結果を記録し、他クライアントの set() で消えていたら復元して押し戻す
         window._fbRememberFinished(scores, state.schedule);
         if (window._fbRestoreFinished(scores, state.schedule) > 0) {
@@ -5960,7 +6003,7 @@ window._fbRestoreFinished = function(scores, schedule) {
 
 window._fbPush = function(data) {
     if (!_ref) return;
-    // pt1/pt2 と確定結果をマージして送信（score-court の書き込みを保護）
+    // pt1/pt2 と確定結果をマージして送信（古い版の画面が set() で消した場合の保険）
     const mergedScores = { ...(data.scores || {}) };
     Object.keys(window._livePtScores).forEach(mid => {
         if (mergedScores[mid]) {
@@ -5969,7 +6012,27 @@ window._fbPush = function(data) {
         }
     });
     window._fbRestoreFinished(mergedScores, data.schedule);
-    set(_ref, { ...data, scores: mergedScores, _cid: CLIENT_ID });
+
+    // ── scores はフィールド単位で書く ────────────────────────────────
+    // set() でセッションノードを丸ごと上書きすると、審判が直前に書いた
+    // status / startedAt / server / left / sw1 / sw2 / refId のような
+    // 「こちらがまだ受信していないフィールド」まで消してしまう。
+    // （管理者画面を2つ開いていると、done を知らない方の push で実際に消えていた）
+    // update() なら書いた場所だけが変わるので、審判の書き込みと衝突しない。
+    const { scores: _omitScores, ...rest } = data;
+    const upd = { ...rest, _cid: CLIENT_ID };
+    Object.keys(mergedScores).forEach(mid => {
+        const sc = mergedScores[mid];
+        if (!sc || typeof sc !== 'object') return;
+        Object.keys(sc).forEach(f => {
+            if (sc[f] !== undefined) upd[`scores/${mid}/${f}`] = sc[f];
+        });
+    });
+    // ローカルから消えた試合（ラウンド削除・リセット）は update() では消えないので明示的に削除する
+    _remoteScoreMids.forEach(mid => { if (!mergedScores[mid]) upd[`scores/${mid}`] = null; });
+    _remoteScoreMids = new Set(Object.keys(mergedScores));
+
+    update(_ref, upd);
 };
 
 window._fbSetEventStatus = async function(sessionId, status) {
