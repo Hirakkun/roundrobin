@@ -31,6 +31,8 @@ body { font-family: sans-serif; font-size: 15px; color: #222; margin: 0; backgro
 .btn-sm-blue  { background: #1565c0; color: #fff; }
 .btn-sm-edit  { background: #e65100; color: #fff; }
 .btn-sm-del   { background: #c62828; color: #fff; }
+.btn-sm-purple{ background: #6a1b9a; color: #fff; }
+.btn-sm-green { background: #2e7d32; color: #fff; }
 .data-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
 .data-table th { background: #e8eaf6; color: #3949ab; padding: 8px 10px; text-align: left; font-size: 12px; border-bottom: 2px solid #c5cae9; }
 .data-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
@@ -311,17 +313,16 @@ function renderEvents(){
         // ── カード上のボタン ──────────────────────────────────────
         // 参加グループ未設定 → [参加グループ登録][削除]
         // 設定済み・開催前後 → [管理画面を開く][削除]
-        // 終了後            → [管理画面を開く] のみ（削除は折りたたみの中）
+        // 終了後            → [管理画面を開く][結果通知URLコピー]（削除は折りたたみの中）
         const grpBtn=`<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openClubs('${esc(eid)}')">⚠️ 参加グループ登録</button>`;
-        const adminBtn=`<button class="btn-sm btn-sm-blue" onclick="event.stopPropagation();openAdminUrl('${esc(eid)}')">🚀 管理画面を開く</button>`;
+        const adminBtn=`<button class="btn-sm btn-sm-purple" onclick="event.stopPropagation();openAdminUrl('${esc(eid)}')">🚀 管理画面を開く</button>`;
+        const viewerBtn=`<button class="btn-sm btn-sm-green" onclick="event.stopPropagation();copyViewerUrl('${esc(eid)}')">📋 結果通知URLコピー</button>`;
         const delBtn = st==='開催中'
             ? `<button class="btn-sm btn-sm-del" disabled title="開催中は削除できません" style="opacity:0.4;cursor:not-allowed;" onclick="event.stopPropagation()">削除</button>`
             : `<button class="btn-sm btn-sm-del" onclick="event.stopPropagation();confirmDelEvent('${esc(eid)}')">削除</button>`;
-        const cardBtns = !hasClubs ? grpBtn+delBtn : (ended ? adminBtn : adminBtn+delBtn);
-        // 折りたたみの中の「参加グループ変更」（終了後は変更できないので無効にして理由を出す）
-        const grpChangeBtn = ended
-            ? `<button class="btn btn-gray" disabled style="opacity:.6;cursor:not-allowed;" title="終了済みのため変更できません">⚙ 参加グループ変更（終了後は不可）</button>`
-            : `<button class="btn btn-dark" onclick="openClubs('${esc(eid)}')">⚙ 参加グループ変更</button>`;
+        const cardBtns = !hasClubs ? grpBtn+delBtn : (ended ? adminBtn+viewerBtn : adminBtn+delBtn);
+        // 折りたたみの中の「参加グループ変更」
+        const grpChangeBtn = `<button class="btn btn-dark" onclick="openClubs('${esc(eid)}')">⚙ 参加グループ変更</button>`;
         // イベント指定URL（このページ自体をイベント名＋参加クラブで絞り込み）
         const clubNames=Object.keys(ev.usedClubs||{}).filter(cid=>cid!==NO_CLUB).map(cid=>decodeURIComponent(cid)).join(',');
         const eventUrl='/roundrobin-event.php?name='+encodeURIComponent(ev.name)+(clubNames?'&club='+encodeURIComponent(clubNames):'');
@@ -346,9 +347,7 @@ function renderEvents(){
             <a class="btn btn-teal" href="${memberUrl}" target="_blank">👤 選手・クラブ登録を開く</a>
             ` : ended ? `
             <div class="evt-expand-actions">
-                <button class="btn btn-green" onclick="copyViewerUrl('${esc(eid)}')">📋 結果通知URLコピー</button>
-                <button class="btn btn-navy"  onclick="changeStatus('${esc(eid)}','開催中')">↩ 開催中にもどす</button>
-                ${grpChangeBtn}
+                <button class="btn btn-navy"   onclick="changeStatus('${esc(eid)}','開催中')">↩ 開催中にもどす</button>
                 <button class="btn btn-danger" onclick="confirmDelEvent('${esc(eid)}')">🗑 このイベントを削除</button>
             </div>
             ` : `
